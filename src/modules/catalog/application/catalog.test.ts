@@ -62,3 +62,7 @@ it('returns the existing product when adding manually twice, and guards private 
   expect(b.id).toBe(a.id);
   await expect(addProductManually(deps, { url: 'http://localhost/p', brand: 'X', name: 'Y' })).rejects.toMatchObject({ code: 'product.url_not_public' });
 });
+
+it('getProduct returns null for an id that is not a uuid', async () => {
+  expect(await getProduct({ products: createProductRepository(await createTestDb()) }, 'not-a-uuid')).toBeNull();
+});

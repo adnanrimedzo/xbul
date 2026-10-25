@@ -14,4 +14,8 @@ export async function findProductByUrl(deps: { products: ProductRepository }, ra
   return deps.products.findByCanonicalUrl(canonicalUrl);
 }
 
-export const getProduct = (deps: { products: ProductRepository }, id: string): Promise<Product | null> => deps.products.findById(id);
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// Ids come from the browser; Postgres throws 22P02 on malformed uuid text, so treat it as "not found".
+export const getProduct = async (deps: { products: ProductRepository }, id: string): Promise<Product | null> =>
+  UUID.test(id) ? deps.products.findById(id) : null;
