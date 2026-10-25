@@ -1,0 +1,10 @@
+export type { Company } from './domain/company';
+export { createCompany } from './domain/company';
+export type { Article, ArticleSpecs } from './domain/article';
+export { createArticle, normalizeArticleCode, withSpecs } from './domain/article';
+export type { ArticleRepository, CompanyRepository } from './domain/repositories';
+export { registerCompany } from './application/register-company';
+export { upsertArticle } from './application/upsert-article';
+export { editArticleSpecs } from './application/edit-article-specs';
+export { createSupplierRepositories } from './infrastructure/drizzle-repositories';
+export { articles, companies } from './infrastructure/schema';
