@@ -24,6 +24,13 @@ it('accepts articleId alone and the boundary values', () => {
   expect(createInquiry({ ...ok, quantityMeters: 1 }).quantityMeters).toBe(1);
 });
 
+it('caps the email at 254 characters after normalization', () => {
+  const email = (n: number) => `${'a'.repeat(n - '@x.test'.length)}@x.test`;
+  expect(createInquiry({ ...ok, buyerEmail: email(254) }).buyerEmail).toHaveLength(254);
+  expect(() => createInquiry({ ...ok, buyerEmail: email(255) })).toThrow(expect.objectContaining({ code: 'inquiry.email_invalid' }));
+  expect(createInquiry({ ...ok, buyerEmail: `  ${email(254).toUpperCase()}  ` }).buyerEmail).toHaveLength(254);
+});
+
 it.each([
   [{ buyerEmail: 'not-an-email' }, 'inquiry.email_invalid'], [{ buyerName: '' }, 'inquiry.name_invalid'],
   [{ buyerName: ' ' }, 'inquiry.name_invalid'], [{ buyerName: 'x'.repeat(101) }, 'inquiry.name_invalid'],

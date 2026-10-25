@@ -1,4 +1,4 @@
-import { expect, it } from 'vitest';
+import { expect, it, vi } from 'vitest';
 import { createProduct, createProductRepository } from '@/modules/catalog';
 import { createCompany, createSupplierRepositories } from '@/modules/supplier';
 import { createTestDb } from '@/shared/db/testing';
@@ -55,6 +55,22 @@ it('saves the inquiry but sends nothing when the mill has no owner email', async
   const inq = await submitInquiry(deps, { companyId: ids.indigo, productId: ids.guess, articleId: null, kind: 'quote', buyerName: 'B', buyerEmail: 'b@x.test' });
   expect(await deps.inquiries.findById(inq.id)).toEqual(inq);
   expect(mailer.sent).toEqual([]);
+});
+
+it.each([
+  ['the mailer', { mailer: { send: async () => { throw new Error('resend: boom'); } } }],
+  ['the owner email lookup', { companyOwnerEmail: async () => { throw new Error('db: boom'); } }],
+])('still returns the saved inquiry when %s fails', async (_name, broken) => {
+  const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+  try {
+    const { deps, ids } = await setup({ agents: [], ownerEmail: 'mill@example.test' });
+    const inq = await submitInquiry({ ...deps, ...broken }, { companyId: ids.indigo, productId: ids.guess, articleId: null, kind: 'quote', buyerName: 'B', buyerEmail: 'b@x.test' });
+    expect(await deps.inquiries.findById(inq.id)).toEqual(inq);
+    expect(log).toHaveBeenCalledTimes(1);
+    expect(log.mock.calls[0].join(' ')).toContain(inq.id);
+  } finally {
+    log.mockRestore();
+  }
 });
 
 it('drops unknown or malformed agent handles', async () => {

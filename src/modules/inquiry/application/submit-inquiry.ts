@@ -43,13 +43,18 @@ export async function submitInquiry(
   if (recent >= RATE_LIMIT) throw new DomainError('inquiry.rate_limited');
   await deps.inquiries.save(inquiry);
 
-  const ownerEmail = await deps.companyOwnerEmail(inquiry.companyId);
-  if (ownerEmail) {
-    await deps.mailer.send({
-      to: ownerEmail,
-      subject: `New ${inquiry.kind} request from ${inquiry.buyerCompany ?? inquiry.buyerName}`,
-      text: ownerEmailBody(inquiry, deps.baseUrl),
-    });
+  // The saved inquiry is the durable record; the email is only a notification, so a failure here must not fail the submit.
+  try {
+    const ownerEmail = await deps.companyOwnerEmail(inquiry.companyId);
+    if (ownerEmail) {
+      await deps.mailer.send({
+        to: ownerEmail,
+        subject: `New ${inquiry.kind} request from ${inquiry.buyerCompany ?? inquiry.buyerName}`,
+        text: ownerEmailBody(inquiry, deps.baseUrl),
+      });
+    }
+  } catch (e) {
+    console.error(`[inquiry] owner notification failed for ${inquiry.id}: ${e instanceof Error ? e.message : String(e)}`);
   }
   return inquiry;
 }

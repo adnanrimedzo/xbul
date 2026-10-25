@@ -34,6 +34,7 @@ export type InquiryInput = {
 const NAME_MAX = 100;
 const COMPANY_MAX = 120;
 const MESSAGE_MAX = 2000;
+const EMAIL_MAX = 254;
 const QUANTITY_MAX = 1_000_000;
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -41,7 +42,7 @@ export function createInquiry(input: InquiryInput & { viaAgentHandle: string | n
   const buyerName = input.buyerName.trim();
   if (buyerName.length < 1 || buyerName.length > NAME_MAX) throw new DomainError('inquiry.name_invalid');
   const buyerEmail = input.buyerEmail.trim().toLowerCase();
-  if (!EMAIL.test(buyerEmail)) throw new DomainError('inquiry.email_invalid');
+  if (buyerEmail.length > EMAIL_MAX || !EMAIL.test(buyerEmail)) throw new DomainError('inquiry.email_invalid');
   const buyerCompany = input.buyerCompany?.trim() || null;
   if (buyerCompany && buyerCompany.length > COMPANY_MAX) throw new DomainError('inquiry.company_invalid');
   const quantityMeters = input.quantityMeters ?? null;
