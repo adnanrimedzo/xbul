@@ -13,7 +13,7 @@
     "typecheck": "next typegen && tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
-    "db:reset": "rm -rf .data/dev && drizzle-kit migrate",
+    "db:reset": "rm -rf .data/dev && mkdir -p .data && drizzle-kit migrate",
     "seed": "tsx scripts/seed.ts",
     "e2e": "playwright test"
   },
