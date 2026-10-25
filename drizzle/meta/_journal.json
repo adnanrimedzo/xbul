@@ -36,6 +36,13 @@
       "when": 1792970670721,
       "tag": "0004_identity",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1792971131187,
+      "tag": "0005_inquiry",
+      "breakpoints": true
     }
   ]
 }
