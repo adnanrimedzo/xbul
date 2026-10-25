@@ -36,3 +36,11 @@ it('decodes HTML entities in meta and title text', () => {
   expect(parseProductPage('<meta property="og:title" content="Jeans &amp; Co">', 'https://x.com/')?.name).toBe('Jeans & Co');
   expect(parseProductPage('<title>Shirt &amp; Tie</title>', 'https://x.com/')?.name).toBe('Shirt & Tie');
 });
+
+it('truncates a long SEO title and brand so the product still fits', () => {
+  const html = `<title>${'Blazer '.repeat(60)}</title><meta property="product:brand" content="${'B'.repeat(80)}">`;
+  const snapshot = parseProductPage(html, 'https://x.com/');
+  expect(snapshot!.name.length).toBeLessThanOrEqual(160);
+  expect(snapshot!.name).toBe(snapshot!.name.trim());
+  expect(snapshot!.brand).toBe('B'.repeat(60));
+});

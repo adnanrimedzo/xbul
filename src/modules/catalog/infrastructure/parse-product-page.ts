@@ -5,6 +5,7 @@ import { brandFromHost } from '../domain/product-url';
 type Json = Record<string, unknown>;
 
 const str = (v: unknown): string | null => (typeof v === 'string' && v.trim() ? v.trim() : null);
+const cut = (s: string, max: number) => s.slice(0, max).trim(); // keeps createProduct's 160/60 limits from failing on SEO titles
 const normalize = (s: string) => s.replace(/[^\p{L}\p{N}]/gu, '').toLowerCase();
 
 function findProduct(node: unknown): Json | null {
@@ -63,5 +64,5 @@ export function parseProductPage(html: string, pageUrl: string): ProductSnapshot
     }
   }
 
-  return { brand, name: stripBrandSuffix(rawName, [brand, hostBrand]), imageUrl, composition: str(product?.material) };
+  return { brand: cut(brand, 60), name: cut(stripBrandSuffix(rawName, [brand, hostBrand]), 160), imageUrl, composition: str(product?.material) };
 }

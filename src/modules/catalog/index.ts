@@ -1,0 +1,11 @@
+export type { Product, ProductSnapshot } from './domain/product';
+export { createProduct } from './domain/product';
+export { canonicalizeProductUrl } from './domain/product-url';
+export type { ProductRepository } from './domain/repositories';
+export type { ImportResult, ProductPageFetcher } from './application/ports';
+export { importProduct } from './application/import-product';
+export { addProductManually } from './application/add-product-manually';
+export { findProductByUrl, getProduct } from './application/find-product';
+export { createProductRepository } from './infrastructure/drizzle-product-repository';
+export { createHttpProductPageFetcher } from './infrastructure/http-product-page-fetcher';
+export { products } from './infrastructure/schema';
