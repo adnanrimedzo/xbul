@@ -2,7 +2,7 @@ import { defineConfig, globalIgnores } from "eslint/config";
 import nextVitals from "eslint-config-next/core-web-vitals";
 import nextTs from "eslint-config-next/typescript";
 
-const deepImport = { group: ['@/modules/*/*', '!@/modules/*/infrastructure/*schema'], message: 'Import a module through its index.ts' };
+const deepImport = { regex: '^@/modules/[^/]+/(?!infrastructure/[^/]*schema$)', message: 'Import a module through its index.ts' };
 
 const eslintConfig = defineConfig([
   ...nextVitals,
