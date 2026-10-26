@@ -41,6 +41,7 @@ async function setup(overrides: { findByCanonicalUrl?: (url: string) => Promise<
       await new Promise((resolve) => setTimeout(resolve, 5));
       inFlight--;
       if (url.includes('blocked')) throw new Error('403');
+      if (url.includes('titled')) return '<title>Trucker Jacket - Armani</title>';
       return url.includes('plain') ? '<html><body>Hello</body></html>' : jacket;
     },
   };
@@ -98,6 +99,14 @@ it('says why each row is not ready, in the order pasted', async () => {
     { state: 'invalid', error: "We can't fetch private addresses." },
     { state: 'ready', name: 'Washed Denim Jacket' },
   ]);
+});
+
+it('offers a title-only page for manual entry, pre-filled with its guess, and saves nothing', async () => {
+  const { products } = await setup();
+  expect(await rowsOf('https://armani.test/titled')).toEqual([
+    { url: 'https://armani.test/titled', state: 'needs_details', reason: 'not_a_product_page', guess: { brand: 'ARMANI', name: 'Trucker Jacket' } },
+  ]);
+  expect(await products.findByCanonicalUrl('https://armani.test/titled')).toBeNull();
 });
 
 it('turns an unexpected failure into a generic row, logs it, and still previews the rest', async () => {

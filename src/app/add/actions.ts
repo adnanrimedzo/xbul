@@ -13,7 +13,7 @@ import { DomainError } from '@/shared/domain/errors';
 
 export type PreviewRow =
   | { url: string; state: 'ready'; productId: string; brand: string; name: string; imageUrl: string | null; composition: string | null }
-  | { url: string; state: 'needs_details'; reason: 'fetch_failed' | 'not_a_product_page' }
+  | { url: string; state: 'needs_details'; reason: 'fetch_failed' | 'not_a_product_page'; guess?: { brand: string; name: string } }
   | { url: string; state: 'invalid'; error: string };
 
 const GENERIC = 'Something went wrong. Please try again.';
@@ -65,7 +65,7 @@ export async function previewGarmentsAction(urlsText: string): Promise<ActionRes
     try {
       if (url.length > MAX_URL) throw new DomainError('product.url_invalid');
       const result = await importProduct({ products, fetcher, allowPrivateHosts: config.allowPrivateHosts }, url);
-      return result.status === 'ok' ? readyRow(url, result.product) : { url, state: 'needs_details', reason: result.reason };
+      return result.status === 'ok' ? readyRow(url, result.product) : { url, state: 'needs_details', reason: result.reason, guess: result.guess };
     } catch (e) {
       if (e instanceof DomainError) return { url, state: 'invalid', error: errorMessage(e.code) };
       console.error('previewGarmentsAction: row failed', url, e);

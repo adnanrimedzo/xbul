@@ -21,3 +21,15 @@ test('mill pastes links, fixes a blocked one by hand, and publishes', async ({ p
   await expect(page).toHaveURL(/\/m\/indigo-mill$/);
   await expect(page.getByText('Black Denim Overshirt')).toBeVisible();
 });
+
+test('a page with only a title is offered for manual entry, pre-filled', async ({ page }) => {
+  await signIn(page, 'mill@example.test');
+  await page.goto('/add');
+  await page.getByLabel(/brand links/i).fill('http://localhost:4010/title-only.html');
+  await page.getByRole('button', { name: /fetch/i }).click();
+  const row = page.getByTestId('preview-row');
+  await expect(row).toContainText(/only has a title/i);
+  await expect(row.getByLabel(/brand/i)).toHaveValue('LOCALHOST');
+  await expect(row.getByLabel(/name/i)).toHaveValue('Selvedge Jeans');
+  await expect(page.getByRole('button', { name: /publish 0 garments/i })).toBeDisabled();
+});

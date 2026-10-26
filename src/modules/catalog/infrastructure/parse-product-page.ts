@@ -34,7 +34,11 @@ function stripBrandSuffix(name: string, brands: string[]): string {
   return m && brands.some((b) => normalize(b) === normalize(m[2]!)) ? m[1]! : name;
 }
 
-export function parseProductPage(html: string, pageUrl: string): ProductSnapshot | null {
+// `confidence` is where the name came from: a JSON-LD Product or og:title ('structured'), or only the <title> ('title'),
+// which every page has, product or not.
+export type ParsedProductPage = ProductSnapshot & { confidence: 'structured' | 'title' };
+
+export function parseProductPage(html: string, pageUrl: string): ParsedProductPage | null {
   const root = parse(html);
   const meta = (property: string) => str(root.querySelector(`meta[property="${property}"]`)?.getAttribute('content'));
 
@@ -51,7 +55,8 @@ export function parseProductPage(html: string, pageUrl: string): ProductSnapshot
   const hostBrand = brandFromHost(new URL(pageUrl).hostname);
   const ldBrand = typeof product?.brand === 'object' && product.brand !== null ? (product.brand as Json).name : product?.brand;
   const brand = str(ldBrand) ?? meta('product:brand') ?? meta('og:site_name') ?? hostBrand;
-  const rawName = str(product?.name) ?? meta('og:title') ?? str(root.querySelector('title')?.text);
+  const structuredName = str(product?.name) ?? meta('og:title');
+  const rawName = structuredName ?? str(root.querySelector('title')?.text);
   if (!rawName) return null;
 
   const rawImage = imageOf(product?.image) ?? meta('og:image');
@@ -64,5 +69,11 @@ export function parseProductPage(html: string, pageUrl: string): ProductSnapshot
     }
   }
 
-  return { brand: cut(brand, 60), name: cut(stripBrandSuffix(rawName, [brand, hostBrand]), 160), imageUrl, composition: str(product?.material) };
+  return {
+    brand: cut(brand, 60),
+    name: cut(stripBrandSuffix(rawName, [brand, hostBrand]), 160),
+    imageUrl,
+    composition: str(product?.material),
+    confidence: structuredName ? 'structured' : 'title',
+  };
 }

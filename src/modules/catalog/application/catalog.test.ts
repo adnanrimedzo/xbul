@@ -30,6 +30,13 @@ it('asks for details when the fetch fails or the page is not a product', async (
   expect(await products.findByCanonicalUrl('https://zara.com/p1')).toBeNull();
 });
 
+it('saves nothing for a page whose only signal is its <title>, and returns the guess for the manual form', async () => {
+  const products = createProductRepository(await createTestDb());
+  expect(await importProduct({ products, fetcher: fetcherReturning('<title>Trucker Jacket - Armani</title>'), allowPrivateHosts: false }, 'https://www.armani.com/x'))
+    .toEqual({ status: 'needs_details', url: 'https://www.armani.com/x', canonicalUrl: 'https://armani.com/x', reason: 'not_a_product_page', guess: { brand: 'ARMANI', name: 'Trucker Jacket' } });
+  expect(await products.findByCanonicalUrl('https://armani.com/x')).toBeNull();
+});
+
 it('never fetches private hosts', async () => {
   const fetcher = fetcherReturning(html);
   await expect(importProduct({ products: createProductRepository(await createTestDb()), fetcher, allowPrivateHosts: false }, 'http://169.254.169.254/latest'))

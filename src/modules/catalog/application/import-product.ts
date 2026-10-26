@@ -22,8 +22,11 @@ export async function importProduct(
   } catch {
     return { status: 'needs_details', url, canonicalUrl, reason: 'fetch_failed' };
   }
-  const snapshot = parseProductPage(html, url);
-  if (!snapshot) return { status: 'needs_details', url, canonicalUrl, reason: 'not_a_product_page' };
+  const page = parseProductPage(html, url);
+  if (!page) return { status: 'needs_details', url, canonicalUrl, reason: 'not_a_product_page' };
+  const { confidence, ...snapshot } = page;
+  // Any page has a <title>, so a title alone doesn't make a product: the mill confirms it by hand before anything is saved.
+  if (confidence === 'title') return { status: 'needs_details', url, canonicalUrl, reason: 'not_a_product_page', guess: { brand: snapshot.brand, name: snapshot.name } };
 
   const product = createProduct({ canonicalUrl, sourceUrl: url, ...snapshot });
   await deps.products.save(product);

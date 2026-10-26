@@ -7,4 +7,5 @@ export interface ProductPageFetcher {
 
 export type ImportResult =
   | { status: 'ok'; product: Product }
-  | { status: 'needs_details'; url: string; canonicalUrl: string; reason: 'fetch_failed' | 'not_a_product_page' };
+  // `guess` (from a page whose only signal was its <title>) pre-fills the manual form.
+  | { status: 'needs_details'; url: string; canonicalUrl: string; reason: 'fetch_failed' | 'not_a_product_page'; guess?: { brand: string; name: string } };

@@ -99,17 +99,17 @@ function NeedsDetailsRow({ row, onSaved }: { row: NeedsDetails; onSaved: (saved:
     <RowShell>
       <div aria-hidden="true" className={`${thumb} bg-[#f4f4f4]`} />
       <Status name={<Url>{row.url}</Url>} tone="ink">
-        Couldn&apos;t read this page. Add the brand and name by hand.
+        {row.guess ? 'This page only has a title. Check the brand and name.' : <>Couldn&apos;t read this page. Add the brand and name by hand.</>}
       </Status>
       <form onSubmit={save} className="col-span-2 flex flex-col gap-2 max-[760px]:col-span-full">
         <div className="grid grid-cols-[1fr_1.6fr] gap-2">
           <label className="flex flex-col gap-1 text-[10px] font-semibold">
             Brand
-            <input name="brand" required maxLength={60} className={input} />
+            <input name="brand" required maxLength={60} defaultValue={row.guess?.brand} className={input} />
           </label>
           <label className="flex flex-col gap-1 text-[10px] font-semibold">
             Name
-            <input name="name" required maxLength={160} className={input} />
+            <input name="name" required maxLength={160} defaultValue={row.guess?.name} className={input} />
           </label>
         </div>
         <div className="flex items-center gap-3">

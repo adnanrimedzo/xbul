@@ -10,11 +10,11 @@ const ogOnly = `<html><head><script type="application/ld+json">{bad json</script
 
 describe('parseProductPage', () => {
   it('prefers JSON-LD Product and resolves relative images', () =>
-    expect(parseProductPage(jsonLd, 'https://guess.eu/en/x')).toEqual({ brand: 'GUESS', name: 'Cropped Denim Blazer', imageUrl: 'https://guess.eu/img/b1.jpg', composition: '100% Cotton' }));
+    expect(parseProductPage(jsonLd, 'https://guess.eu/en/x')).toEqual({ brand: 'GUESS', name: 'Cropped Denim Blazer', imageUrl: 'https://guess.eu/img/b1.jpg', composition: '100% Cotton', confidence: 'structured' }));
   it('falls back to Open Graph, survives bad JSON-LD, strips the brand suffix', () =>
-    expect(parseProductPage(ogOnly, 'https://liujo.com/it/x')).toEqual({ brand: 'Liu Jo', name: 'Printed denim jacket', imageUrl: 'https://cdn.liujo.com/a.jpg', composition: null }));
-  it('falls back to <title> and the host brand', () =>
-    expect(parseProductPage('<title>Trucker Jacket</title>', 'https://www.armani.com/x')).toEqual({ brand: 'ARMANI', name: 'Trucker Jacket', imageUrl: null, composition: null }));
+    expect(parseProductPage(ogOnly, 'https://liujo.com/it/x')).toEqual({ brand: 'Liu Jo', name: 'Printed denim jacket', imageUrl: 'https://cdn.liujo.com/a.jpg', composition: null, confidence: 'structured' }));
+  it('falls back to <title> and the host brand, and says the title was its only signal', () =>
+    expect(parseProductPage('<title>Trucker Jacket</title>', 'https://www.armani.com/x')).toEqual({ brand: 'ARMANI', name: 'Trucker Jacket', imageUrl: null, composition: null, confidence: 'title' }));
   it('returns null without a name', () => expect(parseProductPage('<html><title> </title></html>', 'https://x.com/')).toBeNull());
 
   it('reads a top-level Product, a Product in an array, a type array, a string brand, a string image and an image object', () => {
@@ -28,7 +28,7 @@ describe('parseProductPage', () => {
   });
   it('uses product:brand over og:site_name, and null image when it cannot be resolved', () => {
     const html = '<meta property="og:title" content="Coat"><meta property="product:brand" content="Max"><meta property="og:site_name" content="Shop"><meta property="og:image" content="http://[bad">';
-    expect(parseProductPage(html, 'https://x.com/')).toEqual({ brand: 'Max', name: 'Coat', imageUrl: null, composition: null });
+    expect(parseProductPage(html, 'https://x.com/')).toEqual({ brand: 'Max', name: 'Coat', imageUrl: null, composition: null, confidence: 'structured' });
   });
 });
 
