@@ -2,11 +2,14 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { cache } from 'react';
+import { RowActionButton } from '@/app/_components/row-action-button';
 import { Chip } from '@/app/_components/ui/chip';
 import { GarmentGrid } from '@/app/_components/ui/garment-grid';
 import { GarmentTile } from '@/app/_components/ui/garment-tile';
 import { getCompanyPageView } from '@/modules/discovery';
 import { getContainer } from '@/server/container';
+import { getViewer } from '@/server/viewer';
+import { withdrawClaimAction } from './actions';
 
 const SLUG = /^[a-z0-9-]{1,120}$/;
 
@@ -26,7 +29,8 @@ export async function generateMetadata({ params }: PageProps<'/m/[company]'>): P
 }
 
 export default async function MillPage({ params }: PageProps<'/m/[company]'>) {
-  const { company, articles, garments } = await loadView((await params).company);
+  const [{ company, articles, garments }, viewer] = await Promise.all([loadView((await params).company), getViewer()]);
+  const isOwner = viewer?.userId === company.ownerUserId;
 
   return (
     <div>
@@ -57,13 +61,15 @@ export default async function MillPage({ params }: PageProps<'/m/[company]'>) {
       {garments.length > 0 ? (
         <GarmentGrid>
           {garments.map((g) => (
-            <GarmentTile
-              key={g.productId}
-              tile={g}
-              href={`/p/${g.productId}`}
-              tag={g.kind === 'original' ? 'Original' : 'Equivalent'}
-              tagTone={g.kind === 'original' ? 'accent' : 'muted'}
-            />
+            <div key={g.productId} data-testid="mill-garment">
+              <GarmentTile tile={g} href={`/p/${g.productId}`} tag={g.kind === 'original' ? 'Original' : 'Equivalent'} tagTone={g.kind === 'original' ? 'accent' : 'muted'} />
+              {/* Below the tile link, not inside it: the owner can take a garment back off its page. */}
+              {isOwner && (
+                <div className="px-3 pb-2.5">
+                  <RowActionButton action={withdrawClaimAction.bind(null, g.claimId)} label="Remove" confirmLabel="Confirm remove" />
+                </div>
+              )}
+            </div>
           ))}
         </GarmentGrid>
       ) : (

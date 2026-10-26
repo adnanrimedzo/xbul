@@ -3,6 +3,7 @@ import { beforeAll, expect, it } from 'vitest';
 import type { Db } from '@/shared/db/client';
 import { createTestDb } from '@/shared/db/testing';
 import { products } from '@/modules/catalog';
+import { createClaimRepository } from '@/modules/claims';
 import { createInquiry, createInquiryRepository, markAnswered } from '@/modules/inquiry';
 import { DEMO } from '@/server/demo-ids';
 import { seedDemo } from '@/server/seed-demo';
@@ -45,6 +46,8 @@ it('mill page lists articles with garment counts', async () => {
   expect(v?.articles).toEqual([{ slug: '60219-1', code: '60219/1', garmentCount: 1 }, { slug: '60409-1', code: '60409/1', garmentCount: 1 }]);
   expect(v?.garments.map((g) => [g.brand, g.kind])).toEqual([['LIU-JO', 'original'], ['GUESS', 'original']]);
   expect(v?.garments[0]?.sourceUrl).toBe('https://liujo.com/it/printed-denim-jacket-UF4012');
+  // Each tile carries this mill's claim, so the owner can withdraw it.
+  expect(v?.garments[0]?.claimId).toBe((await createClaimRepository(db).findByProductAndCompany(DEMO.products.liujo, DEMO.companies.indigo))?.id);
   // Tile counts cover every mill's claims on the garment, not just this mill's.
   expect(v?.garments[1]).toMatchObject({ originals: 1, equivalents: 2 });
   // Claims without an article still show on the mill page.

@@ -33,3 +33,15 @@ test('a page with only a title is offered for manual entry, pre-filled', async (
   await expect(row.getByLabel(/name/i)).toHaveValue('Selvedge Jeans');
   await expect(page.getByRole('button', { name: /publish 0 garments/i })).toBeDisabled();
 });
+
+test('the owner removes a garment from its mill page; visitors get no Remove', async ({ page }) => {
+  await page.goto('/m/indigo-mill');
+  await expect(page.getByRole('button', { name: /remove/i })).toHaveCount(0);
+  await signIn(page, 'mill@example.test');
+  await page.goto('/m/indigo-mill');
+  const garment = page.getByTestId('mill-garment').filter({ hasText: 'Black Denim Overshirt' }); // published by the first test
+  await garment.getByRole('button', { name: /^remove$/i }).click();
+  await garment.getByRole('button', { name: /confirm remove/i }).click();
+  await expect(page.getByText('Black Denim Overshirt')).toHaveCount(0);
+  await expect(page.getByText('Washed Denim Jacket')).toBeVisible();
+});

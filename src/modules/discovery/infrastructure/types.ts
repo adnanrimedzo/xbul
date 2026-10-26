@@ -39,7 +39,7 @@ export type ArticlePageView = {
 export type CompanyPageView = {
   company: CompanyRef & { ownerUserId: string };
   articles: { slug: string; code: string; garmentCount: number }[];
-  garments: GarmentTile[];
+  garments: (GarmentTile & { claimId: string })[]; // the claimId is this mill's claim on the garment
 };
 
 export type DeclaredOriginal = {

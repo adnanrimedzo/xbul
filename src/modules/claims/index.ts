@@ -5,5 +5,6 @@ export type { ClaimRepository } from './domain/repositories';
 export type { GarmentItem } from './application/publish-garments';
 export { publishGarments } from './application/publish-garments';
 export { verifyOriginalClaim } from './application/verify-original-claim';
+export { withdrawClaim } from './application/withdraw-claim';
 export { createClaimRepository } from './infrastructure/drizzle-claim-repository';
 export { claims } from './infrastructure/schema';

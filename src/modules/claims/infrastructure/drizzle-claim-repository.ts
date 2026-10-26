@@ -27,6 +27,9 @@ export function createClaimRepository(db: Db): ClaimRepository {
     async save(c) {
       await db.insert(claims).values(c).onConflictDoUpdate({ target: claims.id, set: c });
     },
+    async delete(id) {
+      await db.delete(claims).where(eq(claims.id, id));
+    },
     findById: (id) => claimBy(eq(claims.id, id)),
     findByProductAndCompany: (productId, companyId) => claimBy(and(eq(claims.productId, productId), eq(claims.companyId, companyId))),
     findVerifiedOriginal: (productId) =>

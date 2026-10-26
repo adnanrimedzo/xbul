@@ -6,6 +6,7 @@ import { verifyClaim } from '../domain/claim';
 import { createClaimRepository } from '../infrastructure/drizzle-claim-repository';
 import { publishGarments } from './publish-garments';
 import { verifyOriginalClaim } from './verify-original-claim';
+import { withdrawClaim } from './withdraw-claim';
 
 async function setup() {
   const db = await createTestDb();
@@ -102,4 +103,14 @@ it('verifies idempotently, rejects missing claims and equivalents, and re-publis
   const [changed] = await publishGarments(deps, { companyId: ids.indigo, items: [{ productId: ids.guess, articleCode: '60219/2', kind: 'original' }] });
   expect(changed).toMatchObject({ id: o.id, status: 'declared' });
   expect(await deps.claims.findVerifiedOriginal(ids.guess)).toBeNull();
+});
+
+it('lets only the owning mill withdraw its claim', async () => {
+  const { deps, ids } = await setup();
+  const [c] = await publishGarments(deps, { companyId: ids.indigo, items: [{ productId: ids.guess, articleCode: null, kind: 'original' }] });
+  await expect(withdrawClaim(deps, { companyId: ids.denizli, claimId: c.id })).rejects.toMatchObject({ code: 'auth.forbidden' });
+  expect(await deps.claims.findById(c.id)).toEqual(c);
+  await withdrawClaim(deps, { companyId: ids.indigo, claimId: c.id });
+  expect(await deps.claims.findById(c.id)).toBeNull();
+  await expect(withdrawClaim(deps, { companyId: ids.indigo, claimId: c.id })).rejects.toMatchObject({ code: 'claim.not_found' });
 });

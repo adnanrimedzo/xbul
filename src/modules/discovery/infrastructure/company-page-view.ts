@@ -19,7 +19,7 @@ export async function getCompanyPageView(db: Db, companySlug: string): Promise<C
     .orderBy(asc(articles.code));
 
   const garments = await db
-    .select({ ...tileColumns, kind: claims.kind })
+    .select({ ...tileColumns, kind: claims.kind, claimId: claims.id })
     .from(claims)
     .innerJoin(products, eq(claims.productId, products.id))
     .where(eq(claims.companyId, c.id))
@@ -28,6 +28,6 @@ export async function getCompanyPageView(db: Db, companySlug: string): Promise<C
   return {
     company: { id: c.id, slug: c.slug, name: c.name, city: c.city, country: c.country, ownerUserId: c.ownerUserId },
     articles: articleRows,
-    garments: garments.map(({ kind, ...tile }) => toTile(tile, kind)),
+    garments: garments.map(({ kind, claimId, ...tile }) => ({ ...toTile(tile, kind), claimId })),
   };
 }
