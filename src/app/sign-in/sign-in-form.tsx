@@ -1,11 +1,33 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useSyncExternalStore } from 'react';
+import { authClient } from '@/app/_lib/auth-client';
+import type { ActionResult } from '@/app/_lib/action-result';
 import { Button } from '@/app/_components/ui/button';
-import { sendSignInLinkAction } from './actions';
+
+type SignInState = (ActionResult & { email?: string }) | null;
+
+async function sendLink(_prev: SignInState, form: FormData): Promise<SignInState> {
+  const email = String(form.get('email') ?? '').trim();
+  try {
+    const { error } = await authClient.signIn.magicLink({ email, callbackURL: '/onboarding' });
+    if (!error) return { ok: true, data: undefined };
+  } catch (e) {
+    console.error('[sign-in] network error', e);
+  }
+  // Rate-limited, a rejected address or a mail failure: nothing the visitor can fix beyond trying again. Echo the email,
+  // because React resets the form after an action.
+  return { ok: false, error: "We couldn't send the link, so please try again in a minute.", email };
+}
+
+// false on the server and while hydrating, true afterwards.
+const subscribe = () => () => {};
+const useHydrated = () => useSyncExternalStore(subscribe, () => true, () => false);
 
 export function SignInForm() {
-  const [state, formAction, pending] = useActionState(sendSignInLinkAction, null);
+  const [state, formAction, pending] = useActionState(sendLink, null);
+  // Until hydrated the form is inert: submitting it natively would put the email in the URL.
+  const hydrated = useHydrated();
 
   if (state?.ok) {
     return (
@@ -24,7 +46,9 @@ export function SignInForm() {
           name="email"
           required
           autoComplete="email"
-          className="border border-ink p-2.5 text-[12px] font-normal normal-case focus:outline-2 focus:outline-accent"
+          disabled={!hydrated}
+          defaultValue={state?.ok === false ? state.email : undefined}
+          className="border border-ink p-2.5 text-[12px] font-normal normal-case focus:outline-2 focus:outline-accent disabled:opacity-40"
         />
       </label>
       {state && !state.ok && (
@@ -32,7 +56,7 @@ export function SignInForm() {
           {state.error}
         </p>
       )}
-      <Button variant="cta" type="submit" disabled={pending} className="self-start">
+      <Button variant="cta" type="submit" disabled={!hydrated || pending} className="self-start">
         Send link
       </Button>
     </form>

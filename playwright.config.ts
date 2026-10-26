@@ -19,7 +19,7 @@ export default defineConfig({
         DATABASE_URL: './.data/e2e',
         BETTER_AUTH_URL: baseURL,
         PUBLIC_BASE_URL: baseURL,
-        BETTER_AUTH_SECRET: 'e2e-secret-e2e-secret-e2e-secret-e2e',
+        BETTER_AUTH_SECRET: '74a5fe694e2a78fb4c7bb4255c5a0c0cfdf175dbbbe5f310bc24a76311f6289e', // random, so Better Auth's low-entropy warning stays quiet
         ADMIN_EMAILS: 'admin@example.test',
         MAIL_LOG_FILE: '.outbox/e2e-mail.log',
         RESEND_API_KEY: '', // a developer's .env.local key must never send e2e mail
