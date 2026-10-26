@@ -32,6 +32,7 @@ export function createClaimRepository(db: Db): ClaimRepository {
     },
     findById: (id) => claimBy(eq(claims.id, id)),
     findByProductAndCompany: (productId, companyId) => claimBy(and(eq(claims.productId, productId), eq(claims.companyId, companyId))),
+    existsForProduct: async (productId) => (await claimBy(eq(claims.productId, productId))) !== null,
     findVerifiedOriginal: (productId) =>
       claimBy(and(eq(claims.productId, productId), eq(claims.kind, 'original'), eq(claims.status, 'verified'))),
   };

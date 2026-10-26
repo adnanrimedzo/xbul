@@ -52,6 +52,7 @@ it('persists claims and reads them back as plain domain objects', async () => {
   expect(await deps.claims.findById(c.id)).toEqual(c);
   expect(await deps.claims.findByProductAndCompany(ids.guess, ids.indigo)).toEqual(c);
   expect(await deps.claims.findByProductAndCompany(ids.guess, ids.denizli)).toBeNull();
+  expect([await deps.claims.existsForProduct(ids.guess), await deps.claims.existsForProduct(ids.liujo)]).toEqual([true, false]);
 });
 
 it('dedupes the same product within one batch (last wins, at its last position)', async () => {

@@ -4,9 +4,11 @@ import { findGarmentAction } from './actions';
 
 const lookups: string[] = [];
 let stored: Product | null = null;
+let claimed = true; // whether any mill has a claim on the stored product
 beforeEach(() => {
   lookups.length = 0;
   stored = null;
+  claimed = true;
 });
 vi.mock('@/server/container', () => ({
   getContainer: async () => ({
@@ -16,6 +18,7 @@ vi.mock('@/server/container', () => ({
         return stored;
       },
     },
+    claims: { existsForProduct: async (productId: string) => claimed && productId === stored?.id },
   }),
 }));
 
@@ -44,4 +47,10 @@ it('looks the trimmed link up by its canonical url and redirects to the garment'
     digest: expect.stringContaining(`/p/${stored.id}`),
   });
   expect(lookups.at(-1)).toBe('https://guess.eu/en/blazer-W5RN12');
+});
+
+it('answers notFound for a garment that was previewed but that no mill has claimed', async () => {
+  stored = tagged();
+  claimed = false;
+  expect(await findGarmentAction(null, form('https://guess.eu/en/blazer-W5RN12'))).toEqual({ notFound: true });
 });
