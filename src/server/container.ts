@@ -1,12 +1,14 @@
+import { getCloudflareContext } from '@opennextjs/cloudflare';
+import { after } from 'next/server';
 import { cache } from 'react';
 import { createHttpProductPageFetcher, createProductRepository, type ProductPageFetcher, type ProductRepository } from '@/modules/catalog';
 import { createClaimRepository, type ClaimRepository } from '@/modules/claims';
 import { createAuth, createProfileRepository, createUserDirectory, type Auth, type ProfileRepository } from '@/modules/identity';
 import { createInquiryRepository, type InquiryRepository } from '@/modules/inquiry';
 import { createSupplierRepositories, type ArticleRepository, type CompanyRepository } from '@/modules/supplier';
-import { createDb, type Db } from '@/shared/db/client';
+import { createDb, createPostgresDb, type Db } from '@/shared/db/client';
 import { createConsoleMailer, createResendMailer, type Mailer } from '@/shared/mail/mailer';
-import { readConfig, type AppConfig } from './config';
+import { readConfig, resolveDatabaseUrl, type AppConfig } from './config';
 
 export type Container = {
   config: AppConfig;
@@ -23,14 +25,42 @@ export type Container = {
   users: { getEmail(id: string): Promise<string | null> };
 };
 
-// Better Auth holds in-memory state (its rate limiter), so it is built once per Db; config is fixed per process.
+declare global {
+  interface CloudflareEnv {
+    HYPERDRIVE?: { connectionString: string }; // the wrangler.jsonc binding
+  }
+}
+
+// Better Auth is built once per Db; config is fixed per process. On Workers the Db, and so auth, is per request,
+// which is why its rate limiter keeps counts in the database.
 const authByDb = new WeakMap<Db, Auth>();
 
-// One container per request (React cache). The stateful pieces are shared: createDb memoises per URL/folder,
-// and auth per Db.
+// Outside Workers (next dev/start, scripts) there is no Cloudflare context and the sync call throws. The async
+// call isn't used because under Node it would start a local wrangler proxy instead of failing.
+function cloudflareContext() {
+  try {
+    return getCloudflareContext();
+  } catch {
+    return null;
+  }
+}
+
+// One container per request (React cache). On Node the stateful pieces are shared: createDb memoises per
+// URL/folder, and auth per Db. Workers can't share I/O across requests, so a Hyperdrive pool lives for one
+// request and is closed once the response is done.
 export const getContainer = cache(async (): Promise<Container> => {
   const config = readConfig();
-  const db = createDb(config.databaseUrl ?? './.data/dev');
+  const cf = cloudflareContext();
+  const url = resolveDatabaseUrl(config, cf);
+  let db: Db;
+  if (cf && url === cf.env.HYPERDRIVE?.connectionString) {
+    const { ctx } = cf;
+    const postgres = createPostgresDb(url);
+    after(() => ctx.waitUntil(postgres.pool.end()));
+    db = postgres.db;
+  } else {
+    db = await createDb(url);
+  }
   const mailer = config.resendApiKey
     ? createResendMailer(config.resendApiKey, config.mailFrom)
     : createConsoleMailer(config.mailLogFile ?? undefined);

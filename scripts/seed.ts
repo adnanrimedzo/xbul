@@ -1,7 +1,7 @@
 import { createDb } from '@/shared/db/client';
 import { seedDemo } from '@/server/seed-demo';
 
-const db = createDb(process.env.DATABASE_URL ?? './.data/dev');
+const db = await createDb(process.env.DATABASE_URL ?? './.data/dev');
 try {
   await seedDemo(db);
 } finally {

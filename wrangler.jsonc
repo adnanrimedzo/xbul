@@ -1,0 +1,31 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "xmanufacture",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat", "global_fetch_strictly_public"],
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "services": [
+    // Self-reference, required by OpenNext; the service name must match the worker name.
+    { "binding": "WORKER_SELF_REFERENCE", "service": "xmanufacture" }
+  ],
+  "hyperdrive": [
+    {
+      "binding": "HYPERDRIVE",
+      // Paste the id printed by `pnpm wrangler hyperdrive create xmanufacture-db …` (docs/deploy.md).
+      "id": "<HYPERDRIVE_ID>",
+      // `pnpm preview` connects here instead of Hyperdrive (the Docker Postgres in docs/deploy.md).
+      "localConnectionString": "postgres://postgres:postgres@localhost:5432/xmanufacture"
+    }
+  ],
+  // Public settings. Secrets (BETTER_AUTH_SECRET, RESEND_API_KEY, ADMIN_EMAILS) go in with `wrangler secret put`.
+  // Both URLs are the one canonical origin: pick apex or www and use it everywhere.
+  "vars": {
+    "PUBLIC_BASE_URL": "https://xmanufacture.com",
+    "BETTER_AUTH_URL": "https://xmanufacture.com",
+    "MAIL_FROM": "xmanufacture <hello@xmanufacture.com>"
+  }
+}

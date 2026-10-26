@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readConfig } from './config';
+import { readConfig, resolveDatabaseUrl } from './config';
 
 const secret = 's'.repeat(32);
 
@@ -19,5 +19,25 @@ describe('readConfig', () => {
 
   it('requires a base url', () => {
     expect(() => readConfig({ BETTER_AUTH_SECRET: secret })).toThrow(/PUBLIC_BASE_URL/);
+  });
+
+  it('rejects a base url that does not parse', () => {
+    expect(() => readConfig({ BETTER_AUTH_SECRET: secret, PUBLIC_BASE_URL: 'xmanufacture.com' })).toThrow(/PUBLIC_BASE_URL must be a URL/);
+  });
+
+  it('refuses the console mailer in production unless it is allowed, so magic links never land in logs', () => {
+    const prod = { BETTER_AUTH_SECRET: secret, PUBLIC_BASE_URL: 'https://xmanufacture.com', NODE_ENV: 'production' };
+    expect(() => readConfig(prod)).toThrow(/RESEND_API_KEY/);
+    expect(readConfig({ ...prod, RESEND_API_KEY: 're_1' }).resendApiKey).toBe('re_1');
+    expect(readConfig({ ...prod, ALLOW_CONSOLE_MAILER: '1' }).resendApiKey).toBeNull();
+  });
+});
+
+describe('resolveDatabaseUrl', () => {
+  it('prefers DATABASE_URL, then Hyperdrive, then local PGlite', () => {
+    const base = readConfig({ BETTER_AUTH_SECRET: 's'.repeat(32), PUBLIC_BASE_URL: 'https://xmanufacture.com' });
+    expect(resolveDatabaseUrl({ ...base, databaseUrl: 'postgres://a' }, null)).toBe('postgres://a');
+    expect(resolveDatabaseUrl(base, { env: { HYPERDRIVE: { connectionString: 'postgres://hd' } } })).toBe('postgres://hd');
+    expect(resolveDatabaseUrl(base, null)).toBe('./.data/dev');
   });
 });

@@ -9,19 +9,20 @@ const tmp = mkdtempSync(join(tmpdir(), 'xm-db-'));
 afterAll(() => rmSync(tmp, { recursive: true, force: true }));
 
 it('creates the missing parent folder for a PGlite directory', async () => {
-  const db = createDb(join(tmp, 'missing', 'dev'));
+  const db = await createDb(join(tmp, 'missing', 'dev'));
   const res = (await db.execute(sql`select 1 as one`)) as { rows: unknown[] };
   expect(res.rows[0]).toEqual({ one: 1 });
 });
 
-it('returns one instance for a relative and an absolute path to the same directory', () => {
+it('returns one instance for a relative and an absolute path to the same directory, even when opened concurrently', async () => {
   const abs = join(tmp, 'same');
-  expect(createDb(relative(process.cwd(), abs))).toBe(createDb(abs));
+  const [a, b] = await Promise.all([createDb(relative(process.cwd(), abs)), createDb(abs)]);
+  expect(a).toBe(b);
 });
 
-it('returns one instance per Postgres URL without connecting', () => {
+it('returns one instance per Postgres URL without connecting', async () => {
   // pg.Pool is lazy: constructing it opens no socket, so port 1 is never dialled.
   const url = 'postgres://u:p@127.0.0.1:1/x';
-  expect(createDb(url)).toBe(createDb(url));
-  expect(createDb(`${url}2`)).not.toBe(createDb(url));
+  expect(await createDb(url)).toBe(await createDb(url));
+  expect(await createDb(`${url}2`)).not.toBe(await createDb(url));
 });
