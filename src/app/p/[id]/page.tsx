@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { cache } from 'react';
 import { z } from 'zod';
+import { CopyLinkButton } from '@/app/_components/copy-link-button';
 import { InquiryForm } from '@/app/_components/inquiry-form';
 import { Badge } from '@/app/_components/ui/badge';
 import { Chip } from '@/app/_components/ui/chip';
@@ -11,6 +12,7 @@ import { resolveAgent } from '@/app/_lib/resolve-agent';
 import { getProductPageView } from '@/modules/discovery';
 import type { ArticleSpecs } from '@/modules/supplier';
 import { getContainer } from '@/server/container';
+import { getViewer } from '@/server/viewer';
 
 // Shared by generateMetadata and the page, so the view is read once per request.
 const loadView = cache(async (id: string) => {
@@ -38,8 +40,16 @@ export async function generateMetadata({ params }: PageProps<'/p/[id]'>): Promis
 
 export default async function ProductPage({ params, searchParams }: PageProps<'/p/[id]'>) {
   const [{ id }, { via }] = await Promise.all([params, searchParams]);
-  const [{ product, originals, equivalents }, agent] = await Promise.all([loadView(id), resolveAgent(typeof via === 'string' ? via : undefined)]);
+  const [{ product, originals, equivalents }, agent, viewer, { config }] = await Promise.all([
+    loadView(id),
+    resolveAgent(typeof via === 'string' ? via : undefined),
+    getViewer(),
+    getContainer(),
+  ]);
   const host = new URL(product.sourceUrl).hostname.replace(/^www\./, '');
+  // An agent who copies this link credits themselves on every request that comes through it.
+  const handle = viewer?.profile?.role === 'agent' ? viewer.profile.handle : null;
+  const shareUrl = `${config.baseUrl}/p/${product.id}${handle ? `?via=${handle}` : ''}`;
 
   return (
     // Mockup .item: photo left, panel right; stacked below 760px.
@@ -127,6 +137,11 @@ export default async function ProductPage({ params, searchParams }: PageProps<'/
         <Link href="/add" className="flex justify-between border-t border-ink py-3 text-[12px] font-medium">
           Are you the mill? Claim this garment <span className="text-[16px] leading-none text-accent">+</span>
         </Link>
+        {/* Mockup .acc "Share this page", with the article page's copy button. */}
+        <div className="flex items-center justify-between gap-3 border-t border-ink py-3 text-[12px] font-medium">
+          Share this page
+          <CopyLinkButton url={shareUrl} label="Copy link" />
+        </div>
       </div>
     </div>
   );
