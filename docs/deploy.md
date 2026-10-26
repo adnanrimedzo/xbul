@@ -64,9 +64,11 @@ pnpm run deploy
 
 Use `pnpm run deploy`, not `pnpm deploy`. `pnpm deploy` is pnpm's own workspace command and doesn't run the script.
 
-Before you deploy, make sure there is no `.env`, `.env.local` or `.env.production` file in the checkout. OpenNext copies those files into the worker, which causes two problems:
-- their values would ship in the bundle
-- a `DATABASE_URL` from them would override Hyperdrive
+The project root must not contain any `.env*` file except `.env.example`, such as `.env.local`. OpenNext compiles those files into the worker, which causes two problems:
+- their values, secrets included, would ship in the bundle
+- a `DATABASE_URL` from them would make the worker refuse to start
+
+`pnpm run deploy` and `pnpm preview` refuse to build while such a file is present. Move it out of the project root first.
 
 ## 8. Attach the custom domain
 
@@ -97,8 +99,9 @@ On the custom domain:
    DATABASE_URL=postgres://postgres:postgres@localhost:5432/xmanufacture pnpm seed
    ```
 
-3. Copy `.dev.vars.example` to `.dev.vars` and fill in a 32+ character `BETTER_AUTH_SECRET`.
-4. Run `pnpm preview`, then open `http://localhost:8787`.
+3. Copy `.dev.vars.example` to `.dev.vars` and fill in a 32+ character `BETTER_AUTH_SECRET`. Wrangler reads `.dev.vars`, and OpenNext doesn't bundle it.
+4. Move any `.env*` file except `.env.example` (e.g. your `.env.local` for `pnpm dev`) out of the project root. Otherwise the preview refuses to build, for the same reason as in step 7. Put it back afterwards.
+5. Run `pnpm preview`, then open `http://localhost:8787`.
 
 Magic links are printed in the preview's console.
 

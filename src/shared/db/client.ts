@@ -12,7 +12,7 @@ declare global {
 
 // One instance per Postgres URL or PGlite directory (keyed by absolute path), shared across Next dev hot
 // reloads and module layers, so pools and data folders aren't reopened per request. The promise is cached, so
-// concurrent first calls can't open the same PGlite folder twice.
+// concurrent first calls can't open the same PGlite folder twice; a failed open is dropped so the next call retries.
 export function createDb(url: string): Promise<Db> {
   const postgres = url.startsWith('postgres');
   const key = postgres ? url : resolve(url);
@@ -21,6 +21,7 @@ export function createDb(url: string): Promise<Db> {
   if (!db) {
     db = postgres ? Promise.resolve(createPostgresDb(url).db) : openPglite(key);
     cache.set(key, db);
+    db.catch(() => cache.delete(key));
   }
   return db;
 }

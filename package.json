@@ -16,8 +16,8 @@
     "db:reset": "rm -rf .data/dev && mkdir -p .data && drizzle-kit migrate",
     "seed": "tsx scripts/seed.ts",
     "e2e": "playwright test",
-    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy",
+    "preview": "node scripts/no-env-files.mjs && opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "deploy": "node scripts/no-env-files.mjs && opennextjs-cloudflare build && opennextjs-cloudflare deploy",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts"
   },
   "dependencies": {

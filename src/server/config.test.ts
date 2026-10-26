@@ -21,8 +21,10 @@ describe('readConfig', () => {
     expect(() => readConfig({ BETTER_AUTH_SECRET: secret })).toThrow(/PUBLIC_BASE_URL/);
   });
 
-  it('rejects a base url that does not parse', () => {
-    expect(() => readConfig({ BETTER_AUTH_SECRET: secret, PUBLIC_BASE_URL: 'xmanufacture.com' })).toThrow(/PUBLIC_BASE_URL must be a URL/);
+  it('rejects a base url that is not an http(s) URL', () => {
+    for (const url of ['xmanufacture.com', 'localhost:3000', 'ftp://xmanufacture.com']) {
+      expect(() => readConfig({ BETTER_AUTH_SECRET: secret, PUBLIC_BASE_URL: url }), url).toThrow(/PUBLIC_BASE_URL must be an http\(s\) URL/);
+    }
   });
 
   it('refuses the console mailer in production unless it is allowed, so magic links never land in logs', () => {

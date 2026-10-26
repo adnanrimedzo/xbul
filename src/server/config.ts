@@ -16,7 +16,9 @@ export function readConfig(env: Record<string, string | undefined> = process.env
   if (authSecret.length < 32) throw new Error('BETTER_AUTH_SECRET must be at least 32 characters');
   const baseUrl = value('PUBLIC_BASE_URL')?.replace(/\/+$/, '');
   if (!baseUrl) throw new Error('PUBLIC_BASE_URL is required');
-  if (!URL.canParse(baseUrl)) throw new Error(`PUBLIC_BASE_URL must be a URL such as https://xmanufacture.com, got "${baseUrl}"`);
+  if (!/^https?:$/.test(URL.parse(baseUrl)?.protocol ?? '')) {
+    throw new Error(`PUBLIC_BASE_URL must be an http(s) URL such as https://xmanufacture.com, got "${baseUrl}"`);
+  }
   const resendApiKey = value('RESEND_API_KEY');
   // The console mailer prints magic links, which are bearer tokens, so production logs must never get them.
   if (env.NODE_ENV === 'production' && !resendApiKey && env.ALLOW_CONSOLE_MAILER !== '1') {

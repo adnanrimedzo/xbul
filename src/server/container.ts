@@ -53,7 +53,10 @@ export const getContainer = cache(async (): Promise<Container> => {
   const cf = cloudflareContext();
   const url = resolveDatabaseUrl(config, cf);
   let db: Db;
-  if (cf && url === cf.env.HYPERDRIVE?.connectionString) {
+  if (cf) {
+    // No fallback on Workers: DATABASE_URL would open PGlite or a pool shared across requests.
+    if (config.databaseUrl) throw new Error('DATABASE_URL must not be set on Workers; the database comes from the HYPERDRIVE binding');
+    if (!url.startsWith('postgres')) throw new Error('Workers need the HYPERDRIVE binding with a Postgres connection string (see wrangler.jsonc)');
     const { ctx } = cf;
     const postgres = createPostgresDb(url);
     after(() => ctx.waitUntil(postgres.pool.end()));
