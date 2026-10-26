@@ -32,17 +32,17 @@ export default async function RequestsPage() {
                   <span>{row.kind}</span>
                   <span className="font-normal text-muted">{row.createdAt.toLocaleDateString('en-GB')}</span>
                 </div>
-                <div>
+                <div className="break-words">
                   <span className="text-[16px] font-semibold">{row.buyerName}</span>
                   {row.buyerCompany && <span> · {row.buyerCompany}</span>}
                 </div>
                 <div className="flex flex-wrap gap-x-4 gap-y-1">
-                  <a href={`mailto:${row.buyerEmail}`} className="border-b border-ink normal-case">
+                  <a href={`mailto:${encodeURIComponent(row.buyerEmail).replace('%40', '@')}`} className="border-b border-ink break-all normal-case">
                     {row.buyerEmail}
                   </a>
                   {row.quantityMeters !== null && <span>{row.quantityMeters.toLocaleString('en-US')} m</span>}
                 </div>
-                {row.message && <p className="whitespace-pre-wrap normal-case">{row.message}</p>}
+                {row.message && <p className="break-words whitespace-pre-wrap normal-case">{row.message}</p>}
                 <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11px]">
                   <Link href={row.target.href} className="border-b border-ink">
                     {row.target.label}
