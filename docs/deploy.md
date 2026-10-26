@@ -4,6 +4,7 @@ xmanufacture runs on Cloudflare Workers through [OpenNext](https://opennext.js.o
 
 You need:
 - a Cloudflare account with the production domain's DNS on Cloudflare
+- a Cloudflare Workers Paid plan: the free plan's CPU time (10 ms per request) and subrequest count (50 per request) are too low for rendering pages and for fetching the link previews on `/add`
 - a Neon account
 - a Resend account
 
@@ -52,7 +53,7 @@ Production refuses to start without `RESEND_API_KEY`. Without it, magic links (w
 
 ## 6. Set the public origin
 
-In the `vars` of `wrangler.jsonc`, set both `PUBLIC_BASE_URL` and `BETTER_AUTH_URL` to the real origin, e.g. `https://xmanufacture.com`.
+In the `vars` of `wrangler.jsonc`, set `PUBLIC_BASE_URL` to the real origin, e.g. `https://xmanufacture.com`. It is the only origin setting: sign-in uses it too.
 
 Pick either the apex or `www` and use it everywhere. Sign-in cookies and magic links are bound to one origin, so a link sent from the apex fails on `www` and the other way round. Redirect the other host to it with a Cloudflare redirect rule.
 

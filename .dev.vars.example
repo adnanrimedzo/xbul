@@ -2,7 +2,6 @@
 # Values here override the "vars" in wrangler.jsonc.
 BETTER_AUTH_SECRET=replace-with-32+-random-chars
 PUBLIC_BASE_URL=http://localhost:8787
-BETTER_AUTH_URL=http://localhost:8787
 ADMIN_EMAILS=you@example.com
 # No Resend key locally, so magic links are printed to the console. Never set this in production.
 ALLOW_CONSOLE_MAILER=1

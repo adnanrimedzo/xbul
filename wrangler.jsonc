@@ -22,10 +22,11 @@
     }
   ],
   // Public settings. Secrets (BETTER_AUTH_SECRET, RESEND_API_KEY, ADMIN_EMAILS) go in with `wrangler secret put`.
-  // Both URLs are the one canonical origin: pick apex or www and use it everywhere.
+  // PUBLIC_BASE_URL is the one canonical origin (sign-in included): pick apex or www and use it everywhere.
   "vars": {
     "PUBLIC_BASE_URL": "https://xmanufacture.com",
-    "BETTER_AUTH_URL": "https://xmanufacture.com",
     "MAIL_FROM": "xmanufacture <hello@xmanufacture.com>"
-  }
+  },
+  // Workers Logs: request logs and console output (e.g. a failed owner notification) in the dashboard.
+  "observability": { "enabled": true }
 }
