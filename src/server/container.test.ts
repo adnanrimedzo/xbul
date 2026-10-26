@@ -46,3 +46,8 @@ it('refuses a DATABASE_URL on Workers instead of sharing a pool or opening PGlit
     await expect(getContainer(), url).rejects.toThrow(/DATABASE_URL/);
   }
 });
+
+it('turns the auth rate limiter on explicitly on Workers', async () => {
+  // Left unset, Better Auth enables it only when it detects production, which a bundling change could break.
+  expect((await getContainer()).auth.options.rateLimit).toMatchObject({ enabled: true, storage: 'database' });
+});
