@@ -8,8 +8,15 @@ import { createTestDb } from '@/shared/db/testing';
 import { addManualProductAction, previewGarmentsAction, publishGarmentsAction } from './actions';
 
 const container = vi.hoisted(() => ({ current: null as unknown }));
+// `refuse` makes requireMill throw, as it does when it redirects a visitor who is not a signed-in mill.
+const viewer = vi.hoisted(() => ({ refuse: null as Error | null }));
 vi.mock('@/server/container', () => ({ getContainer: async () => container.current }));
-vi.mock('@/server/viewer', () => ({ requireMill: async () => ({ company: { id: DEMO.companies.indigo, slug: DEMO.companySlugs.indigo } }) }));
+vi.mock('@/server/viewer', () => ({
+  requireMill: async () => {
+    if (viewer.refuse) throw viewer.refuse;
+    return { company: { id: DEMO.companies.indigo, slug: DEMO.companySlugs.indigo } };
+  },
+}));
 
 const GENERIC = 'Something went wrong. Please try again.';
 const jacket = `<script type="application/ld+json">${JSON.stringify({ '@type': 'Product', name: 'Washed Denim Jacket', brand: { name: 'GUESS' }, material: '100% Cotton' })}</script>`;
@@ -17,6 +24,7 @@ const jacket = `<script type="application/ld+json">${JSON.stringify({ '@type': '
 afterEach(() => vi.restoreAllMocks());
 
 async function setup(overrides: { findByCanonicalUrl?: (url: string) => Promise<null> } = {}) {
+  viewer.refuse = null;
   const db = await createTestDb();
   await seedDemo(db);
   const products = createProductRepository(db);
@@ -68,6 +76,15 @@ it('counts the 50-link limit after dedupe', async () => {
   fetched.length = 0;
   const tooMany = Array.from({ length: 51 }, (_, i) => `https://brand.test/jacket-${i}`);
   expect(await preview(...tooMany)).toEqual({ ok: false, error: 'Add between 1 and 50 garments at a time.' });
+  expect(fetched).toEqual([]);
+});
+
+it('refuses a paste too large to be 50 links, or not text at all, without fetching', async () => {
+  const { fetched } = await setup();
+  const batchSize = { ok: false, error: 'Add between 1 and 50 garments at a time.' };
+  expect(await previewGarmentsAction(`https://brand.test/denim\n${' '.repeat(120_000)}`)).toEqual(batchSize);
+  expect(await previewGarmentsAction(['https://brand.test/denim'] as unknown as string)).toEqual(batchSize);
+  expect(await previewGarmentsAction(`https://brand.test/${'a'.repeat(119_000)}`)).toMatchObject({ ok: true, data: [{ state: 'invalid', error: 'Not a valid link.' }] });
   expect(fetched).toEqual([]);
 });
 
@@ -136,4 +153,20 @@ it.each([
   const before = await claims.findByProductAndCompany(DEMO.products.guess, DEMO.companies.indigo);
   expect(await publishGarmentsAction(items as never)).toEqual({ ok: false, error: GENERIC });
   expect(await claims.findByProductAndCompany(DEMO.products.guess, DEMO.companies.indigo)).toEqual(before);
+});
+
+it('lets nobody but a signed-in mill fetch, add or publish', async () => {
+  const { products, claims, fetched } = await setup();
+  const [productId] = (await rowsOf('https://brand.test/denim')).flatMap((r) => (r.state === 'ready' ? [r.productId] : []));
+  fetched.length = 0;
+
+  viewer.refuse = Object.assign(new Error('NEXT_REDIRECT'), { digest: 'NEXT_REDIRECT;replace;/sign-in;307;' });
+  await expect(preview('https://brand.test/fresh')).rejects.toBe(viewer.refuse);
+  await expect(addManualProductAction({ url: 'https://brand.test/by-hand', brand: 'ZARA', name: 'Jacket' })).rejects.toBe(viewer.refuse);
+  await expect(publishGarmentsAction([{ productId: productId!, articleCode: '60777/2', kind: 'original' }])).rejects.toBe(viewer.refuse);
+
+  expect(fetched).toEqual([]);
+  expect(await products.findByCanonicalUrl('https://brand.test/fresh')).toBeNull();
+  expect(await products.findByCanonicalUrl('https://brand.test/by-hand')).toBeNull();
+  expect(await claims.findByProductAndCompany(productId!, DEMO.companies.indigo)).toBeNull();
 });

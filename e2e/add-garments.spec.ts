@@ -8,6 +8,7 @@ test('mill pastes links, fixes a blocked one by hand, and publishes', async ({ p
   await page.getByRole('button', { name: /fetch/i }).click();
   const rows = page.getByTestId('preview-row');
   await expect(rows.nth(0)).toContainText('Washed Denim Jacket');
+  await expect(rows.nth(0).getByRole('link', { name: /photo: localhost/i })).toHaveAttribute('href', 'http://localhost:4010/washed-denim-jacket.html');
   await expect(rows.nth(1)).toContainText(/couldn.t read this page/i);
   await expect(rows.nth(2)).toContainText(/not a valid link/i);
   await rows.nth(1).getByLabel(/brand/i).fill('ZARA');

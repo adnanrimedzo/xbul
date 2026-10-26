@@ -52,6 +52,12 @@ function ReadyRow({ row, onChange }: { row: Ready; onChange: (patch: Partial<Pic
       <GarmentImage src={row.imageUrl} alt={label} className={thumb} />
       <Status name={label} tone="ok">
         {row.byHand ? '✓ Added by hand' : `✓ Fetched${row.composition ? ` · ${row.composition}` : ''}`}
+        {row.imageUrl && (
+          // The thumbnail is too small for the credit pill, so the photo's credit goes on the status line.
+          <a href={row.url} target="_blank" rel="noopener noreferrer" className="mt-1 block text-muted underline">
+            Photo: {new URL(row.url).hostname.replace(/^www\./, '')} ↗
+          </a>
+        )}
       </Status>
       <label className="max-[760px]:col-span-full">
         <span className="sr-only">Article code</span>

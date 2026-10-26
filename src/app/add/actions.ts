@@ -20,6 +20,7 @@ const GENERIC = 'Something went wrong. Please try again.';
 const MAX_LINKS = 50;
 const IMPORT_CONCURRENCY = 5;
 const MAX_URL = 2048;
+const MAX_PASTE = 120_000; // 50 links of 2048 characters is ~100,000; anything longer is not a list of links
 
 const readyRow = (url: string, p: Product): PreviewRow => ({
   url,
@@ -49,6 +50,7 @@ function distinctLinks(lines: string[]): string[] {
 
 export async function previewGarmentsAction(urlsText: string): Promise<ActionResult<PreviewRow[]>> {
   await requireMill(); // the server fetches whatever it is given, so only a signed-in mill may ask
+  if (typeof urlsText !== 'string' || urlsText.length > MAX_PASTE) return toActionError(new DomainError('claims.batch_size_invalid'));
   const links = distinctLinks(
     urlsText
       .split('\n')
