@@ -19,3 +19,19 @@ test('recently tagged grid', async ({ page }) => {
   await expect(page.getByTestId('garment-tile').first()).toBeVisible();
   await expect(page.getByText('1 original · 2 equiv.', { exact: false })).toBeVisible();
 });
+test('the find input shows a keyboard focus ring', async ({ page }) => {
+  await page.goto('/');
+  const input = page.getByPlaceholder(/paste a garment link/i);
+  for (let i = 0; i < 12 && !(await input.evaluate((el) => el === document.activeElement)); i++) await page.keyboard.press('Tab');
+  await expect(input).toBeFocused();
+  const ring = await input.evaluate((el) => {
+    const { outlineStyle, outlineWidth } = getComputedStyle(el);
+    return { outlineStyle, outlineWidth };
+  });
+  expect(ring.outlineStyle).not.toBe('none');
+  expect(ring.outlineWidth).toBe('2px');
+});
+test('the display text keeps a space between its two lines', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText('Who made this fabric?');
+});

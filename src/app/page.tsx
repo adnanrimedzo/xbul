@@ -18,7 +18,7 @@ export default async function Home() {
       {/* Mockup .hero: 440px of denim, the jacket glyph up-left (136px wide, as the mockup renders it), the display text and find bar bottom-right. */}
       <DenimPlaceholder className="relative h-[440px] flex-col items-end justify-end border-b border-ink px-6 pb-7 [&>svg]:absolute [&>svg]:top-[16%] [&>svg]:left-[15%] [&>svg]:w-[136px] [&>svg]:opacity-35">
         <h1 className="relative text-right text-[clamp(40px,11vw,96px)] leading-[0.85] font-bold tracking-[-0.03em] text-paper">
-          Who made
+          Who made{' '}
           <br />
           this fabric?
         </h1>

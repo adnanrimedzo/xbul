@@ -19,7 +19,7 @@ export function FindGarmentForm() {
             inputMode="url"
             required
             placeholder="Paste a garment link — guess.com, zara.com, liujo.com…"
-            className="w-full border-0 p-3.5 text-[13px] normal-case outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent"
+            className="w-full border-0 p-3.5 text-[13px] normal-case focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent"
           />
         </label>
         <Button variant="cta" type="submit" disabled={pending}>

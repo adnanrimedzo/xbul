@@ -1,9 +1,13 @@
-import { expect, it, vi } from 'vitest';
+import { beforeEach, expect, it, vi } from 'vitest';
 import { createProduct, type Product } from '@/modules/catalog';
 import { findGarmentAction } from './actions';
 
 const lookups: string[] = [];
 let stored: Product | null = null;
+beforeEach(() => {
+  lookups.length = 0;
+  stored = null;
+});
 vi.mock('@/server/container', () => ({
   getContainer: async () => ({
     products: {
@@ -31,7 +35,6 @@ it('answers notFound without a lookup for a missing, non-string, blank or over-l
 });
 
 it('answers notFound for a link nobody has tagged', async () => {
-  stored = null;
   expect(await findGarmentAction(null, form('https://example.com/nothing'))).toEqual({ notFound: true });
 });
 
