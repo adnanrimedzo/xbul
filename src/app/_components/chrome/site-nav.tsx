@@ -1,0 +1,40 @@
+import Link from 'next/link';
+import { signOutAction } from '@/app/_actions/sign-out';
+import type { Viewer } from '@/server/viewer';
+
+const group = 'flex gap-7 max-[760px]:gap-3.5';
+
+export function SiteNav({ viewer, newRequests }: { viewer: Viewer | null; newRequests: number }) {
+  const company = viewer?.company;
+  return (
+    <nav aria-label="Main" className="flex flex-wrap justify-between gap-x-7 gap-y-2 border-y border-ink px-5 py-2.5 text-[12px] font-medium">
+      <div className={group}>
+        <Link href="/">Search</Link>
+        {/* ponytail: no mills directory in Phase 1, so this is the viewer's mill page or the mill sign-up path */}
+        <Link href={company ? `/m/${company.slug}` : '/add'}>Mills</Link>
+      </div>
+      <div className={group}>
+        {company && <Link href="/add">Add garment</Link>}
+        {company && (
+          <Link href="/requests">
+            Requests
+            {newRequests > 0 && (
+              <>
+                {' '}
+                <span data-testid="new-requests-count" className="text-accent">{newRequests}</span>
+              </>
+            )}
+          </Link>
+        )}
+        {viewer?.isAdmin && <Link href="/admin/claims">Admin</Link>}
+        {viewer ? (
+          <form action={signOutAction}>
+            <button type="submit">Sign out</button>
+          </form>
+        ) : (
+          <Link href="/sign-in">Sign in</Link>
+        )}
+      </div>
+    </nav>
+  );
+}

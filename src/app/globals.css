@@ -1,26 +1,34 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
+/* Garm design tokens (docs/design/mockup-pages-v1.html). No radius, no shadows: 1px ink lines between bands. */
+@theme {
+  --color-ink: #000000;
+  --color-paper: #ffffff;
+  --color-accent: #F0721F;
+  --color-muted: #707070;
+  --font-sans: var(--font-space-grotesk), sans-serif;
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  --animate-ticker: ticker 84s linear infinite; /* the mockup's ~20px/s over the ticker's wider half */
+  @keyframes ticker {
+    to { transform: translateX(-50%); }
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer base {
+  /* UA styles reset text-transform on buttons; the mockup's buttons inherit the uppercase. Inputs keep what was typed. */
+  button {
+    text-transform: inherit;
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: not-allowed;
+  }
+}
+
+/* Denim twill placeholder, from the mockup's .denim. */
+@utility denim {
+  background:
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.07) 0 2px, transparent 2px 6px),
+    repeating-linear-gradient(-45deg, rgba(0, 0, 0, 0.14) 0 1px, transparent 1px 5px),
+    linear-gradient(160deg, #4a6796, #1d2d4f 60%, #121c33);
 }
