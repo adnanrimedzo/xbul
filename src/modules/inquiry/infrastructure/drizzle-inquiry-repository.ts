@@ -17,6 +17,7 @@ const toInquiry = (r: typeof inquiries.$inferSelect): Inquiry =>
     quantityMeters: r.quantityMeters,
     message: r.message,
     viaAgentHandle: r.viaAgentHandle,
+    clientIpHash: r.clientIpHash,
     status: r.status as Inquiry['status'],
     createdAt: r.createdAt,
   });
@@ -35,6 +36,13 @@ export function createInquiryRepository(db: Db): InquiryRepository {
         .select({ n: count() })
         .from(inquiries)
         .where(and(eq(inquiries.companyId, companyId), eq(inquiries.buyerEmail, buyerEmail), gte(inquiries.createdAt, since)));
+      return row.n;
+    },
+    async countRecentFromIp(clientIpHash, since) {
+      const [row] = await db
+        .select({ n: count() })
+        .from(inquiries)
+        .where(and(eq(inquiries.clientIpHash, clientIpHash), gte(inquiries.createdAt, since)));
       return row.n;
     },
     async countNew(companyId) {

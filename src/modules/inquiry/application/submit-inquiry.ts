@@ -4,7 +4,8 @@ import { createInquiry, type Inquiry, type InquiryInput } from '../domain/inquir
 import type { InquiryRepository } from '../domain/repositories';
 
 const HANDLE = /^[a-z0-9-]{3,40}$/;
-const RATE_LIMIT = 5;
+const RATE_LIMIT = 5; // per buyer email per company
+const IP_RATE_LIMIT = 20; // per client IP across every company: rotating buyer emails must not flood mill inboxes
 const RATE_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 const ownerEmailBody = (i: Inquiry, baseUrl: string): string =>
@@ -30,7 +31,7 @@ export async function submitInquiry(
     baseUrl: string;
     now?: () => Date;
   },
-  input: InquiryInput & { viaAgentHandle?: string | null },
+  input: InquiryInput & { viaAgentHandle?: string | null; clientIpHash?: string | null },
 ): Promise<Inquiry> {
   const now = (deps.now ?? (() => new Date()))();
   // The format check comes first so a malformed value never reaches the lookup.
@@ -38,9 +39,12 @@ export async function submitInquiry(
   const viaAgentHandle = handle && HANDLE.test(handle) && (await deps.agentHandleExists(handle)) ? handle : null;
 
   const inquiry = createInquiry({ ...input, viaAgentHandle }, now);
-  // ponytail: count-then-insert is not atomic, so concurrent requests can overshoot the limit slightly.
-  const recent = await deps.inquiries.countRecentFrom(inquiry.companyId, inquiry.buyerEmail, new Date(now.getTime() - RATE_WINDOW_MS));
-  if (recent >= RATE_LIMIT) throw new DomainError('inquiry.rate_limited');
+  // ponytail: count-then-insert is not atomic, so concurrent requests can overshoot the limits slightly.
+  const since = new Date(now.getTime() - RATE_WINDOW_MS);
+  if ((await deps.inquiries.countRecentFrom(inquiry.companyId, inquiry.buyerEmail, since)) >= RATE_LIMIT) throw new DomainError('inquiry.rate_limited');
+  if (inquiry.clientIpHash && (await deps.inquiries.countRecentFromIp(inquiry.clientIpHash, since)) >= IP_RATE_LIMIT) {
+    throw new DomainError('inquiry.rate_limited');
+  }
   await deps.inquiries.save(inquiry);
 
   // The saved inquiry is the durable record; the email is only a notification, so a failure here must not fail the submit.

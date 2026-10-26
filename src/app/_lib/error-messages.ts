@@ -22,7 +22,7 @@ const MESSAGES: Record<string, string> = {
   'inquiry.name_invalid': 'Name must be 1–100 characters.',
   'inquiry.not_found': 'That request no longer exists.',
   'inquiry.quantity_invalid': 'Quantity must be a whole number of metres from 1 to 1,000,000.',
-  'inquiry.rate_limited': "You've reached today's limit of requests to this mill, so please try again tomorrow.",
+  'inquiry.rate_limited': "You've reached today's limit of requests, so please try again tomorrow.",
   'inquiry.target_required': 'Choose a garment or an article to ask about.',
   'product.brand_invalid': 'Brand must be 1–60 characters.',
   'product.name_invalid': 'Name must be 1–160 characters.',

@@ -50,6 +50,13 @@
       "when": 1792979520148,
       "tag": "0006_rate-limit",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1792981904045,
+      "tag": "0007_inquiry-ip",
+      "breakpoints": true
     }
   ]
 }

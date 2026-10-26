@@ -16,8 +16,12 @@ export const inquiries = pgTable(
     quantityMeters: integer('quantity_meters'),
     message: text('message'),
     viaAgentHandle: text('via_agent_handle'),
+    clientIpHash: text('client_ip_hash'),
     status: text('status').notNull().default('new'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
-  (t) => [index('inquiries_company_email_created_idx').on(t.companyId, t.buyerEmail, t.createdAt)],
+  (t) => [
+    index('inquiries_company_email_created_idx').on(t.companyId, t.buyerEmail, t.createdAt),
+    index('inquiries_ip_created_idx').on(t.clientIpHash, t.createdAt),
+  ],
 );

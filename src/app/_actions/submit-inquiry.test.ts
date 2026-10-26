@@ -1,4 +1,5 @@
-import { expect, it, vi } from 'vitest';
+import { createHash } from 'node:crypto';
+import { beforeEach, expect, it, vi } from 'vitest';
 import { createClaimRepository } from '@/modules/claims';
 import { createProfileRepository, createUserDirectory } from '@/modules/identity';
 import { createInquiryRepository } from '@/modules/inquiry';
@@ -11,8 +12,14 @@ import { submitInquiryAction } from './submit-inquiry';
 
 const container = vi.hoisted(() => ({ current: null as unknown }));
 vi.mock('@/server/container', () => ({ getContainer: async () => container.current }));
+const request = vi.hoisted(() => ({ headers: new Headers() }));
+vi.mock('next/headers', () => ({ headers: async () => request.headers }));
+beforeEach(() => {
+  request.headers = new Headers();
+});
 
 const GENERIC = 'Something went wrong. Please try again.';
+const SECRET = 's'.repeat(32);
 const valid = {
   companyId: DEMO.companies.indigo,
   productId: DEMO.products.guess,
@@ -29,14 +36,19 @@ async function setup() {
   await seedDemo(db);
   const inquiries = createInquiryRepository(db);
   const mailer = createRecordingMailer();
+  // Every argument the action hands the inquiry repository, to prove what reaches storage.
+  const repoCalls: unknown[] = [];
+  const recorded = Object.fromEntries(
+    Object.entries(inquiries).map(([name, fn]) => [name, (...args: unknown[]) => (repoCalls.push(args), (fn as (...a: unknown[]) => unknown)(...args))]),
+  );
   container.current = {
-    inquiries,
+    inquiries: recorded,
     mailer,
     claims: createClaimRepository(db),
     ...createSupplierRepositories(db),
     profiles: createProfileRepository(db),
     users: createUserDirectory(db),
-    config: { baseUrl: 'http://localhost:3100' },
+    config: { baseUrl: 'http://localhost:3100', authSecret: SECRET },
   };
   const submit = (fields: Record<string, string>) => {
     const form = new FormData();
@@ -48,7 +60,7 @@ async function setup() {
     const counts = await Promise.all(Object.values(DEMO.companies).map((id) => inquiries.countRecentFrom(id, 'ana@brand.test', new Date(0))));
     return counts.reduce((a, b) => a + b, 0);
   };
-  return { mailer, submit, saved };
+  return { mailer, submit, saved, repoCalls };
 }
 
 it('saves, credits the agent and emails the mill owner', async () => {
@@ -81,4 +93,23 @@ it('explains a fractional quantity', async () => {
   const { submit, saved } = await setup();
   expect(await submit({ ...valid, quantityMeters: '1.5' })).toEqual({ ok: false, error: 'Quantity must be a whole number of metres from 1 to 1,000,000.' });
   expect(await saved()).toBe(0);
+});
+
+it.each([
+  ['cf-connecting-ip over x-forwarded-for', { 'cf-connecting-ip': '203.0.113.7', 'x-forwarded-for': '198.51.100.4' }, '203.0.113.7'],
+  ['the first x-forwarded-for hop', { 'x-forwarded-for': '198.51.100.4, 10.0.0.1' }, '198.51.100.4'],
+])('stores only a hash of the client IP, taking %s', async (_name, headers, ip) => {
+  const { submit, repoCalls } = await setup();
+  request.headers = new Headers(headers);
+  expect(await submit(valid)).toEqual({ ok: true, data: undefined });
+  const hash = createHash('sha256').update(`${ip}:${SECRET}`).digest('hex');
+  expect(repoCalls.flat()).toContainEqual(expect.objectContaining({ buyerEmail: 'ana@brand.test', clientIpHash: hash }));
+  const sent = JSON.stringify(repoCalls);
+  for (const raw of ['203.0.113.7', '198.51.100.4', '10.0.0.1']) expect(sent).not.toContain(raw);
+});
+
+it('stores no IP hash when the request carries no client IP', async () => {
+  const { submit, repoCalls } = await setup();
+  expect(await submit(valid)).toEqual({ ok: true, data: undefined });
+  expect(repoCalls.flat()).toContainEqual(expect.objectContaining({ buyerEmail: 'ana@brand.test', clientIpHash: null }));
 });

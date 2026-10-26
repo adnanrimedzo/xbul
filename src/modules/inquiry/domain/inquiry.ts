@@ -15,6 +15,7 @@ export type Inquiry = Readonly<{
   quantityMeters: number | null;
   message: string | null;
   viaAgentHandle: string | null;
+  clientIpHash: string | null; // sha256 of the client IP and a server secret; never the raw IP
   status: 'new' | 'answered';
   createdAt: Date;
 }>;
@@ -38,7 +39,7 @@ const EMAIL_MAX = 254;
 const QUANTITY_MAX = 1_000_000;
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export function createInquiry(input: InquiryInput & { viaAgentHandle: string | null }, now: Date = new Date()): Inquiry {
+export function createInquiry(input: InquiryInput & { viaAgentHandle: string | null; clientIpHash?: string | null }, now: Date = new Date()): Inquiry {
   const buyerName = input.buyerName.trim();
   if (buyerName.length < 1 || buyerName.length > NAME_MAX) throw new DomainError('inquiry.name_invalid');
   const buyerEmail = input.buyerEmail.trim().toLowerCase();
@@ -65,6 +66,7 @@ export function createInquiry(input: InquiryInput & { viaAgentHandle: string | n
     quantityMeters,
     message,
     viaAgentHandle: input.viaAgentHandle,
+    clientIpHash: input.clientIpHash ?? null,
     status: 'new',
     createdAt: now,
   });

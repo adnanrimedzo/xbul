@@ -1,5 +1,7 @@
 'use server';
 
+import { createHash } from 'node:crypto';
+import { headers } from 'next/headers';
 import { z } from 'zod';
 import { errorMessage } from '@/app/_lib/error-messages';
 import { toActionError, type ActionResult } from '@/app/_lib/action-result';
@@ -9,6 +11,14 @@ import { getContainer } from '@/server/container';
 
 const GENERIC = 'Something went wrong. Please try again.';
 const blankTo = (empty: null | undefined) => (v: unknown) => (v === '' ? empty : v);
+
+// Cloudflare sets cf-connecting-ip to the real client; x-forwarded-for's first hop covers other proxies. Only a keyed
+// hash is stored, so the per-IP limit never keeps the raw IP.
+async function clientIpHash(secret: string): Promise<string | null> {
+  const h = await headers();
+  const ip = h.get('cf-connecting-ip')?.trim() || h.get('x-forwarded-for')?.split(',')[0]?.trim();
+  return ip ? createHash('sha256').update(`${ip}:${secret}`).digest('hex') : null;
+}
 
 // Lengths, email shape and the 1–1,000,000 range are the domain's (they have messages); this is the wire shape.
 const formSchema = z.object({
@@ -53,7 +63,7 @@ export async function submitInquiryAction(_prev: ActionResult | null, form: Form
         },
         baseUrl: config.baseUrl,
       },
-      { ...input, quantityMeters: input.quantityMeters ?? null, viaAgentHandle: via || null },
+      { ...input, quantityMeters: input.quantityMeters ?? null, viaAgentHandle: via || null, clientIpHash: await clientIpHash(config.authSecret) },
     );
   } catch (e) {
     return toActionError(e);

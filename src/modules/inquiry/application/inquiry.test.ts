@@ -113,6 +113,17 @@ it('rate-limits per company and per normalized email, not globally', async () =>
   await expect(send(ids.indigo, 'other@x.test')).resolves.toBeTruthy();
 });
 
+it('rate-limits 20 per client IP per 24h across every mill and buyer email', async () => {
+  let now = new Date('2026-10-25T10:00:00Z'); const { deps, ids } = await setup({ agents: [], ownerEmail: null, now: () => now });
+  const send = (i: number, clientIpHash: string | null = 'hash-a') =>
+    submitInquiry(deps, { companyId: i % 2 ? ids.denizli : ids.indigo, productId: ids.guess, articleId: null, kind: 'quote', buyerName: 'B', buyerEmail: `b${i}@x.test`, clientIpHash });
+  for (let i = 0; i < 20; i++) await send(i);
+  await expect(send(20)).rejects.toMatchObject({ code: 'inquiry.rate_limited' });
+  await expect(send(21, 'hash-b')).resolves.toMatchObject({ clientIpHash: 'hash-b' });
+  await expect(send(22, null)).resolves.toMatchObject({ clientIpHash: null });
+  now = new Date('2026-10-26T11:00:00Z'); await expect(send(23)).resolves.toBeTruthy();
+});
+
 it('does not save or email an invalid inquiry', async () => {
   const { deps, ids, mailer } = await setup({ agents: [], ownerEmail: 'mill@example.test', now: () => new Date('2026-10-25T10:00:00Z') });
   await expect(submitInquiry(deps, { companyId: ids.indigo, productId: null, articleId: null, kind: 'quote', buyerName: 'B', buyerEmail: 'b@x.test' }))
