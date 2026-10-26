@@ -27,7 +27,8 @@ export function GarmentImage({ src, alt, credit, className = '' }: { src: string
       ) : (
         <DenimPlaceholder className="absolute inset-0" />
       )}
-      {credit && (
+      {/* The credit names the photo's source, so the denim placeholder gets none. */}
+      {credit && showPhoto && (
         <a href={credit.href} target="_blank" rel="noopener noreferrer" className="absolute bottom-2 left-2.5 bg-ink px-1.5 py-0.5 text-[10px] text-paper">
           Photo: {credit.host} ↗
         </a>
