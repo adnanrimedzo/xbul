@@ -10,6 +10,7 @@ export const tileColumns = {
   brand: products.brand,
   name: products.name,
   imageUrl: products.imageUrl,
+  sourceUrl: products.sourceUrl,
   originals: sql<number>`(select count(*)::int from claims k where k.product_id = ${products.id} and k.kind = 'original')`,
   equivalents: sql<number>`(select count(*)::int from claims k where k.product_id = ${products.id} and k.kind = 'equivalent')`,
 };

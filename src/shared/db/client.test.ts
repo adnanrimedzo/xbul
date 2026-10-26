@@ -18,3 +18,10 @@ it('returns one instance for a relative and an absolute path to the same directo
   const abs = join(tmp, 'same');
   expect(createDb(relative(process.cwd(), abs))).toBe(createDb(abs));
 });
+
+it('returns one instance per Postgres URL without connecting', () => {
+  // pg.Pool is lazy: constructing it opens no socket, so port 1 is never dialled.
+  const url = 'postgres://u:p@127.0.0.1:1/x';
+  expect(createDb(url)).toBe(createDb(url));
+  expect(createDb(`${url}2`)).not.toBe(createDb(url));
+});

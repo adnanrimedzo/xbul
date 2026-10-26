@@ -23,19 +23,28 @@ export type Container = {
   users: { getEmail(id: string): Promise<string | null> };
 };
 
-// One container per request (React cache). createDb memoises PGlite per folder, so dev shares one instance.
+// Better Auth holds in-memory state (its rate limiter), so it is built once per Db; config is fixed per process.
+const authByDb = new WeakMap<Db, Auth>();
+
+// One container per request (React cache). The stateful pieces are shared: createDb memoises per URL/folder,
+// and auth per Db.
 export const getContainer = cache(async (): Promise<Container> => {
   const config = readConfig();
   const db = createDb(config.databaseUrl ?? './.data/dev');
   const mailer = config.resendApiKey
     ? createResendMailer(config.resendApiKey, config.mailFrom)
     : createConsoleMailer(config.mailLogFile ?? undefined);
+  let auth = authByDb.get(db);
+  if (!auth) {
+    auth = createAuth({ db, mailer, baseUrl: config.baseUrl, secret: config.authSecret });
+    authByDb.set(db, auth);
+  }
   const { companies, articles } = createSupplierRepositories(db);
   return {
     config,
     db,
     mailer,
-    auth: createAuth({ db, mailer, baseUrl: config.baseUrl, secret: config.authSecret }),
+    auth,
     companies,
     articles,
     products: createProductRepository(db),

@@ -10,8 +10,8 @@ export function SiteNav({ viewer, newRequests }: { viewer: Viewer | null; newReq
     <nav aria-label="Main" className="flex flex-wrap justify-between gap-x-7 gap-y-2 border-y border-ink px-5 py-2.5 text-[12px] font-medium">
       <div className={group}>
         <Link href="/">Search</Link>
-        {/* ponytail: no mills directory in Phase 1, so this is the viewer's mill page or the mill sign-up path */}
-        <Link href={company ? `/m/${company.slug}` : '/add'}>Mills</Link>
+        {/* Phase 1 has no mills directory, so Mills is the viewer's own mill page and only mills see it. */}
+        {company && <Link href={`/m/${company.slug}`}>Mills</Link>}
       </div>
       <div className={group}>
         {company && <Link href="/add">Add garment</Link>}

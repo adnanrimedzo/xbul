@@ -10,8 +10,13 @@ async function mailsTo(email: string): Promise<Mail[]> {
   const log = await readFile(MAIL_LOG, 'utf8').catch(() => '');
   return log
     .split('\n')
-    .filter(Boolean)
-    .map((line) => JSON.parse(line) as Mail)
+    .flatMap((line) => {
+      try {
+        return [JSON.parse(line) as Mail];
+      } catch {
+        return []; // blank, or a last line still being written: the next poll picks it up
+      }
+    })
     .filter((m) => m.to.toLowerCase() === email.toLowerCase());
 }
 

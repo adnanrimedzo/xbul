@@ -33,6 +33,7 @@ it('builds the garment page with ranked originals and equivalents', async () => 
 it('article page shows only that mill’s garments', async () => {
   const v = await getArticlePageView(db, 'indigo-mill', '60219-1');
   expect(v?.garments.map((g) => g.brand)).toEqual(['GUESS']);
+  expect(v?.garments[0]?.sourceUrl).toBe('https://guess.eu/en/cropped-denim-blazer-W5RN12');
   expect(v?.article.specs.weightOz).toBe(12.5);
   expect(v?.company.ownerUserId).toBe(DEMO.users.mill);
   expect(await getArticlePageView(db, 'indigo-mill', 'nope')).toBeNull();
@@ -43,6 +44,7 @@ it('mill page lists articles with garment counts', async () => {
   const v = await getCompanyPageView(db, 'indigo-mill');
   expect(v?.articles).toEqual([{ slug: '60219-1', code: '60219/1', garmentCount: 1 }, { slug: '60409-1', code: '60409/1', garmentCount: 1 }]);
   expect(v?.garments.map((g) => [g.brand, g.kind])).toEqual([['LIU-JO', 'original'], ['GUESS', 'original']]);
+  expect(v?.garments[0]?.sourceUrl).toBe('https://liujo.com/it/printed-denim-jacket-UF4012');
   // Tile counts cover every mill's claims on the garment, not just this mill's.
   expect(v?.garments[1]).toMatchObject({ originals: 1, equivalents: 2 });
   // Claims without an article still show on the mill page.
@@ -56,6 +58,7 @@ it('recently tagged is ordered by latest claim with counts', async () => {
   const tiles = await listRecentlyTagged(db);
   expect(tiles.map((t) => [t.brand, t.originals, t.equivalents])).toEqual([['EMPORIO ARMANI', 0, 1], ['LIU-JO', 1, 0], ['GUESS', 1, 2]]);
   expect(tiles.every((t) => t.kind === null)).toBe(true);
+  expect(tiles[0]?.sourceUrl).toBe('https://armani.com/en/trucker-jacket-6R1B79');
   expect(await listRecentlyTagged(db, 2)).toHaveLength(2);
 });
 

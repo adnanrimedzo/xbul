@@ -24,6 +24,7 @@ export type GarmentTile = {
   brand: string;
   name: string;
   imageUrl: string | null;
+  sourceUrl: string;
   kind: ClaimKind | null;
   originals: number;
   equivalents: number;

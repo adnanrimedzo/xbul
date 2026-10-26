@@ -22,6 +22,7 @@ export default defineConfig({
         BETTER_AUTH_SECRET: 'e2e-secret-e2e-secret-e2e-secret-e2e',
         ADMIN_EMAILS: 'admin@example.test',
         MAIL_LOG_FILE: '.outbox/e2e-mail.log',
+        RESEND_API_KEY: '', // a developer's .env.local key must never send e2e mail
         FETCH_ALLOW_PRIVATE_HOSTS: '1',
       },
     },
