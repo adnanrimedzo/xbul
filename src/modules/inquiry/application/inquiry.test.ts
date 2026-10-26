@@ -36,7 +36,8 @@ it('saves, credits a real agent and emails the mill owner', async () => {
   expect(inq.viaAgentHandle).toBe('lauramartin-x7k2');
   expect(await deps.inquiries.findById(inq.id)).toEqual(inq);
   expect(mailer.sent).toHaveLength(1);
-  expect(mailer.sent[0]).toMatchObject({ to: 'mill@example.test', subject: 'New swatch request from Brand Co' });
+  // Reply-To is the buyer, so the mill answers them straight from the notification.
+  expect(mailer.sent[0]).toMatchObject({ to: 'mill@example.test', subject: 'New swatch request from Brand Co', replyTo: 'ana@brand.test' });
   expect(mailer.sent[0].text).toBe([
     'Name: Ana Buyer', 'Email: ana@brand.test', 'Company: Brand Co', 'Quantity: 1000 m', 'Message: Need it by May', 'Via agent: @lauramartin-x7k2',
     '', 'Open your requests: http://localhost:3000/requests',

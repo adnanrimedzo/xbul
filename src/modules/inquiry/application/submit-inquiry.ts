@@ -51,6 +51,7 @@ export async function submitInquiry(
         to: ownerEmail,
         subject: `New ${inquiry.kind} request from ${inquiry.buyerCompany ?? inquiry.buyerName}`,
         text: ownerEmailBody(inquiry, deps.baseUrl),
+        replyTo: inquiry.buyerEmail,
       });
     }
   } catch (e) {
