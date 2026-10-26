@@ -8,8 +8,9 @@ import { getContainer } from '@/server/container';
 import { requireViewer } from '@/server/viewer';
 
 const GENERIC = 'Check the numbers and try again.';
-// A blank number field means "leave it as it is". Ranges and whole-number checks are the domain's (they have messages).
-const number = z.preprocess((v) => (v === '' ? undefined : v), z.coerce.number().optional());
+// The form posts every field, so a blank number clears it, as a blank text field does. Ranges and whole-number checks
+// are the domain's (they have messages).
+const number = z.preprocess((v) => (v === '' ? null : v), z.coerce.number().nullable().optional());
 
 const formSchema = z.object({
   articleId: z.uuid(),
