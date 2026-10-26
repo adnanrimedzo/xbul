@@ -1,0 +1,44 @@
+import { expect, it, vi } from 'vitest';
+import { createProduct, type Product } from '@/modules/catalog';
+import { findGarmentAction } from './actions';
+
+const lookups: string[] = [];
+let stored: Product | null = null;
+vi.mock('@/server/container', () => ({
+  getContainer: async () => ({
+    products: {
+      findByCanonicalUrl: async (url: string) => {
+        lookups.push(url);
+        return stored;
+      },
+    },
+  }),
+}));
+
+const form = (url: FormDataEntryValue | null) => {
+  const f = new FormData();
+  if (url !== null) f.set('url', url);
+  return f;
+};
+const tagged = () =>
+  createProduct({ canonicalUrl: 'https://guess.eu/en/blazer-W5RN12', sourceUrl: 'https://guess.eu/en/blazer-W5RN12', brand: 'GUESS', name: 'Blazer', imageUrl: null, composition: null });
+
+it('answers notFound without a lookup for a missing, non-string, blank or over-long link', async () => {
+  for (const f of [form(null), form(new File(['x'], 'x.txt')), form('   '), form(`https://guess.eu/${'a'.repeat(2048)}`)]) {
+    expect(await findGarmentAction(null, f)).toEqual({ notFound: true });
+  }
+  expect(lookups).toEqual([]);
+});
+
+it('answers notFound for a link nobody has tagged', async () => {
+  stored = null;
+  expect(await findGarmentAction(null, form('https://example.com/nothing'))).toEqual({ notFound: true });
+});
+
+it('looks the trimmed link up by its canonical url and redirects to the garment', async () => {
+  stored = tagged();
+  await expect(findGarmentAction(null, form('  https://www.guess.eu/en/blazer-W5RN12?utm_source=x  '))).rejects.toMatchObject({
+    digest: expect.stringContaining(`/p/${stored.id}`),
+  });
+  expect(lookups.at(-1)).toBe('https://guess.eu/en/blazer-W5RN12');
+});

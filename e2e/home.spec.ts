@@ -1,0 +1,21 @@
+import { expect, test } from '@playwright/test';
+import { DEMO } from '../src/server/demo-ids';
+
+test('pasting a tagged garment link (with tracking params) opens its page', async ({ page }) => {
+  await page.goto('/');
+  await page.getByPlaceholder(/paste a garment link/i).fill('https://www.guess.eu/en/cropped-denim-blazer-W5RN12?utm_source=whatsapp');
+  await page.getByRole('button', { name: /^find$/i }).click();
+  await expect(page).toHaveURL(new RegExp(`/p/${DEMO.products.guess}$`));
+});
+test('an untagged link says so and invites mills', async ({ page }) => {
+  await page.goto('/');
+  await page.getByPlaceholder(/paste a garment link/i).fill('https://example.com/nothing');
+  await page.getByRole('button', { name: /^find$/i }).click();
+  await expect(page.getByText(/no mill has tagged this garment yet/i)).toBeVisible();
+  await expect(page.getByRole('link', { name: /are you the mill/i })).toHaveAttribute('href', '/add');
+});
+test('recently tagged grid', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.getByTestId('garment-tile').first()).toBeVisible();
+  await expect(page.getByText('1 original · 2 equiv.', { exact: false })).toBeVisible();
+});
