@@ -15,6 +15,7 @@ export function createAuth(deps: { db: Db; mailer: Mailer; baseUrl: string; secr
     plugins: [
       magicLink({
         expiresIn: 600,
+        storeToken: 'hashed', // the emailed token stays plain; only its hash is stored
         sendMagicLink: ({ email, url }) =>
           deps.mailer.send({
             to: email,
