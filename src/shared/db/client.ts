@@ -39,5 +39,8 @@ async function openPglite(dir: string): Promise<Db> {
   mkdirSync(dirname(dir), { recursive: true });
   // Imported on demand so the Workers bundle, which only ever talks to Postgres, never evaluates PGlite.
   const [{ PGlite }, { drizzle }] = await Promise.all([import('@electric-sql/pglite'), import('drizzle-orm/pglite')]);
-  return drizzle({ client: new PGlite(dir) }) as unknown as Db;
+  // Wait for startup so a failed start rejects this promise (and is forgotten) instead of escaping unhandled.
+  const client = new PGlite(dir);
+  await client.waitReady;
+  return drizzle({ client }) as unknown as Db;
 }

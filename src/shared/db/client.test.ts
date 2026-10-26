@@ -14,6 +14,11 @@ it('creates the missing parent folder for a PGlite directory', async () => {
   expect(res.rows[0]).toEqual({ one: 1 });
 });
 
+it('resolves only once PGlite has finished starting, so a failed start rejects createDb itself', async () => {
+  const db = (await createDb(join(tmp, 'ready'))) as unknown as { $client: { ready: boolean } };
+  expect(db.$client.ready).toBe(true);
+});
+
 it('returns one instance for a relative and an absolute path to the same directory, even when opened concurrently', async () => {
   const abs = join(tmp, 'same');
   const [a, b] = await Promise.all([createDb(relative(process.cwd(), abs)), createDb(abs)]);
