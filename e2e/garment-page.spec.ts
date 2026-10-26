@@ -33,6 +33,9 @@ test('link previews carry title and description', async ({ request }) => {
   expect(html).toContain('<meta property="og:title" content="GUESS — Cropped Denim Blazer"');
   expect(html).toMatch(/<meta property="og:description" content="Fabric by Indigo Mill \(article 60219\/1\) · 2 mills can make an equivalent"/);
 });
-test('unknown product is a 404', async ({ page }) => {
+test('unknown product is a 404, with the site chrome and a way home', async ({ page }) => {
   expect((await page.goto('/p/not-a-uuid'))?.status()).toBe(404);
+  await expect(page.getByRole('heading', { level: 1 })).toHaveText(/not found/i);
+  await expect(page.getByRole('link', { name: /back to xmanufacture/i })).toHaveAttribute('href', '/');
+  await expect(page.getByText(/ISTANBUL, TR/i)).toBeVisible();
 });
