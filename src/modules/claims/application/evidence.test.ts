@@ -182,6 +182,30 @@ it('a file that can’t be deleted is logged and does not undo the decision', as
   expect(await deps.evidence.listByClaim(ids.claim)).toEqual([]);
 });
 
+it('still deletes the files when the rows can’t be deleted, and the decision stands', async () => {
+  const { deps, ids, stored } = await setup();
+  await addEvidence(deps, { companyId: ids.indigo, claimId: ids.claim, fileName: 'a.pdf', bytes: PDF });
+  await submitClaimForReview(deps, { companyId: ids.indigo, claimId: ids.claim });
+  const failing = { ...deps, evidence: { ...deps.evidence, deleteByClaim: vi.fn().mockRejectedValue(new Error('db down')) } };
+  const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+  await expect(approveClaimReview(failing, { claimId: ids.claim, adminUserId: 'admin1' })).resolves.toMatchObject({ status: 'verified' });
+  expect(await deps.claims.findById(ids.claim)).toMatchObject({ status: 'verified', reviewedBy: 'admin1' });
+  expect(stored.size).toBe(0);
+  expect(log).toHaveBeenCalledWith(expect.stringContaining(ids.claim), expect.any(Error));
+});
+
+it('keeps the row when its file can’t be deleted, so removing it can be retried', async () => {
+  const { deps, ids, stored } = await setup();
+  const e = await addEvidence(deps, { companyId: ids.indigo, claimId: ids.claim, fileName: 'a.pdf', bytes: PDF });
+  const failing = { ...deps, store: { ...deps.store, delete: vi.fn().mockRejectedValue(new Error('r2 down')) } };
+  await expect(removeEvidence(failing, { companyId: ids.indigo, evidenceId: e.id })).rejects.toThrow('r2 down');
+  expect(await deps.evidence.listByClaim(ids.claim)).toEqual([e]);
+  expect(stored.size).toBe(1);
+  await removeEvidence(deps, { companyId: ids.indigo, evidenceId: e.id }); // the retry
+  expect(await deps.evidence.listByClaim(ids.claim)).toEqual([]);
+  expect(stored.size).toBe(0);
+});
+
 it('stores nothing behind a row that failed to save', async () => {
   const { deps, ids, stored } = await setup();
   const broken = { ...deps, evidence: { ...deps.evidence, save: vi.fn().mockRejectedValue(new Error('db down')) } };

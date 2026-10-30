@@ -1,6 +1,9 @@
-import { afterEach, expect, it, vi } from 'vitest';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { createProductRepository, type ProductPageFetcher } from '@/modules/catalog';
-import { createClaimRepository } from '@/modules/claims';
+import { addEvidence, createClaimRepository, createEvidenceRepository, createLocalEvidenceStore } from '@/modules/claims';
 import { createSupplierRepositories } from '@/modules/supplier';
 import { DEMO } from '@/server/demo-ids';
 import { seedDemo } from '@/server/seed-demo';
@@ -21,7 +24,17 @@ vi.mock('@/server/viewer', () => ({
 const GENERIC = 'Something went wrong. Please try again.';
 const jacket = `<script type="application/ld+json">${JSON.stringify({ '@type': 'Product', name: 'Washed Denim Jacket', brand: { name: 'GUESS' }, material: '100% Cotton' })}</script>`;
 
-afterEach(() => vi.restoreAllMocks());
+// Publishing can delete evidence under EVIDENCE_DIR; each test gets a folder of its own, removed afterwards.
+let evidenceDir: string;
+beforeEach(() => {
+  evidenceDir = mkdtempSync(join(tmpdir(), 'xm-add-evidence-'));
+  vi.stubEnv('EVIDENCE_DIR', evidenceDir);
+});
+afterEach(() => {
+  vi.restoreAllMocks();
+  vi.unstubAllEnvs();
+  rmSync(evidenceDir, { recursive: true, force: true });
+});
 
 async function setup(overrides: { findByCanonicalUrl?: (url: string) => Promise<null> } = {}) {
   viewer.refuse = null;
@@ -46,8 +59,8 @@ async function setup(overrides: { findByCanonicalUrl?: (url: string) => Promise<
       return url.includes('plain') ? '<html><body>Hello</body></html>' : jacket;
     },
   };
-  container.current = { products: { ...products, ...overrides }, fetcher, claims, articles, config: { allowPrivateHosts: false } };
-  return { products, claims, articles, fetched, peak: () => peak };
+  container.current = { products: { ...products, ...overrides }, fetcher, claims, articles, db, config: { allowPrivateHosts: false } };
+  return { db, products, claims, articles, fetched, peak: () => peak };
 }
 
 const preview = (...lines: string[]) => previewGarmentsAction(lines.join('\n'));
@@ -151,6 +164,21 @@ it('publishes the ready rows under the mill from the session, then goes to its p
   const article = await articles.findByCode(DEMO.companies.indigo, '60777/2');
   expect(await claims.findByProductAndCompany(coded!, DEMO.companies.indigo)).toMatchObject({ kind: 'equivalent', scope: 'fabric', articleId: article!.id });
   expect(await claims.findByProductAndCompany(plain!, DEMO.companies.indigo)).toMatchObject({ kind: 'original', articleId: null });
+});
+
+it('deletes the files behind an original when it is republished as another kind, and keeps them when nothing changed', async () => {
+  const { db, claims } = await setup();
+  const store = createLocalEvidenceStore(evidenceDir);
+  const file = await addEvidence({ claims, evidence: createEvidenceRepository(db), store }, {
+    companyId: DEMO.companies.indigo, claimId: (await claims.findByProductAndCompany(DEMO.products.liujo, DEMO.companies.indigo))!.id, fileName: 'invoice.pdf', bytes: new TextEncoder().encode('%PDF-1.7 hello'),
+  });
+  const republish = (kind: 'original' | 'equivalent') =>
+    expect(publishGarmentsAction([{ productId: DEMO.products.liujo, articleCode: '60409/1', kind }])).rejects.toMatchObject({ digest: expect.stringContaining('/m/') });
+
+  await republish('original');
+  expect(await store.get(file.storageKey)).not.toBeNull();
+  await republish('equivalent');
+  expect(await store.get(file.storageKey)).toBeNull();
 });
 
 it("files a garment maker's claims under the garment scope", async () => {

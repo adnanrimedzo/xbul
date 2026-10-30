@@ -28,7 +28,7 @@ export function sniffEvidenceType(bytes: Uint8Array): EvidenceType | null {
 }
 
 // What the uploader called the file, for display only: the last path part, without control or direction-override
-// characters (the latter can make "invoice‮fdp.exe" read as ".pdf"). It never reaches a path.
+// characters (a right-to-left override, U+202E, can reorder a name so that ".exe" reads as ".pdf"). It never reaches a path.
 const cleanFileName = (raw: string): string =>
   Array.from(raw.slice(Math.max(raw.lastIndexOf('/'), raw.lastIndexOf('\\')) + 1).replace(/[\p{Cc}\p{Cf}]/gu, '').trim())
     .slice(0, FILE_NAME_MAX)

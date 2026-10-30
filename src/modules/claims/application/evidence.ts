@@ -27,6 +27,19 @@ export async function deleteStoredFiles(store: EvidenceStore, files: readonly Ev
   }
 }
 
+// Takes a claim's documents away once a decision, an edit or a withdrawal that makes them pointless has been saved:
+// the rows, then the stored files. `files` is what listByClaim returned before that was saved. Each failure is logged
+// and never thrown (the file keys are in the log for cleaning up by hand), because what was saved stays saved and
+// a retry could not find the documents again.
+export async function purgeEvidence(deps: Pick<EvidenceDeps, 'evidence' | 'store'>, claimId: string, files: readonly Evidence[]): Promise<void> {
+  try {
+    await deps.evidence.deleteByClaim(claimId);
+  } catch (e) {
+    console.error(`[evidence] could not delete the records of claim ${claimId}`, e);
+  }
+  await deleteStoredFiles(deps.store, files);
+}
+
 export async function addEvidence(
   deps: EvidenceDeps,
   input: { companyId: string; claimId: string; fileName: string; bytes: Uint8Array },
@@ -51,8 +64,9 @@ export async function removeEvidence(deps: EvidenceDeps, input: { companyId: str
   const claim = evidence && (await deps.claims.findById(evidence.claimId));
   if (!evidence || !claim || claim.companyId !== input.companyId) throw new DomainError('evidence.not_found');
   assertCanEditEvidence(claim);
+  // The file first, and a failure stops here: the row stays, so the supplier still sees the file and can try again.
+  await deps.store.delete(evidence.storageKey);
   await deps.evidence.delete(evidence.id);
-  await deleteStoredFiles(deps.store, [evidence]);
 }
 
 export async function submitClaimForReview(deps: EvidenceDeps, input: { companyId: string; claimId: string }): Promise<Claim> {
@@ -81,8 +95,7 @@ export async function readEvidence(
 async function settle(deps: EvidenceDeps, decided: Claim): Promise<void> {
   const files = await deps.evidence.listByClaim(decided.id);
   await deps.claims.save(decided);
-  await deps.evidence.deleteByClaim(decided.id);
-  await deleteStoredFiles(deps.store, files);
+  await purgeEvidence(deps, decided.id, files);
 }
 
 export async function approveClaimReview(deps: EvidenceDeps, input: { claimId: string; adminUserId: string }): Promise<Claim> {

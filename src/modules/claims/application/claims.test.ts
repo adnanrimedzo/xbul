@@ -1,13 +1,19 @@
-import { expect, it } from 'vitest';
+import { afterEach, expect, it, vi } from 'vitest';
 import { createProduct, createProductRepository, getProduct } from '@/modules/catalog';
 import { createCompany, createSupplierRepositories, upsertArticle, type CompanyKind } from '@/modules/supplier';
 import { createTestDb } from '@/shared/db/testing';
 import { verifyClaim } from '../domain/claim';
 import { createClaimRepository } from '../infrastructure/drizzle-claim-repository';
 import { createEvidenceRepository } from '../infrastructure/drizzle-evidence-repository';
+import { addEvidence, submitClaimForReview } from './evidence';
+import type { EvidenceStore } from './ports';
 import { publishGarments } from './publish-garments';
 import { verifyOriginalClaim } from './verify-original-claim';
 import { withdrawClaim } from './withdraw-claim';
+
+const PDF = new TextEncoder().encode('%PDF-1.7 hello');
+
+afterEach(() => vi.restoreAllMocks());
 
 async function setup() {
   const db = await createTestDb();
@@ -30,14 +36,20 @@ async function setup() {
     guess: await garment('GUESS', 'Cropped Denim Blazer', 'guess'),
     liujo: await garment('LIU JO', 'Flared Jeans', 'liujo'),
   };
+  const stored = new Map<string, Uint8Array>();
+  const store: EvidenceStore = {
+    put: async (key, bytes) => void stored.set(key, bytes),
+    get: async (key) => stored.get(key) ?? null,
+    delete: async (key) => void stored.delete(key),
+  };
   const deps = {
     claims: createClaimRepository(db),
     evidence: createEvidenceRepository(db),
-    store: { put: async () => {}, get: async () => null, delete: async () => {} }, // claims here carry no files; evidence.test.ts covers them
+    store,
     getProduct: (id: string) => getProduct({ products }, id),
     upsertArticle: (i: { companyId: string; code: string }) => upsertArticle({ articles }, i),
   };
-  return { deps, ids };
+  return { deps, ids, stored };
 }
 
 it('publishes a batch, re-publishing updates the same claim', async () => {
@@ -122,4 +134,54 @@ it('lets only the owning mill withdraw its claim', async () => {
   await withdrawClaim(deps, { companyId: ids.indigo, claimId: c.id });
   expect(await deps.claims.findById(c.id)).toBeNull();
   await expect(withdrawClaim(deps, { companyId: ids.indigo, claimId: c.id })).rejects.toMatchObject({ code: 'claim.not_found' });
+});
+
+// An original's invoices are kept only for the claim they were sent for. If the claim changes, they go.
+const originalWithFile = async (deps: Awaited<ReturnType<typeof setup>>['deps'], companyId: string, productId: string, articleCode: string | null) => {
+  const [claim] = await publishGarments(deps, { companyId, scope: 'fabric', items: [{ productId, articleCode, kind: 'original' }] });
+  const file = await addEvidence(deps, { companyId, claimId: claim!.id, fileName: 'invoice.pdf', bytes: PDF });
+  return { claim: claim!, file };
+};
+
+it('deletes the files and the review when an original is republished as an equivalent', async () => {
+  const { deps, ids, stored } = await setup();
+  const { claim } = await originalWithFile(deps, ids.indigo, ids.guess, '60219/1');
+  const kept = await originalWithFile(deps, ids.indigo, ids.liujo, null);
+  await submitClaimForReview(deps, { companyId: ids.indigo, claimId: claim.id });
+  const [again] = await publishGarments(deps, { companyId: ids.indigo, scope: 'fabric', items: [{ productId: ids.guess, articleCode: '60219/1', kind: 'equivalent' }] });
+  expect(again).toMatchObject({ id: claim.id, kind: 'equivalent', reviewStatus: 'none' });
+  expect(await deps.evidence.listByClaim(claim.id)).toEqual([]);
+  expect([...stored.keys()]).toEqual([kept.file.storageKey]); // another claim's file is not touched
+  expect(await deps.evidence.listByClaim(kept.claim.id)).toHaveLength(1);
+});
+
+it('deletes the files and the review when an original is republished with another product code', async () => {
+  const { deps, ids, stored } = await setup();
+  const { claim } = await originalWithFile(deps, ids.indigo, ids.guess, '60219/1');
+  await submitClaimForReview(deps, { companyId: ids.indigo, claimId: claim.id });
+  const [again] = await publishGarments(deps, { companyId: ids.indigo, scope: 'fabric', items: [{ productId: ids.guess, articleCode: '60219/2', kind: 'original' }] });
+  expect(again).toMatchObject({ id: claim.id, kind: 'original', reviewStatus: 'none' });
+  expect(await deps.evidence.listByClaim(claim.id)).toEqual([]);
+  expect(stored.size).toBe(0);
+});
+
+it('keeps the files and the review when the claim is republished unchanged', async () => {
+  const { deps, ids, stored } = await setup();
+  const { claim } = await originalWithFile(deps, ids.indigo, ids.guess, '60219/1');
+  await submitClaimForReview(deps, { companyId: ids.indigo, claimId: claim.id });
+  const [again] = await publishGarments(deps, { companyId: ids.indigo, scope: 'fabric', items: [{ productId: ids.guess, articleCode: '60219/1', kind: 'original', note: 'edited' }] });
+  expect(again).toMatchObject({ id: claim.id, note: 'edited', reviewStatus: 'pending' });
+  expect(await deps.evidence.listByClaim(claim.id)).toHaveLength(1);
+  expect(stored.size).toBe(1);
+});
+
+it('a file that can’t be deleted is logged and the republish still goes through', async () => {
+  const { deps, ids } = await setup();
+  const { claim, file } = await originalWithFile(deps, ids.indigo, ids.guess, null);
+  const failing = { ...deps, store: { ...deps.store, delete: vi.fn().mockRejectedValue(new Error('r2 down')) } };
+  const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+  const [again] = await publishGarments(failing, { companyId: ids.indigo, scope: 'fabric', items: [{ productId: ids.guess, articleCode: null, kind: 'equivalent' }] });
+  expect(again).toMatchObject({ id: claim.id, kind: 'equivalent' });
+  expect(await deps.evidence.listByClaim(claim.id)).toEqual([]);
+  expect(log).toHaveBeenCalledWith(expect.stringContaining(file.storageKey), expect.any(Error));
 });

@@ -56,6 +56,10 @@ export function declareClaim(
   });
 }
 
+// What a claim asserts, and so what verification and a review are about: the kind and the product code. The note is not part of it.
+export const sameClaimedFact = (a: Pick<Claim, 'kind' | 'articleId'>, b: Pick<Claim, 'kind' | 'articleId'>): boolean =>
+  a.kind === b.kind && a.articleId === b.articleId;
+
 // A redeclaration restates the whole claim: an absent note clears it. Verification and a pending review
 // survive only if the claimed fact (kind + article) is unchanged.
 export function redeclareClaim(
@@ -64,7 +68,7 @@ export function redeclareClaim(
   now: Date = new Date(),
 ): Claim {
   const note = normalizeNote(input.note);
-  const sameFact = input.kind === claim.kind && input.articleId === claim.articleId;
+  const sameFact = sameClaimedFact(claim, input);
   return Object.freeze({
     ...claim,
     articleId: input.articleId,
