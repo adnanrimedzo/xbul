@@ -53,6 +53,9 @@ test('a supplier submits evidence, an admin approves it, and the badge appears',
   expect(download.headers()['content-disposition']).toContain('attachment');
   expect(download.headers()['x-content-type-options']).toBe('nosniff');
   await row.getByRole('button', { name: /^approve$/i }).click();
+  await expect(row).toHaveCount(1); // the first click only asks to confirm: nothing is verified or deleted yet
+  expect((await admin.request.get(`http://localhost:3100${fileUrl}`)).status()).toBe(200);
+  await row.getByRole('button', { name: /^confirm approve$/i }).click();
   await expect(row).toHaveCount(0);
   await admin.goto(`/p/${DEMO.products.liujo}`);
   await expect(admin.getByTestId('original-claim')).toContainText('Verified');

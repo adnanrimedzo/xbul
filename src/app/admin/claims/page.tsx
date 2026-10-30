@@ -49,7 +49,7 @@ export default async function AdminClaimsPage() {
                 </ul>
               </div>
               <div className="flex flex-col items-start gap-3">
-                <RowActionButton action={approveReviewAction.bind(null, row.claimId)} label="Approve" />
+                <RowActionButton action={approveReviewAction.bind(null, row.claimId)} label="Approve" confirmLabel="Confirm approve" />
                 <RejectForm claimId={row.claimId} />
               </div>
             </li>
