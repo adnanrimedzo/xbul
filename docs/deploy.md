@@ -1,14 +1,27 @@
 # Deploying xbul to Cloudflare Workers
 
-xbul runs on Cloudflare Workers through [OpenNext](https://opennext.js.org/cloudflare). Neon Postgres sits behind Hyperdrive, and Resend sends the mail.
+xbul runs on Cloudflare Workers through [OpenNext](https://opennext.js.org/cloudflare). Neon Postgres sits behind Hyperdrive, R2 holds supplier documents, and Resend sends the mail. For running the live site, see [runbook.md](runbook.md).
+
+There are two environments that share nothing. **Do every step for staging first, then repeat it for production.**
+
+| | Staging | Production |
+|---|---|---|
+| Address | `https://staging.xbul.ai` | `https://xbul.ai` |
+| Worker | `xbul-staging` | `xbul` |
+| Neon project | `xbul-staging` (Free plan) | `xbul-production` (Launch plan) |
+| Hyperdrive config | `xbul-db-staging` | `xbul-db` |
+| Document bucket | `xbul-evidence-staging` | `xbul-evidence` |
+| Wrangler flag | `--env staging` | none |
+| Deploy command | `pnpm run deploy:staging` | `pnpm run deploy` |
 
 You need:
-- a Cloudflare account with the production domain's DNS on Cloudflare
+- a Cloudflare account with `xbul.ai`'s DNS on Cloudflare
 - a Cloudflare Workers Paid plan: the free plan's CPU time (10 ms per request) and subrequest count (50 per request) are too low for rendering pages and for fetching the link previews on `/add`
 - R2 enabled on that account. Do this once in the Cloudflare dashboard, under **R2 Object Storage**. Step 4 fails until you have.
 - a Neon account
 - a Resend account
-- Node.js 22.1 or newer and pnpm 10
+- a private GitHub repository for this code
+- Node.js 22.1 or newer, pnpm 10, and Docker for checking backups
 
 Every command runs from the repository root. Install the dependencies once, then sign in to Cloudflare:
 
@@ -17,9 +30,13 @@ pnpm install
 pnpm wrangler login
 ```
 
-## 1. Create the database
+## 1. Create the databases
 
-Create a Neon project and copy its connection string. Turn Neon's connection pooling off, because Hyperdrive does the pooling. The string looks like `postgresql://user:password@ep-….neon.tech/neondb?sslmode=require`.
+Create the Neon projects in the table above. Choose Postgres 17 and the Frankfurt region (`aws-eu-central-1`). The worker is placed next to that region through `placement` in `wrangler.jsonc`, so change both together if you ever move the database.
+
+Copy each project's connection string, with Neon's connection pooling turned off, because Hyperdrive does the pooling. The string looks like `postgresql://user:password@ep-….neon.tech/neondb?sslmode=require`.
+
+On `xbul-production`, set the history window to 7 days, the most the Launch plan allows. That is how far back an instant restore reaches.
 
 ## 2. Apply the migrations
 
@@ -27,60 +44,76 @@ Create a Neon project and copy its connection string. Turn Neon's connection poo
 DATABASE_URL="<neon url>" pnpm db:migrate
 ```
 
-Run this again before you deploy any code that adds a migration in `drizzle/`. Do not run `pnpm seed` against production, because it loads demo data.
+After step 11, GitHub Actions does this before each deploy. New migrations must still work with the previous version of the code, because a rollback doesn't undo them: add first, and remove in a later release.
 
-## 3. Create the Hyperdrive config
+Never run `pnpm seed` against production, because it loads demo data.
+
+## 3. Create the Hyperdrive configs
 
 ```bash
-pnpm wrangler hyperdrive create xbul-db --connection-string="<neon url>" --caching-disabled
+pnpm wrangler hyperdrive create xbul-db-staging --connection-string="<staging neon url>" --caching-disabled
+pnpm wrangler hyperdrive create xbul-db --connection-string="<production neon url>" --caching-disabled
 ```
 
-Paste the printed `id` over `<HYPERDRIVE_ID>` in `wrangler.jsonc`.
+Paste each printed `id` into `wrangler.jsonc`: `<HYPERDRIVE_STAGING_ID>` for staging and `<HYPERDRIVE_ID>` for production. These ids aren't secret, so commit them.
 
 Caching is disabled because Hyperdrive's query cache is not cleared when the app writes. The app reads right after it writes: the rate limiter, sessions and claims. Cached reads there would be stale.
 
-## 4. Create the evidence bucket
+## 4. Create the buckets
 
 Suppliers send invoices and similar documents in for review. They go in a private R2 bucket, bound to the worker as `EVIDENCE` in `wrangler.jsonc`. The app serves them only to the supplier who sent them and to admins, and deletes them once a claim is decided.
 
 ```bash
+pnpm wrangler r2 bucket create xbul-evidence-staging
+pnpm wrangler r2 bucket lifecycle add xbul-evidence-staging expire-evidence evidence/ --expire-days 90
 pnpm wrangler r2 bucket create xbul-evidence
 pnpm wrangler r2 bucket lifecycle add xbul-evidence expire-evidence evidence/ --expire-days 90
 ```
 
-Never attach a public domain or an `r2.dev` URL to this bucket.
+Weekly database backups go in their own bucket, for production only. They hold personal data, so they expire too:
 
-The lifecycle rule is a backstop. The app deletes a file when its claim is decided, withdrawn or changed, but a delete can fail, and the app logs it (`[evidence] could not delete …`) without retrying. A file that is left over must not stay forever, so every object under `evidence/` expires after 90 days. The same rule also takes the files of a claim nobody got round to deciding. Their downloads then answer 404, so an admin rejects the claim with a note and the supplier uploads the documents again. A supplier who never submitted can remove the listed files and add them again.
+```bash
+pnpm wrangler r2 bucket create xbul-backups
+pnpm wrangler r2 bucket lifecycle add xbul-backups expire-backups db/ --expire-days 90
+```
+
+Never attach a public domain or an `r2.dev` URL to any of these buckets.
+
+The evidence lifecycle rule is a backstop. The app deletes a file when its claim is decided, withdrawn or changed, but a delete can fail, and the app logs it (`[evidence] could not delete …`) without retrying. A file that is left over must not stay forever, so every object under `evidence/` expires after 90 days. The same rule also takes the files of a claim nobody got round to deciding. Their downloads then answer 404, so an admin rejects the claim with a note and the supplier uploads the documents again. A supplier who never submitted can remove the listed files and add them again.
 
 ## 5. Set the secrets
 
+Use different values in each environment. Generate a new `BETTER_AUTH_SECRET` for each, and create one Resend key per environment.
+
 ```bash
-openssl rand -hex 32                      # paste this at the next prompt
-pnpm wrangler secret put BETTER_AUTH_SECRET
-pnpm wrangler secret put RESEND_API_KEY
-pnpm wrangler secret put ADMIN_EMAILS     # comma-separated, e.g. you@example.com
+openssl rand -hex 32                                    # paste this at the next prompt
+pnpm wrangler secret put BETTER_AUTH_SECRET --env staging
+pnpm wrangler secret put RESEND_API_KEY --env staging
+pnpm wrangler secret put ADMIN_EMAILS --env staging     # comma-separated, e.g. you@example.com
 ```
 
-If the worker doesn't exist yet, Wrangler offers to create it. Answer yes.
+Repeat without `--env staging` for production. If a worker doesn't exist yet, Wrangler offers to create it. Answer yes.
 
-Production refuses to start without `RESEND_API_KEY`. Without it, magic links (which are sign-in tokens) would be written to the logs. Never set `ALLOW_CONSOLE_MAILER` in production.
+Production refuses to start without `RESEND_API_KEY`. Without it, magic links (which are sign-in tokens) would be written to the logs. Never set `ALLOW_CONSOLE_MAILER` on a deployed worker.
 
-## 6. Verify the sending domain
+## 6. Set up email
 
-1. In Resend, add the domain and create the DNS records it lists.
-2. Wait until Resend shows the domain as verified.
-3. Set `MAIL_FROM` in the `vars` of `wrangler.jsonc` to an address on that domain, e.g. `xbul <hello@xbul.ai>`.
+1. In Resend, add `xbul.ai` and create the DNS records it lists.
+2. Wait until Resend shows the domain as verified. Sign-in doesn't work until then.
+3. In Cloudflare, open **Email → Email Routing** for `xbul.ai` and forward `hello@xbul.ai` to your own inbox. Sign-in mail is sent from that address, and `/privacy` and `/terms` give it as the contact, so replies must reach you. Check that the records from step 1 and these don't conflict.
 
-## 7. Set the public origin
+`MAIL_FROM` is already set in `wrangler.jsonc`.
 
-In the `vars` of `wrangler.jsonc`, set `PUBLIC_BASE_URL` to the real origin, e.g. `https://xbul.ai`. It is the only origin setting: sign-in uses it too.
+## 7. Check the public address
 
-Pick either the apex or `www` and use it everywhere. Sign-in cookies and magic links are bound to one origin, so a link sent from the apex fails on `www` and the other way round. Redirect the other host to it with a Cloudflare redirect rule.
+`PUBLIC_BASE_URL` in `wrangler.jsonc` is already `https://xbul.ai` for production and `https://staging.xbul.ai` for staging. It is the only origin setting: sign-in uses it too, and `/robots.txt` blocks all search engines unless it is exactly `https://xbul.ai`.
+
+Sign-in cookies and magic links are bound to one origin, so a link sent from `xbul.ai` fails on `www.xbul.ai`. Step 9 redirects `www`.
 
 ## 8. Deploy
 
 ```bash
-pnpm run deploy
+pnpm run deploy:staging   # or: pnpm run deploy
 ```
 
 Use `pnpm run deploy`, not `pnpm deploy`. `pnpm deploy` is pnpm's own workspace command and doesn't run the script.
@@ -89,27 +122,66 @@ The project root must not contain any `.env*` file except `.env.example`, such a
 - their values, secrets included, would ship in the bundle
 - a `DATABASE_URL` from them would make the worker refuse to start
 
-`pnpm run deploy` and `pnpm preview` refuse to build while such a file is present. Move it out of the project root first.
+The deploy and preview scripts refuse to build while such a file is present. Move it out of the project root first, and put it back afterwards.
 
 ## 9. Attach the custom domain
 
 In the Cloudflare dashboard:
-1. Open **Workers & Pages → xbul → Settings → Domains & Routes**.
+1. Open **Workers & Pages → xbul-staging** (or **xbul**) **→ Settings → Domains & Routes**.
 2. Choose **Add → Custom domain**.
-3. Enter the origin from step 7.
+3. Enter the address from the table above.
+
+For production, also:
+- Redirect `www.xbul.ai` to `https://xbul.ai` with a Cloudflare redirect rule.
+- Turn on **SSL/TLS → Edge Certificates → Always Use HTTPS**.
 
 ## 10. Smoke-test
 
-On the custom domain:
+First the read-only check, which also runs after every automated deploy:
+
+```bash
+node scripts/smoke.mjs https://staging.xbul.ai
+```
+
+Then by hand, on the same address:
 - `/` loads.
 - Requesting a sign-in link delivers an email through Resend, and the link signs you in.
-- On `/add`, pasting a real guess.eu product link either fetches the product or offers manual entry.
+- On `/add`, pasting a real product link either fetches the product or offers manual entry.
 - Use a test supplier for the rest, because approving a claim makes its **Verified** badge public. On `/add`, publish the product as **We made this**. On the company page, its **Get verified** link opens the upload page.
 - On the **Get verified** page, uploading a PDF works and the file's link downloads it. The same link signed out answers 404.
 - Click **Submit for review**. Then sign in as an admin (an address in `ADMIN_EMAILS`) and open `/admin/claims`. The claim is listed, and the file's link downloads.
 - Click **Approve**, then **Confirm approve**. The product page now shows **Verified**, and the file's link answers 404, because approving deletes the documents.
 - Remove the test product from the supplier's page when you're done.
 - On `/`, search for a product link. Then open `/admin/stats` as an admin: **Searches** has gone up by one.
+
+## 11. Turn on automated deploys
+
+Push this repository to your private GitHub repository. In **Settings → Secrets and variables → Actions**, add:
+
+| Secret | Value |
+|---|---|
+| `CLOUDFLARE_API_TOKEN` | A token from the **Edit Cloudflare Workers** template, limited to this account. Confirm it can write to R2, because the backup job needs that. |
+| `CLOUDFLARE_ACCOUNT_ID` | Shown on the Workers overview page |
+| `STAGING_DATABASE_URL` | The staging Neon connection string |
+| `PRODUCTION_DATABASE_URL` | The production Neon connection string |
+
+Under **Settings → Environments**, create one called `production`.
+
+What then runs:
+
+| Workflow | When | What it does |
+|---|---|---|
+| `CI` | Every pull request | Lint, types, unit tests, browser tests |
+| `Deploy staging` | Every push to `main` | CI, migrations, deploy, smoke check |
+| `Deploy production` | Only when you start it under **Actions** | CI, migrations, deploy, smoke check. It doesn't roll back on failure: see [runbook.md](runbook.md). |
+| `Back up the database` | Mondays at 03:00 UTC, or when you start it | Dumps production to `xbul-backups`. A failed run emails the repository owner. |
+
+## 12. Protect and watch production
+
+- **Check the first backup.** Start `Back up the database` by hand, download the dump from the `xbul-backups` bucket in the dashboard, then run `bash scripts/verify-restore.sh <dump file>`.
+- **Uptime monitor.** Add `https://xbul.ai/api/health` to a free external uptime monitor that emails you. It has to be outside Cloudflare, so it can tell you when Cloudflare can't reach the site.
+- **Rate limit.** Under **Security → WAF → Rate limiting rules**, add the one rule the Free plan allows: path equals `/`, more than 50 requests in 10 seconds per IP, block for 10 seconds. It limits anonymous search spam, and no real visitor reaches it. Sign-in has its own limiter in the app.
+- **Billing.** Set a billing notification in Cloudflare and Neon.
 
 ## Checking the Workers build locally (optional)
 
@@ -148,5 +220,5 @@ When you're done, remove the container with `docker rm -f xm-pg`.
 - There are no buyer accounts and no ratings. Buyers search and contact suppliers without signing in.
 - There are no supplier subscriptions, paid visibility or visual search.
 - There are no analytics for suppliers. The only figures are the platform-wide counts an admin sees on `/admin/stats`.
+- There is no email when a claim is submitted or decided. Admins check `/admin/claims`, and suppliers see the result on their page.
 - There is no incremental cache, because every page renders on demand.
-- There is no deploy pipeline: deploys run from a developer machine with the steps above.
