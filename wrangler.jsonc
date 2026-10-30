@@ -31,12 +31,17 @@
   },
   // Workers Logs: request logs and console output (e.g. a failed owner notification) in the dashboard.
   "observability": { "enabled": true },
+  // Only the custom domain answers: a workers.dev copy would be open to crawlers, outside the rate limit, and old versions would stay callable.
+  "workers_dev": false,
+  "preview_urls": false,
   // A page runs several queries, so the worker runs beside the Neon database (docs/deploy.md).
   "placement": { "region": "aws:eu-central-1" },
   "env": {
     // Test data only. Bindings and vars aren't inherited, so staging repeats each one with its own resource.
     "staging": {
       "name": "xbul-staging",
+      "workers_dev": false,
+      "preview_urls": false,
       "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "xbul-staging" }],
       "hyperdrive": [
         {

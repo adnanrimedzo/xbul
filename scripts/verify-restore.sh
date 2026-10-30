@@ -7,7 +7,7 @@ dump="${1:?Usage: verify-restore.sh <dump file>}"
 [ -s "$dump" ] || { echo "No dump at $dump, or it is empty" >&2; exit 1; }
 
 name="xbul-restore-$$"
-trap 'docker rm -f "$name" > /dev/null 2>&1 || true' EXIT
+trap 'docker rm -f -v "$name" > /dev/null 2>&1 || true' EXIT
 docker run -d --name "$name" -e POSTGRES_PASSWORD=postgres postgres:17 > /dev/null
 
 # Over TCP, because Postgres's first start during setup listens on its socket only and would look ready too early.
@@ -22,7 +22,9 @@ docker exec -i "$name" pg_restore --no-owner --no-privileges -U postgres -d post
 count() { docker exec "$name" psql -U postgres -d postgres -tAc "select count(*) from $1"; }
 companies="$(count companies)"
 echo "companies: $companies"
-echo "claims: $(count claims)"
-echo "users: $(count '"user"')"
+claims="$(count claims)"
+users="$(count '"user"')"
+echo "claims: $claims"
+echo "users: $users"
 [ "$companies" -gt 0 ] || { echo "The restore has no companies" >&2; exit 1; }
 echo "Restore works."
