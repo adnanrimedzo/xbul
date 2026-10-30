@@ -30,7 +30,7 @@ export function createDb(url: string): Promise<Db> {
 // builds one per request and ends the pool itself.
 export function createPostgresDb(url: string): { db: Db; pool: Pool } {
   const pool = new Pool({ connectionString: url, max: 5 });
-  pool.on('error', (e) => console.error('[db] pool error', e)); // an idle client's error would otherwise crash the process
+  pool.on('error', (e) => console.error('[db] pool error', e.message)); // an idle client's error would otherwise crash the process
   return { db: drizzlePg({ client: pool }) as unknown as Db, pool };
 }
 
