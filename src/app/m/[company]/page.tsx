@@ -7,7 +7,7 @@ import { SupplierContact } from '@/app/_components/supplier-contact';
 import { Chip } from '@/app/_components/ui/chip';
 import { GarmentGrid } from '@/app/_components/ui/garment-grid';
 import { GarmentTile } from '@/app/_components/ui/garment-tile';
-import { getCompanyPageView } from '@/modules/discovery';
+import { getCompanyPageView, type CompanyPageView } from '@/modules/discovery';
 import type { CompanyKind } from '@/modules/supplier';
 import { getContainer } from '@/server/container';
 import { getViewer } from '@/server/viewer';
@@ -16,6 +16,17 @@ import { EditContactForm } from './edit-contact-form';
 
 const SLUG = /^[a-z0-9-]{1,120}$/;
 const KIND_LABEL: Record<CompanyKind, string> = { fabric_mill: 'Fabric mill', garment_maker: 'Garment maker' };
+
+// What the owner can do next about an original: nothing once it is verified, wait while an admin reviews it, otherwise send documents.
+function VerifyStep({ garment }: { garment: CompanyPageView['garments'][number] }) {
+  if (garment.kind !== 'original' || garment.claimStatus !== 'declared') return null;
+  if (garment.reviewStatus === 'pending') return <span className="py-[7px] text-[11px] font-semibold">Under review</span>;
+  return (
+    <Link href={`/verify/${garment.claimId}`} className="border border-ink px-2.5 py-[7px] text-[11px] font-semibold">
+      Get verified
+    </Link>
+  );
+}
 
 // Shared by generateMetadata and the page, so the view is read once per request.
 const loadView = cache(async (slug: string) => {
@@ -78,8 +89,9 @@ export default async function MillPage({ params }: PageProps<'/m/[company]'>) {
               <GarmentTile tile={g} href={`/p/${g.productId}`} tag={g.kind === 'original' ? 'Original' : 'Equivalent'} tagTone={g.kind === 'original' ? 'accent' : 'muted'} />
               {/* Below the tile link, not inside it: the owner can take a product back off its page. */}
               {isOwner && (
-                <div className="px-3 pb-2.5">
+                <div className="flex flex-wrap items-start gap-2 px-3 pb-2.5">
                   <RowActionButton action={withdrawClaimAction.bind(null, g.claimId)} label="Remove" confirmLabel="Confirm remove" />
+                  <VerifyStep garment={g} />
                 </div>
               )}
             </div>

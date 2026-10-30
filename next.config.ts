@@ -16,6 +16,9 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  // Evidence files upload one per action call, up to 10 MB each (MAX_EVIDENCE_BYTES). The limit covers the whole
+  // multipart body, so 11 MB leaves room for its overhead.
+  experimental: { serverActions: { bodySizeLimit: "11mb" } },
   turbopack: {
     rules: {
       "*.css": {

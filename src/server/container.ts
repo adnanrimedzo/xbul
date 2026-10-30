@@ -2,7 +2,16 @@ import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { after } from 'next/server';
 import { cache } from 'react';
 import { createHttpProductPageFetcher, createProductRepository, type ProductPageFetcher, type ProductRepository } from '@/modules/catalog';
-import { createClaimRepository, type ClaimRepository } from '@/modules/claims';
+import {
+  createClaimRepository,
+  createEvidenceRepository,
+  createLocalEvidenceStore,
+  createR2EvidenceStore,
+  type ClaimRepository,
+  type EvidenceBucket,
+  type EvidenceRepository,
+  type EvidenceStore,
+} from '@/modules/claims';
 import { createAuth, type Auth } from '@/modules/identity';
 import { createSupplierRepositories, type ArticleRepository, type CompanyRepository } from '@/modules/supplier';
 import { createDb, createPostgresDb, type Db } from '@/shared/db/client';
@@ -19,11 +28,14 @@ export type Container = {
   products: ProductRepository;
   fetcher: ProductPageFetcher;
   claims: ClaimRepository;
+  evidence: EvidenceRepository;
+  evidenceStore: EvidenceStore;
 };
 
 declare global {
   interface CloudflareEnv {
     HYPERDRIVE?: { connectionString: string }; // the wrangler.jsonc binding
+    EVIDENCE?: EvidenceBucket; // the private R2 bucket for supplier documents
   }
 }
 
@@ -49,16 +61,21 @@ export const getContainer = cache(async (): Promise<Container> => {
   const cf = cloudflareContext();
   const url = resolveDatabaseUrl(config, cf);
   let db: Db;
+  let evidenceStore: EvidenceStore;
   if (cf) {
     // No fallback on Workers: DATABASE_URL would open PGlite or a pool shared across requests.
     if (config.databaseUrl) throw new Error('DATABASE_URL must not be set on Workers; the database comes from the HYPERDRIVE binding');
     if (!url.startsWith('postgres')) throw new Error('Workers need the HYPERDRIVE binding with a Postgres connection string (see wrangler.jsonc)');
+    // Likewise for documents (customers' invoices): there is no local-disk fallback on Workers.
+    if (!cf.env.EVIDENCE) throw new Error('Workers need the EVIDENCE R2 binding for supplier documents (see wrangler.jsonc)');
     const { ctx } = cf;
     const postgres = createPostgresDb(url);
     after(() => ctx.waitUntil(postgres.pool.end()));
     db = postgres.db;
+    evidenceStore = createR2EvidenceStore(cf.env.EVIDENCE);
   } else {
     db = await createDb(url);
+    evidenceStore = createLocalEvidenceStore(config.evidenceDir);
   }
   const mailer = config.resendApiKey
     ? createResendMailer(config.resendApiKey, config.mailFrom)
@@ -80,5 +97,7 @@ export const getContainer = cache(async (): Promise<Container> => {
     products: createProductRepository(db),
     fetcher: createHttpProductPageFetcher({ allowPrivateHosts: config.allowPrivateHosts }),
     claims: createClaimRepository(db),
+    evidence: createEvidenceRepository(db),
+    evidenceStore,
   };
 });

@@ -5,15 +5,26 @@ import { createTestDb } from '@/shared/db/testing';
 import { verifyClaim } from '../domain/claim';
 import { createClaimRepository } from '../infrastructure/drizzle-claim-repository';
 import { createEvidenceRepository } from '../infrastructure/drizzle-evidence-repository';
-import { addEvidence, submitClaimForReview } from './evidence';
+import { addEvidence, approveClaimReview, submitClaimForReview } from './evidence';
 import type { EvidenceStore } from './ports';
 import { publishGarments } from './publish-garments';
-import { verifyOriginalClaim } from './verify-original-claim';
 import { withdrawClaim } from './withdraw-claim';
 
 const PDF = new TextEncoder().encode('%PDF-1.7 hello');
 
 afterEach(() => vi.restoreAllMocks());
+
+type Deps = Awaited<ReturnType<typeof setup>>['deps'];
+
+// A claim is verified by an admin approving the documents its supplier sent in.
+const sendIn = async (deps: Deps, companyId: string, claimId: string) => {
+  await addEvidence(deps, { companyId, claimId, fileName: 'invoice.pdf', bytes: PDF });
+  await submitClaimForReview(deps, { companyId, claimId });
+};
+const approve = async (deps: Deps, companyId: string, claimId: string) => {
+  await sendIn(deps, companyId, claimId);
+  return approveClaimReview(deps, { claimId, adminUserId: 'admin1' });
+};
 
 async function setup() {
   const db = await createTestDb();
@@ -103,22 +114,23 @@ it('allows one verified original per scope, so a mill and a garment maker can bo
   const [mill] = await publishGarments(deps, { companyId: ids.indigo, scope: 'fabric', items: [{ productId: ids.guess, articleCode: null, kind: 'original' }] });
   const [rival] = await publishGarments(deps, { companyId: ids.denizli, scope: 'fabric', items: [{ productId: ids.guess, articleCode: null, kind: 'original' }] });
   const [maker] = await publishGarments(deps, { companyId: ids.anka, scope: 'garment', items: [{ productId: ids.guess, articleCode: null, kind: 'original' }] });
-  expect((await verifyOriginalClaim(deps, mill.id)).status).toBe('verified');
-  expect((await verifyOriginalClaim(deps, maker.id)).status).toBe('verified');
-  await expect(verifyOriginalClaim(deps, rival.id)).rejects.toMatchObject({ code: 'claim.already_verified_original' });
+  expect((await approve(deps, ids.indigo, mill.id)).status).toBe('verified');
+  expect((await approve(deps, ids.anka, maker.id)).status).toBe('verified');
+  await sendIn(deps, ids.denizli, rival.id);
+  await expect(approveClaimReview(deps, { claimId: rival.id, adminUserId: 'admin1' })).rejects.toMatchObject({ code: 'claim.already_verified_original' });
   await expect(deps.claims.save(verifyClaim(rival))).rejects.toThrow(); // the partial unique index, per scope
   expect((await deps.claims.findVerifiedOriginal(ids.guess, 'fabric'))?.id).toBe(mill.id);
   expect((await deps.claims.findVerifiedOriginal(ids.guess, 'garment'))?.id).toBe(maker.id);
 });
 
-it('verifies idempotently, rejects missing claims and equivalents, and re-publishing unchanged keeps verification', async () => {
+it('approves a review once, refuses missing claims and ones not in review, and re-publishing unchanged keeps verification', async () => {
   const { deps, ids } = await setup();
   const [o, e] = await publishGarments(deps, { companyId: ids.indigo, scope: 'fabric', items: [
     { productId: ids.guess, articleCode: '60219/1', kind: 'original' }, { productId: ids.liujo, articleCode: null, kind: 'equivalent' }] });
-  await verifyOriginalClaim(deps, o.id);
-  expect((await verifyOriginalClaim(deps, o.id)).status).toBe('verified');
-  await expect(verifyOriginalClaim(deps, crypto.randomUUID())).rejects.toMatchObject({ code: 'claim.not_found' });
-  await expect(verifyOriginalClaim(deps, e.id)).rejects.toMatchObject({ code: 'claim.only_original_verifiable' });
+  expect((await approve(deps, ids.indigo, o.id)).status).toBe('verified');
+  await expect(approveClaimReview(deps, { claimId: o.id, adminUserId: 'admin1' })).rejects.toMatchObject({ code: 'claim.not_in_review' }); // decided already
+  await expect(approveClaimReview(deps, { claimId: crypto.randomUUID(), adminUserId: 'admin1' })).rejects.toMatchObject({ code: 'claim.not_found' });
+  await expect(approveClaimReview(deps, { claimId: e.id, adminUserId: 'admin1' })).rejects.toMatchObject({ code: 'claim.not_in_review' }); // an equivalent can't be sent in
   const [same] = await publishGarments(deps, { companyId: ids.indigo, scope: 'fabric', items: [{ productId: ids.guess, articleCode: '60219/1', kind: 'original', note: 'edited' }] });
   expect(same).toMatchObject({ id: o.id, status: 'verified', note: 'edited' });
   const [changed] = await publishGarments(deps, { companyId: ids.indigo, scope: 'fabric', items: [{ productId: ids.guess, articleCode: '60219/2', kind: 'original' }] });

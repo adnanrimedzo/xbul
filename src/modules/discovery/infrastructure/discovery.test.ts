@@ -1,14 +1,14 @@
 import { beforeAll, expect, it } from 'vitest';
 import type { Db } from '@/shared/db/client';
 import { createTestDb } from '@/shared/db/testing';
-import { createClaimRepository } from '@/modules/claims';
+import { createClaimRepository, createEvidence, createEvidenceRepository, declareClaim, rejectReview, submitForReview } from '@/modules/claims';
 import { DEMO } from '@/server/demo-ids';
 import { seedDemo } from '@/server/seed-demo';
 import {
   getArticlePageView,
   getCompanyPageView,
   getProductPageView,
-  listDeclaredOriginals,
+  listPendingReviews,
   listRecentlyTagged,
 } from '@/modules/discovery';
 
@@ -52,6 +52,8 @@ it('mill page lists articles with garment counts', async () => {
   expect(v?.garments[0]?.sourceUrl).toBe('https://liujo.com/it/printed-denim-jacket-UF4012');
   // Each tile carries this mill's claim, so the owner can withdraw it.
   expect(v?.garments[0]?.claimId).toBe((await createClaimRepository(db).findByProductAndCompany(DEMO.products.liujo, DEMO.companies.indigo))?.id);
+  // Each tile says where this mill's claim stands, so the owner is offered the right next step.
+  expect(v?.garments.map((g) => [g.brand, g.claimStatus, g.reviewStatus])).toEqual([['LIU-JO', 'declared', 'none'], ['GUESS', 'verified', 'none']]);
   // Tile counts cover every mill's claims on the garment, not just this mill's.
   expect(v?.garments[1]).toMatchObject({ originals: 2, equivalents: 2 });
   // Claims without an article still show on the mill page.
@@ -69,8 +71,31 @@ it('recently tagged is ordered by latest claim with counts', async () => {
   expect(await listRecentlyTagged(db, 2)).toHaveLength(2);
 });
 
-it('lists declared (unverified) originals for admin', async () =>
-  expect((await listDeclaredOriginals(db)).map((d) => d.product.brand)).toEqual(['LIU-JO']));
+it('lists the claims waiting for review, longest waiting first, with their files', async () => {
+  const own = await createTestDb(); // the shared database stays as the other tests expect it
+  await seedDemo(own);
+  expect(await listPendingReviews(own)).toEqual([]); // a declared original is not in the queue until it is sent in
+  const claims = createClaimRepository(own);
+  const evidence = createEvidenceRepository(own);
+  const pdf = new TextEncoder().encode('%PDF-1.7 demo');
+  const png = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0]);
+  const rival = declareClaim({ productId: DEMO.products.liujo, companyId: DEMO.companies.denizli, articleId: null, kind: 'original', scope: 'fabric' });
+  await claims.save(rival);
+  const indigo = (await claims.findByProductAndCompany(DEMO.products.liujo, DEMO.companies.indigo))!;
+  const sendIn = async (claim: typeof rival, files: [string, Uint8Array][], at: string) => {
+    for (const [i, [fileName, bytes]] of files.entries()) await evidence.save(createEvidence({ claimId: claim.id, fileName, bytes }, new Date(Date.parse(at) + i)));
+    const pending = submitForReview(claim, new Date(at));
+    await claims.save(pending);
+    return pending;
+  };
+  const sentIndigo = await sendIn(indigo, [['invoice.pdf', pdf], ['order.png', png]], '2026-03-01T09:00:00Z');
+  await sendIn(rival, [['rival.pdf', pdf]], '2026-02-01T09:00:00Z');
+  const summary = async () => (await listPendingReviews(own)).map((r) => [r.company.name, r.scope, r.product.brand, r.evidence.map((e) => e.fileName)]);
+  expect(await summary()).toEqual([['Denizli Indigo', 'fabric', 'LIU-JO', ['rival.pdf']], ['Indigo Mill', 'fabric', 'LIU-JO', ['invoice.pdf', 'order.png']]]);
+  expect((await listPendingReviews(own))[1]?.evidence[0]).toEqual({ id: expect.any(String), fileName: 'invoice.pdf', sizeBytes: pdf.length });
+  await claims.save(rejectReview(sentIndigo, 'admin1', 'Unreadable')); // a decided claim leaves the queue
+  expect(await summary()).toEqual([['Denizli Indigo', 'fabric', 'LIU-JO', ['rival.pdf']]]);
+});
 
 it('seedDemo is idempotent', async () => {
   await seedDemo(db);

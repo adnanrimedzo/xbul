@@ -24,15 +24,13 @@ vi.mock('@/server/viewer', () => ({
 const GENERIC = 'Something went wrong. Please try again.';
 const jacket = `<script type="application/ld+json">${JSON.stringify({ '@type': 'Product', name: 'Washed Denim Jacket', brand: { name: 'GUESS' }, material: '100% Cotton' })}</script>`;
 
-// Publishing can delete evidence under EVIDENCE_DIR; each test gets a folder of its own, removed afterwards.
+// Publishing can delete evidence; each test gets a folder of its own for the store, removed afterwards.
 let evidenceDir: string;
 beforeEach(() => {
   evidenceDir = mkdtempSync(join(tmpdir(), 'xm-add-evidence-'));
-  vi.stubEnv('EVIDENCE_DIR', evidenceDir);
 });
 afterEach(() => {
   vi.restoreAllMocks();
-  vi.unstubAllEnvs();
   rmSync(evidenceDir, { recursive: true, force: true });
 });
 
@@ -43,6 +41,8 @@ async function setup(overrides: { findByCanonicalUrl?: (url: string) => Promise<
   await seedDemo(db);
   const products = createProductRepository(db);
   const claims = createClaimRepository(db);
+  const evidence = createEvidenceRepository(db);
+  const evidenceStore = createLocalEvidenceStore(evidenceDir);
   const { articles } = createSupplierRepositories(db);
   const fetched: string[] = [];
   let inFlight = 0;
@@ -59,8 +59,8 @@ async function setup(overrides: { findByCanonicalUrl?: (url: string) => Promise<
       return url.includes('plain') ? '<html><body>Hello</body></html>' : jacket;
     },
   };
-  container.current = { products: { ...products, ...overrides }, fetcher, claims, articles, db, config: { allowPrivateHosts: false } };
-  return { db, products, claims, articles, fetched, peak: () => peak };
+  container.current = { products: { ...products, ...overrides }, fetcher, claims, evidence, evidenceStore, articles, db, config: { allowPrivateHosts: false } };
+  return { evidence, evidenceStore, products, claims, articles, fetched, peak: () => peak };
 }
 
 const preview = (...lines: string[]) => previewGarmentsAction(lines.join('\n'));
@@ -167,9 +167,8 @@ it('publishes the ready rows under the mill from the session, then goes to its p
 });
 
 it('deletes the files behind an original when it is republished as another kind, and keeps them when nothing changed', async () => {
-  const { db, claims } = await setup();
-  const store = createLocalEvidenceStore(evidenceDir);
-  const file = await addEvidence({ claims, evidence: createEvidenceRepository(db), store }, {
+  const { claims, evidence, evidenceStore: store } = await setup();
+  const file = await addEvidence({ claims, evidence, store }, {
     companyId: DEMO.companies.indigo, claimId: (await claims.findByProductAndCompany(DEMO.products.liujo, DEMO.companies.indigo))!.id, fileName: 'invoice.pdf', bytes: new TextEncoder().encode('%PDF-1.7 hello'),
   });
   const republish = (kind: 'original' | 'equivalent') =>

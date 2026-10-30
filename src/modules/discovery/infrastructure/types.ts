@@ -1,4 +1,4 @@
-import type { ClaimKind, ClaimStatus } from '@/modules/claims';
+import type { ClaimKind, ClaimScope, ClaimStatus, ReviewStatus } from '@/modules/claims';
 import type { ArticleSpecs, CompanyContact, CompanyKind } from '@/modules/supplier';
 
 export type CompanyRef = { id: string; slug: string; name: string; kind: CompanyKind; city: string; country: string; contact: CompanyContact };
@@ -43,12 +43,15 @@ export type ArticlePageView = {
 export type CompanyPageView = {
   company: CompanyRef & { ownerUserId: string };
   articles: { slug: string; code: string; garmentCount: number }[];
-  garments: (GarmentTile & { claimId: string })[]; // the claimId is this mill's claim on the garment
+  // The claimId is this mill's claim on the garment, with where its claim and its review stand.
+  garments: (GarmentTile & { claimId: string; claimStatus: ClaimStatus; reviewStatus: ReviewStatus })[];
 };
 
-export type DeclaredOriginal = {
+// An original waiting for an admin, with the documents the supplier sent in.
+export type PendingReview = {
   claimId: string;
-  createdAt: Date;
+  scope: ClaimScope;
   product: { id: string; brand: string; name: string };
   company: { slug: string; name: string };
+  evidence: { id: string; fileName: string; sizeBytes: number }[];
 };

@@ -21,6 +21,8 @@
       "localConnectionString": "postgres://postgres:postgres@localhost:5432/xmanufacture"
     }
   ],
+  // Private bucket for the documents suppliers send in for review (docs/deploy.md): never public, read only through the app.
+  "r2_buckets": [{ "binding": "EVIDENCE", "bucket_name": "xmanufacture-evidence" }],
   // Public settings. Secrets (BETTER_AUTH_SECRET, RESEND_API_KEY, ADMIN_EMAILS) go in with `wrangler secret put`.
   // PUBLIC_BASE_URL is the one canonical origin (sign-in included): pick apex or www and use it everywhere.
   "vars": {

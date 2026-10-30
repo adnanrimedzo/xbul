@@ -21,17 +21,15 @@ vi.mock('@/server/viewer', () => ({
 }));
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 
-// The action stores evidence under EVIDENCE_DIR; each test gets a folder of its own, removed afterwards.
+// Withdrawing deletes evidence; each test gets a folder of its own for the store, removed afterwards.
 let evidenceDir: string;
 beforeEach(() => {
   viewer.mill = DEMO.companies.indigo;
   viewer.user = DEMO.users.mill;
   viewer.refuse = null;
   evidenceDir = mkdtempSync(join(tmpdir(), 'xm-actions-evidence-'));
-  vi.stubEnv('EVIDENCE_DIR', evidenceDir);
 });
 afterEach(() => {
-  vi.unstubAllEnvs();
   rmSync(evidenceDir, { recursive: true, force: true });
 });
 
@@ -39,9 +37,11 @@ async function setup() {
   const db = await createTestDb();
   await seedDemo(db);
   const claims = createClaimRepository(db);
-  container.current = { claims, db };
+  const evidence = createEvidenceRepository(db);
+  const evidenceStore = createLocalEvidenceStore(evidenceDir);
+  container.current = { claims, evidence, evidenceStore };
   const claim = (await claims.findByProductAndCompany(DEMO.products.liujo, DEMO.companies.indigo))!;
-  return { db, claims, claimId: claim.id, exists: async () => (await claims.findById(claim.id)) !== null };
+  return { evidence, evidenceStore, claims, claimId: claim.id, exists: async () => (await claims.findById(claim.id)) !== null };
 }
 
 it('removes the mill’s own claim', async () => {
@@ -51,9 +51,8 @@ it('removes the mill’s own claim', async () => {
 });
 
 it('deletes the claim’s files with it', async () => {
-  const { db, claims, claimId } = await setup();
-  const store = createLocalEvidenceStore(evidenceDir);
-  const file = await addEvidence({ claims, evidence: createEvidenceRepository(db), store }, { companyId: DEMO.companies.indigo, claimId, fileName: 'invoice.pdf', bytes: new TextEncoder().encode('%PDF-1.7 hello') });
+  const { claims, evidence, evidenceStore: store, claimId } = await setup();
+  const file = await addEvidence({ claims, evidence, store }, { companyId: DEMO.companies.indigo, claimId, fileName: 'invoice.pdf', bytes: new TextEncoder().encode('%PDF-1.7 hello') });
   expect(await store.get(file.storageKey)).not.toBeNull();
   expect(await withdrawClaimAction(claimId)).toEqual({ ok: true, data: undefined });
   expect(await store.get(file.storageKey)).toBeNull();

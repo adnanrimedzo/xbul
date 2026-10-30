@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { toActionError, type ActionResult } from '@/app/_lib/action-result';
 import { errorMessage } from '@/app/_lib/error-messages';
 import { addProductManually, canonicalizeProductUrl, getProduct, importProduct, type Product } from '@/modules/catalog';
-import { createEvidenceRepository, createLocalEvidenceStore, publishGarments } from '@/modules/claims';
+import { publishGarments } from '@/modules/claims';
 import { claimScopeOf, upsertArticle } from '@/modules/supplier';
 import { getContainer } from '@/server/container';
 import { requireMill } from '@/server/viewer';
@@ -123,16 +123,13 @@ export async function publishGarmentsAction(
   const parsed = itemsSchema.safeParse(items);
   if (!parsed.success) return { ok: false, error: GENERIC };
 
-  const { claims, products, articles, db } = await getContainer();
-  // Built here until the container provides the evidence store (as in withdrawClaimAction).
-  const evidence = createEvidenceRepository(db);
-  const store = createLocalEvidenceStore(process.env.EVIDENCE_DIR ?? './.data/evidence');
+  const { claims, evidence, evidenceStore, products, articles } = await getContainer();
   try {
     await publishGarments(
       {
         claims,
         evidence,
-        store,
+        store: evidenceStore,
         getProduct: (id) => getProduct({ products }, id),
         upsertArticle: (input) => upsertArticle({ articles }, input),
       },

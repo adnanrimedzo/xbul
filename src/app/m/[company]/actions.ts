@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { toActionError, type ActionResult } from '@/app/_lib/action-result';
-import { createEvidenceRepository, createLocalEvidenceStore, withdrawClaim } from '@/modules/claims';
+import { withdrawClaim } from '@/modules/claims';
 import { updateCompanyContact } from '@/modules/supplier';
 import { getContainer } from '@/server/container';
 import { requireMill } from '@/server/viewer';
@@ -14,12 +14,9 @@ export async function withdrawClaimAction(claimId: string): Promise<ActionResult
   const { company } = await requireMill(); // never from the caller; the use case checks the claim is this supplier's
   if (!z.uuid().safeParse(claimId).success) return { ok: false, error: GENERIC };
 
-  const { claims, db } = await getContainer();
-  // Built here until the container provides the evidence store.
-  const evidence = createEvidenceRepository(db);
-  const store = createLocalEvidenceStore(process.env.EVIDENCE_DIR ?? './.data/evidence');
+  const { claims, evidence, evidenceStore } = await getContainer();
   try {
-    await withdrawClaim({ claims, evidence, store }, { companyId: company.id, claimId });
+    await withdrawClaim({ claims, evidence, store: evidenceStore }, { companyId: company.id, claimId });
   } catch (e) {
     return toActionError(e);
   }

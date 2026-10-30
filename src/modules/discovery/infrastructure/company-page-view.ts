@@ -1,7 +1,7 @@
 import { asc, count, desc, eq } from 'drizzle-orm';
 import type { Db } from '@/shared/db/client';
 import { products } from '@/modules/catalog';
-import { claims } from '@/modules/claims';
+import { claims, type ClaimStatus, type ReviewStatus } from '@/modules/claims';
 import { articles, companies, type CompanyKind } from '@/modules/supplier';
 import { tileColumns, toTile } from './garment-tiles';
 import type { CompanyPageView } from './types';
@@ -19,7 +19,7 @@ export async function getCompanyPageView(db: Db, companySlug: string): Promise<C
     .orderBy(asc(articles.code));
 
   const garments = await db
-    .select({ ...tileColumns, kind: claims.kind, claimId: claims.id })
+    .select({ ...tileColumns, kind: claims.kind, claimId: claims.id, claimStatus: claims.status, reviewStatus: claims.reviewStatus })
     .from(claims)
     .innerJoin(products, eq(claims.productId, products.id))
     .where(eq(claims.companyId, c.id))
@@ -37,6 +37,11 @@ export async function getCompanyPageView(db: Db, companySlug: string): Promise<C
       ownerUserId: c.ownerUserId,
     },
     articles: articleRows,
-    garments: garments.map(({ kind, claimId, ...tile }) => ({ ...toTile(tile, kind), claimId })),
+    garments: garments.map(({ kind, claimId, claimStatus, reviewStatus, ...tile }) => ({
+      ...toTile(tile, kind),
+      claimId,
+      claimStatus: claimStatus as ClaimStatus,
+      reviewStatus: reviewStatus as ReviewStatus,
+    })),
   };
 }

@@ -32,7 +32,20 @@ Paste the printed `id` over `<HYPERDRIVE_ID>` in `wrangler.jsonc`.
 
 Caching is disabled because Hyperdrive's query cache is not cleared when the app writes. The app reads right after it writes: the rate limiter, sessions and claims. Cached reads there would be stale.
 
-## 4. Set the secrets
+## 4. Create the evidence bucket
+
+Suppliers send invoices and similar documents in for review. They go in a private R2 bucket, bound to the worker as `EVIDENCE` in `wrangler.jsonc`. The app serves them only to the supplier who sent them and to admins, and deletes them once a claim is decided.
+
+```bash
+pnpm wrangler r2 bucket create xmanufacture-evidence
+pnpm wrangler r2 bucket lifecycle add xmanufacture-evidence expire-evidence evidence/ --expire-days 90
+```
+
+Never attach a public domain or an `r2.dev` URL to this bucket.
+
+The lifecycle rule is a backstop. The app deletes a file when its claim is decided, withdrawn or changed, but a delete can fail, and the app logs it (`[evidence] could not delete …`) without retrying. A file that is left over must not stay forever, so every object under `evidence/` expires after 90 days. The same rule also takes the files of a claim nobody got round to deciding. Their downloads then answer 404, so an admin rejects the claim with a note and the supplier uploads the documents again. A supplier who never submitted can remove the listed files and add them again.
+
+## 5. Set the secrets
 
 ```bash
 openssl rand -hex 32                      # paste this at the next prompt
@@ -45,19 +58,19 @@ If the worker doesn't exist yet, Wrangler offers to create it. Answer yes.
 
 Production refuses to start without `RESEND_API_KEY`. Without it, magic links (which are sign-in tokens) would be written to the logs. Never set `ALLOW_CONSOLE_MAILER` in production.
 
-## 5. Verify the sending domain
+## 6. Verify the sending domain
 
 1. In Resend, add the domain and create the DNS records it lists.
 2. Wait until Resend shows the domain as verified.
 3. Set `MAIL_FROM` in the `vars` of `wrangler.jsonc` to an address on that domain, e.g. `xmanufacture <hello@xmanufacture.com>`.
 
-## 6. Set the public origin
+## 7. Set the public origin
 
 In the `vars` of `wrangler.jsonc`, set `PUBLIC_BASE_URL` to the real origin, e.g. `https://xmanufacture.com`. It is the only origin setting: sign-in uses it too.
 
 Pick either the apex or `www` and use it everywhere. Sign-in cookies and magic links are bound to one origin, so a link sent from the apex fails on `www` and the other way round. Redirect the other host to it with a Cloudflare redirect rule.
 
-## 7. Deploy
+## 8. Deploy
 
 ```bash
 pnpm run deploy
@@ -71,19 +84,20 @@ The project root must not contain any `.env*` file except `.env.example`, such a
 
 `pnpm run deploy` and `pnpm preview` refuse to build while such a file is present. Move it out of the project root first.
 
-## 8. Attach the custom domain
+## 9. Attach the custom domain
 
 In the Cloudflare dashboard:
 1. Open **Workers & Pages → xmanufacture → Settings → Domains & Routes**.
 2. Choose **Add → Custom domain**.
-3. Enter the origin from step 6.
+3. Enter the origin from step 7.
 
-## 9. Smoke-test
+## 10. Smoke-test
 
 On the custom domain:
 - `/` loads.
 - Requesting a sign-in link delivers an email through Resend, and the link signs you in.
 - On `/add`, pasting a real guess.eu product link either fetches the product or offers manual entry.
+- On a declared original's **Get verified** page, uploading a PDF works and the file's link downloads it. The same link signed out answers 404.
 
 ## Checking the Workers build locally (optional)
 
@@ -101,7 +115,7 @@ On the custom domain:
    ```
 
 3. Copy `.dev.vars.example` to `.dev.vars` and fill in a 32+ character `BETTER_AUTH_SECRET`. Wrangler reads `.dev.vars`, and OpenNext doesn't bundle it.
-4. Move any `.env*` file except `.env.example` (e.g. your `.env.local` for `pnpm dev`) out of the project root. Otherwise the preview refuses to build, for the same reason as in step 7. Put it back afterwards.
+4. Move any `.env*` file except `.env.example` (e.g. your `.env.local` for `pnpm dev`) out of the project root. Otherwise the preview refuses to build, for the same reason as in step 8. Put it back afterwards.
 5. Run `pnpm preview`, then open `http://localhost:8787`.
 
 Magic links are printed in the preview's console.
@@ -114,7 +128,6 @@ When you're done, remove the container with `docker rm -f xm-pg`.
 
 ## What Phase 1 does not do yet
 
-- Verification has no proof upload: an admin approves claims by hand.
 - There are no team members or invites. There is one account per company.
 - The site is in English only.
 - You can't browse by brand or category.

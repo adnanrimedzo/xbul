@@ -7,6 +7,7 @@ export type AppConfig = {
   mailFrom: string;
   mailLogFile: string | null;
   allowPrivateHosts: boolean;
+  evidenceDir: string; // where the local evidence store keeps files; Workers use the EVIDENCE bucket instead
 };
 
 export function readConfig(env: Record<string, string | undefined> = process.env): AppConfig {
@@ -34,6 +35,7 @@ export function readConfig(env: Record<string, string | undefined> = process.env
     mailFrom: value('MAIL_FROM') ?? 'xmanufacture <hello@xmanufacture.com>',
     mailLogFile: value('MAIL_LOG_FILE'),
     allowPrivateHosts: env.FETCH_ALLOW_PRIVATE_HOSTS === '1',
+    evidenceDir: value('EVIDENCE_DIR') ?? './.data/evidence',
   };
 }
 

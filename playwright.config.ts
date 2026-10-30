@@ -12,11 +12,12 @@ export default defineConfig({
     { command: 'node e2e/fixture-server.mjs', port: 4010 },
     {
       // A fresh seeded PGlite database per run; `.data` must exist because PGlite's mkdir isn't recursive.
-      command: 'rm -rf .data/e2e .outbox && mkdir -p .data && pnpm drizzle-kit migrate && pnpm seed && pnpm next dev -p 3100',
+      command: 'rm -rf .data/e2e .data/e2e-evidence .outbox && mkdir -p .data && pnpm drizzle-kit migrate && pnpm seed && pnpm next dev -p 3100',
       port: 3100,
       timeout: 120_000,
       env: {
         DATABASE_URL: './.data/e2e',
+        EVIDENCE_DIR: './.data/e2e-evidence',
         PUBLIC_BASE_URL: baseURL,
         BETTER_AUTH_SECRET: '74a5fe694e2a78fb4c7bb4255c5a0c0cfdf175dbbbe5f310bc24a76311f6289e', // random, so Better Auth's low-entropy warning stays quiet
         ADMIN_EMAILS: 'admin@example.test',
