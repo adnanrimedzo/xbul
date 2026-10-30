@@ -16,6 +16,8 @@ test('non-admins are sent home', async ({ page }) => {
 test('an admin sees the search it just ran counted', async ({ page }) => {
   await signIn(page, 'admin@example.test');
   await page.goto('/admin/stats');
+  await expect(page.getByRole('heading', { name: 'Visitor-days' })).toBeVisible();
+  await expect(page.getByText('Target: 10–20 customers. One address counts once a day, so this overstates customers.')).toBeVisible();
   const before = Number(await page.getByTestId('stat-searches').textContent());
   await page.goto('/');
   await page.getByPlaceholder(/paste a product link/i).fill('https://example.com/counted');

@@ -9,7 +9,7 @@ export default async function AdminStatsPage() {
   const rows = [
     { key: 'suppliers', label: 'Suppliers', value: stats.suppliers, note: 'Target: 20–30' },
     { key: 'products', label: 'Products', value: stats.taggedProducts, note: 'Target: 200–300' },
-    { key: 'searchers', label: 'Searchers', value: stats.distinctSearchers, note: 'Target: 10–20' },
+    { key: 'searchers', label: 'Visitor-days', value: stats.distinctSearchers, note: 'Target: 10–20 customers. One address counts once a day, so this overstates customers.' },
     { key: 'searches', label: 'Searches', value: stats.searches, note: `${stats.matchedSearches} found` },
   ];
 
