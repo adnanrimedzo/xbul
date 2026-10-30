@@ -87,7 +87,12 @@ test('a rejected supplier sees why and can try again', async ({ page, browser })
   await expect(row).toHaveCount(0);
   await expectHiddenFrom(stranger, verifyUrl, ['The invoice is unreadable']);
 
-  await page.reload();
+  // On its company page the tile says it was rejected, not the same "Get verified" as a claim that sent nothing.
+  await page.goto('/m/bursa-weave');
+  const tile = page.getByTestId('mill-garment').filter({ hasText: 'Washed Denim Jacket' });
+  await expect(tile.getByRole('link', { name: /get verified/i })).toHaveCount(0);
+  await tile.getByRole('link', { name: 'Rejected: see why' }).click();
+  await expect(page).toHaveURL(verifyUrl);
   await expect(page.getByText('Rejected: The invoice is unreadable. Add new documents and submit again.')).toBeVisible(); // one full stop, not two
   await expect(page.getByLabel(/add a document/i)).toBeVisible();
 

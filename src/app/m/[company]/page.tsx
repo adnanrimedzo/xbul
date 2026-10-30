@@ -17,13 +17,14 @@ import { EditContactForm } from './edit-contact-form';
 const SLUG = /^[a-z0-9-]{1,120}$/;
 const KIND_LABEL: Record<CompanyKind, string> = { fabric_mill: 'Fabric mill', garment_maker: 'Garment maker' };
 
-// What the owner can do next about an original: nothing once it is verified, wait while an admin reviews it, otherwise send documents.
+// What the owner can do next about an original: nothing once it is verified, wait while an admin reviews it, otherwise send documents
+// (or, after a rejection, read why and send new ones).
 function VerifyStep({ garment }: { garment: CompanyPageView['garments'][number] }) {
   if (garment.kind !== 'original' || garment.claimStatus !== 'declared') return null;
   if (garment.reviewStatus === 'pending') return <span className="py-[7px] text-[11px] font-semibold">Under review</span>;
   return (
     <Link href={`/verify/${garment.claimId}`} className="border border-ink px-2.5 py-[7px] text-[11px] font-semibold">
-      Get verified
+      {garment.reviewStatus === 'rejected' ? 'Rejected: see why' : 'Get verified'}
     </Link>
   );
 }
