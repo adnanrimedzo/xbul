@@ -41,6 +41,7 @@ export function OnboardingForm({ defaultEmail }: { defaultEmail: string }) {
       </label>
       <fieldset className="flex flex-col gap-4">
         <legend className="mb-1 text-[11px] font-semibold">How buyers reach you (at least one)</legend>
+        <p className="text-[12px] normal-case">These are shown publicly on your page.</p>
         <label className={label}>
           Contact email
           <input name="contactEmail" type="email" maxLength={254} autoComplete="email" defaultValue={values ? values.contactEmail : defaultEmail} className={input} />

@@ -47,6 +47,7 @@ test('onboarding errors are shown inline', async ({ page }) => {
 test('a supplier must give a way to be reached', async ({ page }) => {
   await signIn(page, 'no-contact-mill@example.test');
   await expect(page.getByLabel(/contact email/i)).toHaveValue('no-contact-mill@example.test'); // defaults to the sign-in email
+  await expect(page.getByText('These are shown publicly on your page.')).toBeVisible(); // so that default doesn't surprise anyone
   await page.getByRole('radio', { name: /we make fabric/i }).check();
   await page.getByLabel(/company name/i).fill('Quiet Mill');
   await page.getByLabel(/city/i).fill('Istanbul');
