@@ -7,17 +7,17 @@ import { editArticleSpecs } from '@/modules/supplier';
 import { getContainer } from '@/server/container';
 import { requireViewer } from '@/server/viewer';
 
-const GENERIC = 'Check the numbers and try again.';
-// The form posts every field, so a blank number clears it, as a blank text field does. Ranges and whole-number checks
-// are the domain's (they have messages).
+const GENERIC = 'Check the lead time and try again.';
+// The form posts every field, so a blank lead time clears it, as a blank text field does. Lengths and the whole-number
+// range are the domain's (they have messages).
 const number = z.preprocess((v) => (v === '' ? null : v), z.coerce.number().nullable().optional());
 
 const formSchema = z.object({
   articleId: z.uuid(),
-  weightOz: number,
+  weight: z.string().trim().optional(),
   composition: z.string().trim().optional(),
   finish: z.string().trim().optional(),
-  moqMeters: number,
+  moq: z.string().trim().optional(),
   leadTimeWeeks: number,
 });
 

@@ -24,8 +24,8 @@ export function EditSpecsForm({ articleId, specs }: { articleId: string; specs: 
           <form key={JSON.stringify(specs)} action={formAction} className="mt-3 grid max-w-[640px] grid-cols-2 gap-3 max-[760px]:grid-cols-1">
             <input type="hidden" name="articleId" value={articleId} />
             <label className={label}>
-              Weight (oz)
-              <input name="weightOz" type="number" min={1} max={40} step="any" defaultValue={specs.weightOz ?? ''} className={input} />
+              Weight
+              <input name="weight" maxLength={60} placeholder="12.5 oz or 240 g/m²" defaultValue={specs.weight ?? ''} className={input} />
             </label>
             <label className={label}>
               Composition
@@ -36,8 +36,8 @@ export function EditSpecsForm({ articleId, specs }: { articleId: string; specs: 
               <input name="finish" maxLength={80} defaultValue={specs.finish ?? ''} className={input} />
             </label>
             <label className={label}>
-              MOQ (m)
-              <input name="moqMeters" type="number" min={1} max={1_000_000} step={1} inputMode="numeric" defaultValue={specs.moqMeters ?? ''} className={input} />
+              MOQ
+              <input name="moq" maxLength={60} placeholder="1,000 m or 500 pieces" defaultValue={specs.moq ?? ''} className={input} />
             </label>
             <label className={label}>
               Lead time (weeks)

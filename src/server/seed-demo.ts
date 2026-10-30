@@ -40,10 +40,10 @@ export async function seedDemo(db: Db): Promise<void> {
   }
 
   const a60219 = withSpecs(createArticle({ companyId: DEMO.companies.indigo, code: '60219/1' }, BASE), {
-    weightOz: 12.5,
+    weight: '12.5 oz',
     composition: '98% CO 2% EA',
     finish: 'Rigid · dark indigo',
-    moqMeters: 1000,
+    moq: '1,000 m',
     leadTimeWeeks: 3,
   });
   await articles.save({ ...a60219, id: DEMO.articles.indigo60219 });

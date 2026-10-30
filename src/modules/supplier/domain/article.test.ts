@@ -11,22 +11,28 @@ it('rejects empty or >40-char codes', () => {
 
 it('slugs the code and starts with empty specs', () => {
   const a = createArticle({ companyId: 'c1', code: '60219/1' });
-  expect(a).toMatchObject({ code: '60219/1', slug: '60219-1', specs: { weightOz: null, moqMeters: null } });
+  expect(a).toMatchObject({ code: '60219/1', slug: '60219-1', specs: { weight: null, moq: null } });
+});
+
+it('takes weight and MOQ as free text in the supplier’s own units', () => {
+  const a = createArticle({ companyId: 'c1', code: '60219/1' });
+  expect(withSpecs(a, { weight: ' 240 g/m² ', moq: '500 pieces' }).specs).toMatchObject({ weight: '240 g/m²', moq: '500 pieces' });
+  expect(withSpecs(a, { weight: '', moq: '' }).specs).toMatchObject({ weight: null, moq: null });
+  expect(() => withSpecs(a, { moq: 'x'.repeat(61) })).toThrow(expect.objectContaining({ code: 'article.text_too_long' }));
+  expect(() => withSpecs(a, { weight: 'x'.repeat(61) })).toThrow(expect.objectContaining({ code: 'article.text_too_long' }));
 });
 
 it('validates specs', () => {
   const a = createArticle({ companyId: 'c1', code: '60219/1' });
-  expect(withSpecs(a, { moqMeters: 1000, weightOz: 12.5, composition: ' 98% CO 2% EA ', finish: '' }).specs)
-    .toEqual({ moqMeters: 1000, weightOz: 12.5, composition: '98% CO 2% EA', finish: null, leadTimeWeeks: null });
-  expect(() => withSpecs(a, { moqMeters: 0 })).toThrow(expect.objectContaining({ code: 'article.moq_invalid' }));
+  expect(withSpecs(a, { moq: '1,000 m', weight: '12.5 oz', composition: ' 98% CO 2% EA ', finish: '' }).specs)
+    .toEqual({ moq: '1,000 m', weight: '12.5 oz', composition: '98% CO 2% EA', finish: null, leadTimeWeeks: null });
   expect(() => withSpecs(a, { leadTimeWeeks: 2.5 })).toThrow(expect.objectContaining({ code: 'article.lead_time_invalid' }));
-  expect(() => withSpecs(a, { weightOz: 41 })).toThrow(expect.objectContaining({ code: 'article.weight_invalid' }));
 });
 
 it('keeps unpatched specs (even undefined ones), clears on null, and caps text length', () => {
-  const a = withSpecs(createArticle({ companyId: 'c1', code: '60219/1' }), { moqMeters: 500, finish: 'Rinse' });
-  const b = withSpecs(a, { moqMeters: undefined, finish: null, leadTimeWeeks: 0 });
-  expect(b.specs).toMatchObject({ moqMeters: 500, finish: null, leadTimeWeeks: 0 });
+  const a = withSpecs(createArticle({ companyId: 'c1', code: '60219/1' }), { moq: '500 m', finish: 'Rinse' });
+  const b = withSpecs(a, { moq: undefined, finish: null, leadTimeWeeks: 0 });
+  expect(b.specs).toMatchObject({ moq: '500 m', finish: null, leadTimeWeeks: 0 });
   expect(() => withSpecs(a, { composition: 'x'.repeat(121) })).toThrow(expect.objectContaining({ code: 'article.text_too_long' }));
   expect(() => withSpecs(a, { finish: 'x'.repeat(81) })).toThrow(expect.objectContaining({ code: 'article.text_too_long' }));
 });

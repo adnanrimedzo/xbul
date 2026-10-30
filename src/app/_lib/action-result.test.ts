@@ -15,7 +15,7 @@ describe('toActionError', () => {
   });
 
   it('has copy for every error code thrown under src/', () => {
-    // Codes reach DomainError directly or through helpers (article.moq_invalid), so collect every dotted
+    // Codes reach DomainError directly or through helpers (article.lead_time_invalid), so collect every dotted
     // string literal in non-test files that use DomainError.
     const codes = new Set<string>();
     for (const file of readdirSync('src', { recursive: true, encoding: 'utf8' })) {

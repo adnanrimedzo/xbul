@@ -11,7 +11,7 @@ vi.mock('@/server/viewer', () => ({ requireViewer: async () => ({ userId: 'demo-
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 
 // The form posts every field, so these are what the owner sees after saving.
-const seeded = { weightOz: '12.5', composition: '98% CO 2% EA', finish: 'Rigid · dark indigo', moqMeters: '1000', leadTimeWeeks: '3' };
+const seeded = { weight: '12.5 oz', composition: '98% CO 2% EA', finish: 'Rigid · dark indigo', moq: '1,000 m', leadTimeWeeks: '3' };
 
 async function setup() {
   const db = await createTestDb();
@@ -28,14 +28,23 @@ async function setup() {
   return { submit, specs };
 }
 
-it('saves a changed number and keeps the rest', async () => {
+it('saves a changed spec and keeps the rest', async () => {
   const { submit, specs } = await setup();
-  expect(await submit({ ...seeded, moqMeters: '1500' })).toEqual({ ok: true, data: undefined });
-  expect(await specs()).toEqual({ weightOz: 12.5, composition: '98% CO 2% EA', finish: 'Rigid · dark indigo', moqMeters: 1500, leadTimeWeeks: 3 });
+  expect(await submit({ ...seeded, moq: '1,500 m' })).toEqual({ ok: true, data: undefined });
+  expect(await specs()).toEqual({ weight: '12.5 oz', composition: '98% CO 2% EA', finish: 'Rigid · dark indigo', moq: '1,500 m', leadTimeWeeks: 3 });
 });
 
-it('clears every field the owner blanks, numbers included', async () => {
+it('clears every field the owner blanks, lead time included', async () => {
   const { submit, specs } = await setup();
-  expect(await submit({ weightOz: '', composition: '', finish: '', moqMeters: '', leadTimeWeeks: '' })).toEqual({ ok: true, data: undefined });
-  expect(await specs()).toEqual({ weightOz: null, composition: null, finish: null, moqMeters: null, leadTimeWeeks: null });
+  expect(await submit({ weight: '', composition: '', finish: '', moq: '', leadTimeWeeks: '' })).toEqual({ ok: true, data: undefined });
+  expect(await specs()).toEqual({ weight: null, composition: null, finish: null, moq: null, leadTimeWeeks: null });
+});
+
+it('shows the domain’s copy when a text spec is too long, and saves nothing', async () => {
+  const { submit, specs } = await setup();
+  expect(await submit({ ...seeded, moq: 'x'.repeat(61) })).toEqual({
+    ok: false,
+    error: 'Weight and MOQ must be 60 characters or fewer, composition 120 and finish 80.',
+  });
+  expect((await specs()).moq).toBe('1,000 m');
 });

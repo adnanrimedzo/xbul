@@ -3,10 +3,10 @@ import { newId } from '@/shared/domain/ids';
 import { slugify } from '@/shared/domain/slug';
 
 export type ArticleSpecs = Readonly<{
-  weightOz: number | null;
+  weight: string | null;
   composition: string | null;
   finish: string | null;
-  moqMeters: number | null;
+  moq: string | null;
   leadTimeWeeks: number | null;
 }>;
 
@@ -29,7 +29,7 @@ export function createArticle(input: { companyId: string; code: string }, now: D
   const code = normalizeArticleCode(input.code);
   const slug = slugify(code);
   if (!slug) throw new DomainError('article.code_invalid');
-  const specs: ArticleSpecs = Object.freeze({ weightOz: null, composition: null, finish: null, moqMeters: null, leadTimeWeeks: null });
+  const specs: ArticleSpecs = Object.freeze({ weight: null, composition: null, finish: null, moq: null, leadTimeWeeks: null });
   return Object.freeze({ id: newId(), companyId: input.companyId, code, slug, specs, createdAt: now });
 }
 
@@ -49,13 +49,11 @@ const int = (v: number | null, min: number, max: number, code: string): number |
 export function withSpecs(a: Article, patch: Partial<ArticleSpecs>): Article {
   const defined = Object.fromEntries(Object.entries(patch).filter(([, v]) => v !== undefined)) as Partial<ArticleSpecs>;
   const s = { ...a.specs, ...defined };
-  const weightOz = s.weightOz;
-  if (weightOz !== null && !(weightOz >= 1 && weightOz <= 40)) throw new DomainError('article.weight_invalid');
   const specs: ArticleSpecs = Object.freeze({
-    weightOz,
+    weight: text(s.weight, 60),
     composition: text(s.composition, 120),
     finish: text(s.finish, 80),
-    moqMeters: int(s.moqMeters, 1, 1_000_000, 'article.moq_invalid'),
+    moq: text(s.moq, 60),
     leadTimeWeeks: int(s.leadTimeWeeks, 0, 52, 'article.lead_time_invalid'),
   });
   return Object.freeze({ ...a, specs });

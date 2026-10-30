@@ -36,20 +36,20 @@ it('only the owner edits specs', async () => {
   const repos = createSupplierRepositories(await createTestDb());
   const c = await registerCompany(repos, { name: 'Indigo Mill', city: 'Istanbul', country: 'TR', ownerUserId: 'u1', contact });
   const a = await upsertArticle(repos, { companyId: c.id, code: '60219/1' });
-  await expect(editArticleSpecs(repos, { userId: 'u2', articleId: a.id, specs: { moqMeters: 10 } })).rejects.toMatchObject({ code: 'auth.forbidden' });
-  expect((await editArticleSpecs(repos, { userId: 'u1', articleId: a.id, specs: { moqMeters: 1500 } })).specs.moqMeters).toBe(1500);
+  await expect(editArticleSpecs(repos, { userId: 'u2', articleId: a.id, specs: { moq: '10 m' } })).rejects.toMatchObject({ code: 'auth.forbidden' });
+  expect((await editArticleSpecs(repos, { userId: 'u1', articleId: a.id, specs: { moq: '1,500 m' } })).specs.moq).toBe('1,500 m');
 });
 
 it('persists specs and reads back plain domain objects', async () => {
   const repos = createSupplierRepositories(await createTestDb());
   const c = await registerCompany(repos, { name: 'Indigo Mill', city: 'Istanbul', country: 'tr', ownerUserId: 'u1', contact });
   const a = await upsertArticle(repos, { companyId: c.id, code: '60219/1' });
-  await editArticleSpecs(repos, { userId: 'u1', articleId: a.id, specs: { weightOz: 12.5, composition: '98% CO 2% EA', leadTimeWeeks: 6 } });
+  await editArticleSpecs(repos, { userId: 'u1', articleId: a.id, specs: { weight: '12.5 oz', composition: '98% CO 2% EA', leadTimeWeeks: 6 } });
   expect(await repos.companies.findBySlug('indigo-mill')).toEqual(c);
   expect(await repos.companies.findByOwner('u1')).toEqual(c);
   expect(await repos.articles.findByCode(c.id, '60219/1')).toMatchObject({
     id: a.id,
-    specs: { weightOz: 12.5, composition: '98% CO 2% EA', finish: null, moqMeters: null, leadTimeWeeks: 6 },
+    specs: { weight: '12.5 oz', composition: '98% CO 2% EA', finish: null, moq: null, leadTimeWeeks: 6 },
   });
   expect(Object.isFrozen(await repos.articles.findById(a.id))).toBe(true);
   expect(await repos.articles.findById('00000000-0000-4000-8000-000000000000')).toBeNull();

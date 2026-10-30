@@ -37,7 +37,7 @@ export async function getArticlePageView(db: Db, companySlug: string, articleSlu
       id: a.id,
       slug: a.slug,
       code: a.code,
-      specs: { weightOz: a.weightOz, composition: a.composition, finish: a.finish, moqMeters: a.moqMeters, leadTimeWeeks: a.leadTimeWeeks },
+      specs: { weight: a.weight, composition: a.composition, finish: a.finish, moq: a.moq, leadTimeWeeks: a.leadTimeWeeks },
     },
     garments: garments.map(({ kind, ...tile }) => toTile(tile, kind)),
   };

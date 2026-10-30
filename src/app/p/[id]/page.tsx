@@ -19,7 +19,7 @@ const loadView = cache(async (id: string) => {
   return (await getProductPageView(db, id)) ?? notFound();
 });
 
-const moq = (s: ArticleSpecs) => (s.moqMeters === null ? null : `MOQ ${s.moqMeters.toLocaleString('en-US')} m`);
+const moq = (s: ArticleSpecs) => (s.moq === null ? null : `MOQ ${s.moq}`);
 const leadTime = (s: ArticleSpecs) => (s.leadTimeWeeks === null ? null : `${s.leadTimeWeeks} ${s.leadTimeWeeks === 1 ? 'week' : 'weeks'}`);
 
 export async function generateMetadata({ params }: PageProps<'/p/[id]'>): Promise<Metadata> {
@@ -73,7 +73,7 @@ export default async function ProductPage({ params }: PageProps<'/p/[id]'>) {
             <div className="mb-2.5 text-[16px] font-semibold">{c.company.name}</div>
             {c.article && (
               <div className="mb-3 flex flex-wrap gap-1.5">
-                {[`Article ${c.article.code}`, c.article.specs.weightOz === null ? null : `${c.article.specs.weightOz} oz`, c.article.specs.composition, moq(c.article.specs), leadTime(c.article.specs)]
+                {[`Article ${c.article.code}`, c.article.specs.weight, c.article.specs.composition, moq(c.article.specs), leadTime(c.article.specs)]
                   .filter((chip) => chip !== null)
                   .map((chip) => (
                     <Chip key={chip}>{chip}</Chip>

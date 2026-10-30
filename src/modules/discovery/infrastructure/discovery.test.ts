@@ -20,7 +20,7 @@ beforeAll(async () => {
 
 it('builds the garment page with ranked originals and equivalents', async () => {
   const v = await getProductPageView(db, DEMO.products.guess);
-  expect(v?.originals.map((c) => [c.company.name, c.status, c.article?.code, c.article?.specs.moqMeters])).toEqual([['Indigo Mill', 'verified', '60219/1', 1000]]);
+  expect(v?.originals.map((c) => [c.company.name, c.status, c.article?.code, c.article?.specs.moq])).toEqual([['Indigo Mill', 'verified', '60219/1', '1,000 m']]);
   expect(v?.equivalents.map((c) => c.company.name)).toEqual(['Denizli Indigo', 'Bursa Weave']);
   expect(v?.equivalents[0]).toMatchObject({ note: 'Same twill, 13 oz, rigid. Swatch in stock.', article: null });
   // Contact details are public: every claim carries its supplier's, so a buyer needs no account to reach them.
@@ -34,7 +34,7 @@ it('article page shows only that mill’s garments', async () => {
   const v = await getArticlePageView(db, 'indigo-mill', '60219-1');
   expect(v?.garments.map((g) => g.brand)).toEqual(['GUESS']);
   expect(v?.garments[0]?.sourceUrl).toBe('https://guess.eu/en/cropped-denim-blazer-W5RN12');
-  expect(v?.article.specs.weightOz).toBe(12.5);
+  expect(v?.article.specs.weight).toBe('12.5 oz');
   expect(v?.company.ownerUserId).toBe(DEMO.users.mill);
   expect(v?.company.contact.email).toBe('sales@indigo-mill.example');
   expect(await getArticlePageView(db, 'indigo-mill', 'nope')).toBeNull();

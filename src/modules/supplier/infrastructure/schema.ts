@@ -1,4 +1,4 @@
-import { char, doublePrecision, integer, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import { char, integer, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 
 export const companies = pgTable('companies', {
   id: uuid('id').primaryKey(),
@@ -21,10 +21,10 @@ export const articles = pgTable(
     companyId: uuid('company_id').notNull().references(() => companies.id, { onDelete: 'cascade' }),
     code: text('code').notNull(),
     slug: text('slug').notNull(),
-    weightOz: doublePrecision('weight_oz'),
+    weight: text('weight'),
     composition: text('composition'),
     finish: text('finish'),
-    moqMeters: integer('moq_meters'),
+    moq: text('moq'),
     leadTimeWeeks: integer('lead_time_weeks'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },

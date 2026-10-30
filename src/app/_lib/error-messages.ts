@@ -2,10 +2,8 @@
 const MESSAGES: Record<string, string> = {
   'article.code_invalid': 'Article code must be 1–40 characters.',
   'article.lead_time_invalid': 'Lead time must be a whole number of weeks from 0 to 52.',
-  'article.moq_invalid': 'MOQ must be a whole number of metres from 1 to 1,000,000.',
   'article.not_found': 'That article no longer exists.',
-  'article.text_too_long': 'Composition must be 120 characters or fewer, and finish 80 or fewer.',
-  'article.weight_invalid': 'Weight must be between 1 and 40 oz.',
+  'article.text_too_long': 'Weight and MOQ must be 60 characters or fewer, composition 120 and finish 80.',
   'auth.forbidden': "You don't have permission to do that.",
   'claim.already_verified_original': 'Another mill is already verified as the original for this garment.',
   'claim.not_found': 'That claim no longer exists.',

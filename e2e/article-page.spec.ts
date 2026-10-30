@@ -21,7 +21,7 @@ test('the owner edits specs; others cannot see the form', async ({ page }) => {
   await signIn(page, 'mill@example.test');
   await page.goto('/m/indigo-mill/a/60219-1');
   await page.getByRole('button', { name: /edit specs/i }).click();
-  await page.getByLabel(/moq/i).fill('1500');
+  await page.getByLabel(/moq/i).fill('1,500 m');
   await page.getByRole('button', { name: /save specs/i }).click();
   await expect(page.getByText('1,500 m', { exact: false })).toBeVisible();
 });

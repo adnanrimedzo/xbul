@@ -14,7 +14,6 @@ import { EditSpecsForm } from './edit-specs-form';
 
 const SLUG = /^[a-z0-9-]{1,120}$/;
 const DASH = '—';
-const metres = new Intl.NumberFormat('en');
 
 // Shared by generateMetadata and the page, so the view is read once per request.
 const loadView = cache(async (company: string, article: string) => {
@@ -23,8 +22,6 @@ const loadView = cache(async (company: string, article: string) => {
   return (await getArticlePageView(db, company, article)) ?? notFound();
 });
 
-const weight = (s: ArticleSpecs) => (s.weightOz === null ? null : `${s.weightOz} oz`);
-const moq = (s: ArticleSpecs) => (s.moqMeters === null ? DASH : `${metres.format(s.moqMeters)} m`);
 const lead = (s: ArticleSpecs) => (s.leadTimeWeeks === null ? DASH : `${s.leadTimeWeeks} wks`);
 
 export async function generateMetadata({ params }: PageProps<'/m/[company]/a/[article]'>): Promise<Metadata> {
@@ -32,7 +29,7 @@ export async function generateMetadata({ params }: PageProps<'/m/[company]/a/[ar
   const { company, article, garments } = await loadView(companySlug, articleSlug);
   const { config } = await getContainer();
   const title = `Article ${article.code} by ${company.name}`;
-  const description = [weight(article.specs), article.specs.composition, article.specs.finish].filter((s) => s !== null).join(' · ') || `Fabric by ${company.name}`;
+  const description = [article.specs.weight, article.specs.composition, article.specs.finish].filter((s) => s !== null).join(' · ') || `Fabric by ${company.name}`;
   const image = garments.find((g) => g.imageUrl)?.imageUrl;
   return { title, description, openGraph: { title, description, url: `${config.baseUrl}/m/${company.slug}/a/${article.slug}`, images: image ? [image] : [] } };
 }
@@ -71,10 +68,10 @@ export default async function ArticlePage({ params }: PageProps<'/m/[company]/a/
 
       <dl className="flex border-t border-ink max-[760px]:flex-wrap">
         {[
-          ['Weight', weight(specs) ?? DASH],
+          ['Weight', specs.weight ?? DASH],
           ['Composition', specs.composition ?? DASH],
           ['Finish', specs.finish ?? DASH],
-          ['MOQ / lead', specs.moqMeters === null && specs.leadTimeWeeks === null ? DASH : `${moq(specs)} · ${lead(specs)}`],
+          ['MOQ / lead', specs.moq === null && specs.leadTimeWeeks === null ? DASH : `${specs.moq ?? DASH} · ${lead(specs)}`],
         ].map(([name, value]) => (
           <div key={name} className="flex-1 border-r border-ink px-5 py-3 text-[11px] last:border-r-0 max-[760px]:basis-1/2 max-[760px]:border-b max-[760px]:nth-[2n]:border-r-0">
             <dt>{name}</dt>
