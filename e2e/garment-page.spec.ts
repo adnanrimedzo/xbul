@@ -2,16 +2,13 @@ import { expect, test } from '@playwright/test';
 import { DEMO } from '../src/server/demo-ids';
 
 const url = `/p/${DEMO.products.guess}`;
-test('buyer requests a swatch', async ({ page }) => {
+test('a visitor can reach the original supplier and an equivalent directly, with no account', async ({ page }) => {
   await page.goto(url);
   const original = page.getByTestId('original-claim');
   await expect(original).toContainText('Indigo Mill'); await expect(original).toContainText('Verified'); await expect(original).toContainText('60219/1');
-  await expect(page.getByTestId('equivalent-claim').first()).toContainText('Denizli Indigo');
-  await original.getByRole('button', { name: /request swatch/i }).click();
-  await page.getByLabel(/your name/i).fill('Ana Buyer'); await page.getByLabel(/email/i).fill('ana@brand.test');
-  await page.getByLabel(/company/i).fill('Brand Co'); await page.getByLabel(/quantity/i).fill('1000');
-  await page.getByRole('button', { name: /send request/i }).click();
-  await expect(page.getByText(/request sent/i)).toBeVisible();
+  await expect(original.getByRole('link', { name: 'sales@indigo-mill.example' })).toHaveAttribute('href', 'mailto:sales@indigo-mill.example');
+  await expect(page.getByTestId('equivalent-claim').first().getByTestId('supplier-contact')).toBeVisible();
+  await expect(page.getByRole('button', { name: /request/i })).toHaveCount(0);
 });
 test('the copied garment link carries no handle', async ({ page, context }) => {
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);

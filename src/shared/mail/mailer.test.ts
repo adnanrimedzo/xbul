@@ -15,15 +15,15 @@ vi.mock('resend', () => ({
 it('console mailer appends a JSON line per message', async () => {
   const info = vi.spyOn(console, 'info').mockImplementation(() => {});
   const file = join(mkdtempSync(join(tmpdir(), 'xm-')), 'out', 'mail.log');
-  await createConsoleMailer(file).send({ to: 'a@b.test', subject: 'Hi', text: 'Body', replyTo: 'c@d.test' });
-  expect(JSON.parse(readFileSync(file, 'utf8').trim())).toMatchObject({ to: 'a@b.test', subject: 'Hi', text: 'Body', replyTo: 'c@d.test' });
+  await createConsoleMailer(file).send({ to: 'a@b.test', subject: 'Hi', text: 'Body' });
+  expect(JSON.parse(readFileSync(file, 'utf8').trim())).toMatchObject({ to: 'a@b.test', subject: 'Hi', text: 'Body' });
   expect(info).toHaveBeenCalledOnce();
   info.mockRestore();
 });
 
-it('resend mailer sends from the configured address and passes Reply-To through', async () => {
-  await createResendMailer('re_test', 'xm <hello@x.test>').send({ to: 'a@b.test', subject: 'Hi', text: 'Body', replyTo: 'c@d.test' });
-  expect(resendSent).toEqual([{ from: 'xm <hello@x.test>', to: 'a@b.test', subject: 'Hi', text: 'Body', replyTo: 'c@d.test' }]);
+it('resend mailer sends from the configured address', async () => {
+  await createResendMailer('re_test', 'xm <hello@x.test>').send({ to: 'a@b.test', subject: 'Hi', text: 'Body' });
+  expect(resendSent).toEqual([{ from: 'xm <hello@x.test>', to: 'a@b.test', subject: 'Hi', text: 'Body' }]);
 });
 
 it('recording mailer keeps sent messages', async () => {

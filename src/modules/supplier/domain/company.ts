@@ -2,6 +2,9 @@ import { DomainError } from '@/shared/domain/errors';
 import { newId } from '@/shared/domain/ids';
 import { slugify } from '@/shared/domain/slug';
 
+export type CompanyContact = Readonly<{ email: string | null; phone: string | null; website: string | null }>;
+export type ContactInput = { email?: string | null; phone?: string | null; website?: string | null };
+
 export type Company = Readonly<{
   id: string;
   slug: string;
@@ -10,11 +13,34 @@ export type Company = Readonly<{
   city: string;
   country: string;
   ownerUserId: string;
+  contact: CompanyContact;
   createdAt: Date;
 }>;
 
+const blank = (v: string | null | undefined): string | null => v?.trim() || null;
+
+// At least one way to reach the supplier. The platform relays nothing, so these are the only channel.
+export function normalizeContact(input: ContactInput): CompanyContact {
+  const email = blank(input.email)?.toLowerCase() ?? null;
+  if (email !== null && (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))) throw new DomainError('company.email_invalid');
+  const phone = blank(input.phone);
+  if (phone !== null && !/^\+?[0-9 ()-]{6,30}$/.test(phone)) throw new DomainError('company.phone_invalid');
+  const raw = blank(input.website);
+  let website: string | null = null;
+  if (raw !== null) {
+    // Only a web address is a website: `javascript:` and `ftp://` are refused, a bare `taypa.com` gets https.
+    const url = raw.includes('://') || /^[a-z]+:/.test(raw) ? raw : `https://${raw}`;
+    if (raw.length > 2048 || !URL.canParse(url)) throw new DomainError('company.website_invalid');
+    const parsed = new URL(url);
+    if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') throw new DomainError('company.website_invalid');
+    website = parsed.href;
+  }
+  if (email === null && phone === null && website === null) throw new DomainError('company.contact_required');
+  return Object.freeze({ email, phone, website });
+}
+
 export function createCompany(
-  input: { name: string; city: string; country: string; ownerUserId: string },
+  input: { name: string; city: string; country: string; ownerUserId: string; contact: ContactInput },
   now: Date = new Date(),
 ): Company {
   const name = input.name.trim();
@@ -24,5 +50,6 @@ export function createCompany(
   if (city.length < 1 || city.length > 60) throw new DomainError('company.city_invalid');
   const country = input.country.trim().toUpperCase();
   if (!/^[A-Z]{2}$/.test(country)) throw new DomainError('company.country_invalid');
-  return Object.freeze({ id: newId(), slug, name, kind: 'fabric_mill', city, country, ownerUserId: input.ownerUserId, createdAt: now });
+  const contact = normalizeContact(input.contact);
+  return Object.freeze({ id: newId(), slug, name, kind: 'fabric_mill', city, country, ownerUserId: input.ownerUserId, contact, createdAt: now });
 }

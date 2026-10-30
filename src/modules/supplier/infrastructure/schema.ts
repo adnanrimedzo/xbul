@@ -8,6 +8,9 @@ export const companies = pgTable('companies', {
   city: text('city').notNull(),
   country: char('country', { length: 2 }).notNull(),
   ownerUserId: text('owner_user_id').notNull().unique(),
+  contactEmail: text('contact_email'),
+  contactPhone: text('contact_phone'),
+  website: text('website'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 

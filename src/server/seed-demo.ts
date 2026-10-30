@@ -3,7 +3,6 @@ import type { Db } from '@/shared/db/client';
 import { createProduct, createProductRepository } from '@/modules/catalog';
 import { createClaimRepository, declareClaim, verifyClaim, type ClaimKind } from '@/modules/claims';
 import { user } from '@/modules/identity';
-import { createInquiry, createInquiryRepository } from '@/modules/inquiry';
 import { createArticle, createCompany, createSupplierRepositories, companies, withSpecs } from '@/modules/supplier';
 import { DEMO } from './demo-ids';
 
@@ -29,13 +28,14 @@ export async function seedDemo(db: Db): Promise<void> {
   );
 
   const mills = [
-    { key: 'indigo', owner: 'mill', name: 'Indigo Mill', city: 'Istanbul' },
-    { key: 'denizli', owner: 'denizli', name: 'Denizli Indigo', city: 'Denizli' },
-    { key: 'bursa', owner: 'bursa', name: 'Bursa Weave', city: 'Bursa' },
+    { key: 'indigo', owner: 'mill', name: 'Indigo Mill', city: 'Istanbul', website: 'https://indigo-mill.example' },
+    { key: 'denizli', owner: 'denizli', name: 'Denizli Indigo', city: 'Denizli', website: null },
+    { key: 'bursa', owner: 'bursa', name: 'Bursa Weave', city: 'Bursa', website: null },
   ] as const;
   for (const m of mills) {
     const ownerUserId = DEMO.users[m.owner];
-    const company = createCompany({ name: m.name, city: m.city, country: 'TR', ownerUserId }, BASE);
+    const contact = { email: `sales@${DEMO.companySlugs[m.key]}.example`, website: m.website };
+    const company = createCompany({ name: m.name, city: m.city, country: 'TR', ownerUserId, contact }, BASE);
     await companyRepo.save({ ...company, id: DEMO.companies[m.key] });
   }
 
@@ -72,21 +72,4 @@ export async function seedDemo(db: Db): Promise<void> {
     const claim = declareClaim({ productId: DEMO.products[c.product], companyId: DEMO.companies[c.company], articleId: c.article, kind: c.kind, note: c.note }, now);
     await claimRepo.save(c.verified ? verifyClaim(claim, now) : claim);
   }
-
-  await createInquiryRepository(db).save(
-    createInquiry(
-      {
-        companyId: DEMO.companies.indigo,
-        productId: DEMO.products.guess,
-        articleId: null,
-        kind: 'swatch',
-        buyerName: 'Seed Buyer',
-        buyerEmail: 'seed@buyer.test',
-        buyerCompany: 'Seed Buyer Co',
-        quantityMeters: 500,
-        viaAgentHandle: null,
-      },
-      at(10),
-    ),
-  );
 }

@@ -6,7 +6,17 @@ import type { ArticleRepository, CompanyRepository } from '../domain/repositorie
 import { articles, companies } from './schema';
 
 const toCompany = (r: typeof companies.$inferSelect): Company =>
-  Object.freeze({ id: r.id, slug: r.slug, name: r.name, kind: 'fabric_mill', city: r.city, country: r.country, ownerUserId: r.ownerUserId, createdAt: r.createdAt });
+  Object.freeze({
+    id: r.id,
+    slug: r.slug,
+    name: r.name,
+    kind: 'fabric_mill',
+    city: r.city,
+    country: r.country,
+    ownerUserId: r.ownerUserId,
+    contact: Object.freeze({ email: r.contactEmail, phone: r.contactPhone, website: r.website }),
+    createdAt: r.createdAt,
+  });
 
 const toArticle = (r: typeof articles.$inferSelect): Article =>
   Object.freeze({
@@ -30,8 +40,9 @@ export function createSupplierRepositories(db: Db): { companies: CompanyReposito
 
   return {
     companies: {
-      async save(c) {
-        await db.insert(companies).values(c).onConflictDoUpdate({ target: companies.id, set: c });
+      async save({ contact, ...c }) {
+        const row = { ...c, contactEmail: contact.email, contactPhone: contact.phone, website: contact.website };
+        await db.insert(companies).values(row).onConflictDoUpdate({ target: companies.id, set: row });
       },
       findById: (id) => companyBy(eq(companies.id, id)),
       findBySlug: (slug) => companyBy(eq(companies.slug, slug)),

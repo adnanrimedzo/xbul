@@ -24,7 +24,15 @@ export async function getArticlePageView(db: Db, companySlug: string, articleSlu
     .orderBy(desc(claims.createdAt));
 
   return {
-    company: { id: c.id, slug: c.slug, name: c.name, city: c.city, country: c.country, ownerUserId: c.ownerUserId },
+    company: {
+      id: c.id,
+      slug: c.slug,
+      name: c.name,
+      city: c.city,
+      country: c.country,
+      contact: { email: c.contactEmail, phone: c.contactPhone, website: c.website },
+      ownerUserId: c.ownerUserId,
+    },
     article: {
       id: a.id,
       slug: a.slug,

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { cache } from 'react';
 import { RowActionButton } from '@/app/_components/row-action-button';
+import { SupplierContact } from '@/app/_components/supplier-contact';
 import { Chip } from '@/app/_components/ui/chip';
 import { GarmentGrid } from '@/app/_components/ui/garment-grid';
 import { GarmentTile } from '@/app/_components/ui/garment-tile';
@@ -10,6 +11,7 @@ import { getCompanyPageView } from '@/modules/discovery';
 import { getContainer } from '@/server/container';
 import { getViewer } from '@/server/viewer';
 import { withdrawClaimAction } from './actions';
+import { EditContactForm } from './edit-contact-form';
 
 const SLUG = /^[a-z0-9-]{1,120}$/;
 
@@ -39,6 +41,14 @@ export default async function MillPage({ params }: PageProps<'/m/[company]'>) {
         <div className="mt-2 text-[12px]">
           {company.city}, {company.country}
         </div>
+        <div className="mt-2.5">
+          <SupplierContact contact={company.contact} />
+        </div>
+        {isOwner && (
+          <div className="mt-3">
+            <EditContactForm contact={company.contact} />
+          </div>
+        )}
       </div>
 
       {articles.length > 0 && (

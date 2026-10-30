@@ -1,10 +1,10 @@
 import { DomainError } from '@/shared/domain/errors';
-import { createCompany, type Company } from '../domain/company';
+import { createCompany, type Company, type ContactInput } from '../domain/company';
 import type { CompanyRepository } from '../domain/repositories';
 
 export async function registerCompany(
   deps: { companies: CompanyRepository },
-  input: { name: string; city: string; country: string; ownerUserId: string },
+  input: { name: string; city: string; country: string; ownerUserId: string; contact: ContactInput },
 ): Promise<Company> {
   if (await deps.companies.findByOwner(input.ownerUserId)) throw new DomainError('company.already_registered');
   const company = createCompany(input);

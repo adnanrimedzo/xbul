@@ -26,7 +26,14 @@ export async function getProductPageView(db: Db, productId: string): Promise<Pro
     status: claim.status as ClaimStatus,
     note: claim.note,
     createdAt: claim.createdAt,
-    company: { id: company.id, slug: company.slug, name: company.name, city: company.city, country: company.country },
+    company: {
+      id: company.id,
+      slug: company.slug,
+      name: company.name,
+      city: company.city,
+      country: company.country,
+      contact: { email: company.contactEmail, phone: company.contactPhone, website: company.website },
+    },
     article: article && {
       id: article.id,
       slug: article.slug,

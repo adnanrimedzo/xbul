@@ -64,6 +64,20 @@
       "when": 1793356344944,
       "tag": "0008_drop-profiles",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793356879534,
+      "tag": "0009_drop-inquiries",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1793356885895,
+      "tag": "0010_company-contact",
+      "breakpoints": true
     }
   ]
 }

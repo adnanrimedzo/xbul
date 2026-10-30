@@ -3,7 +3,7 @@ import { requireViewer } from '@/server/viewer';
 import { OnboardingForm } from './onboarding-form';
 
 export default async function OnboardingPage() {
-  const { company } = await requireViewer();
+  const { company, email } = await requireViewer();
   if (company) redirect('/add');
   return (
     <div className="grid min-h-[420px] grid-cols-[1fr_1.4fr] max-[1100px]:grid-cols-1">
@@ -12,7 +12,7 @@ export default async function OnboardingPage() {
         <p className="text-[12px] leading-normal text-[#333] normal-case">Tell us who you are so we can set up your account.</p>
       </div>
       <div className="px-5 py-7">
-        <OnboardingForm />
+        <OnboardingForm defaultEmail={email} />
       </div>
     </div>
   );

@@ -13,7 +13,7 @@ async function setup() {
   const { companies, articles } = createSupplierRepositories(db);
   const products = createProductRepository(db);
   const mill = async (name: string, owner: string) => {
-    const c = createCompany({ name, city: 'Istanbul', country: 'TR', ownerUserId: owner });
+    const c = createCompany({ name, city: 'Istanbul', country: 'TR', ownerUserId: owner, contact: { email: 'sales@x.test' } });
     await companies.save(c);
     return c.id;
   };

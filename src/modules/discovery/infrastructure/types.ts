@@ -1,7 +1,7 @@
 import type { ClaimKind, ClaimStatus } from '@/modules/claims';
-import type { ArticleSpecs } from '@/modules/supplier';
+import type { ArticleSpecs, CompanyContact } from '@/modules/supplier';
 
-export type CompanyRef = { id: string; slug: string; name: string; city: string; country: string };
+export type CompanyRef = { id: string; slug: string; name: string; city: string; country: string; contact: CompanyContact };
 
 export type ClaimView = {
   claimId: string;
@@ -47,18 +47,4 @@ export type DeclaredOriginal = {
   createdAt: Date;
   product: { id: string; brand: string; name: string };
   company: { slug: string; name: string };
-};
-
-export type InquiryRow = {
-  id: string;
-  kind: 'swatch' | 'quote';
-  status: 'new' | 'answered';
-  buyerName: string;
-  buyerEmail: string;
-  buyerCompany: string | null;
-  quantityMeters: number | null;
-  message: string | null;
-  viaAgentHandle: string | null;
-  createdAt: Date;
-  target: { href: string; label: string };
 };

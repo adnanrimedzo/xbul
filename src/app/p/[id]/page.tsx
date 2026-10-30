@@ -4,7 +4,7 @@ import { notFound } from 'next/navigation';
 import { cache } from 'react';
 import { z } from 'zod';
 import { CopyLinkButton } from '@/app/_components/copy-link-button';
-import { InquiryForm } from '@/app/_components/inquiry-form';
+import { SupplierContact } from '@/app/_components/supplier-contact';
 import { Badge } from '@/app/_components/ui/badge';
 import { Chip } from '@/app/_components/ui/chip';
 import { GarmentImage } from '@/app/_components/ui/garment-image';
@@ -80,14 +80,7 @@ export default async function ProductPage({ params }: PageProps<'/p/[id]'>) {
                   ))}
               </div>
             )}
-            <InquiryForm
-              companyId={c.company.id}
-              companyName={c.company.name}
-              productId={product.id}
-              articleId={c.article?.id}
-              kind="swatch"
-              label="Request swatch"
-            />
+            <SupplierContact contact={c.company.contact} />
           </section>
         ))}
 
@@ -97,20 +90,13 @@ export default async function ProductPage({ params }: PageProps<'/p/[id]'>) {
               Can make an equivalent <span>{equivalents.length}</span>
             </h2>
             {equivalents.map((c) => (
-              <div key={c.claimId} data-testid="equivalent-claim" className="flex flex-wrap justify-between gap-x-3 border-b border-[#ddd] py-3 last:border-b-0">
-                <div>
-                  <div className="text-[13px] font-semibold">{c.company.name}</div>
-                  {c.note && <div className="mt-[3px] text-[11px] text-muted normal-case">{c.note}</div>}
-                  {c.article && <div className="mt-[5px] text-[10px]">{[moq(c.article.specs), leadTime(c.article.specs)].filter((fact) => fact !== null).join(' · ')}</div>}
+              <div key={c.claimId} data-testid="equivalent-claim" className="border-b border-[#ddd] py-3 last:border-b-0">
+                <div className="text-[13px] font-semibold">{c.company.name}</div>
+                {c.note && <div className="mt-[3px] text-[11px] text-muted normal-case">{c.note}</div>}
+                {c.article && <div className="mt-[5px] text-[10px]">{[moq(c.article.specs), leadTime(c.article.specs)].filter((fact) => fact !== null).join(' · ')}</div>}
+                <div className="mt-2.5">
+                  <SupplierContact contact={c.company.contact} />
                 </div>
-                <InquiryForm
-                  companyId={c.company.id}
-                  companyName={c.company.name}
-                  productId={product.id}
-                  articleId={c.article?.id}
-                  kind="quote"
-                  label="Request quote"
-                />
               </div>
             ))}
           </section>

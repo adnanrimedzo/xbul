@@ -3,8 +3,7 @@ import { after } from 'next/server';
 import { cache } from 'react';
 import { createHttpProductPageFetcher, createProductRepository, type ProductPageFetcher, type ProductRepository } from '@/modules/catalog';
 import { createClaimRepository, type ClaimRepository } from '@/modules/claims';
-import { createAuth, createUserDirectory, type Auth } from '@/modules/identity';
-import { createInquiryRepository, type InquiryRepository } from '@/modules/inquiry';
+import { createAuth, type Auth } from '@/modules/identity';
 import { createSupplierRepositories, type ArticleRepository, type CompanyRepository } from '@/modules/supplier';
 import { createDb, createPostgresDb, type Db } from '@/shared/db/client';
 import { createConsoleMailer, createResendMailer, type Mailer } from '@/shared/mail/mailer';
@@ -20,8 +19,6 @@ export type Container = {
   products: ProductRepository;
   fetcher: ProductPageFetcher;
   claims: ClaimRepository;
-  inquiries: InquiryRepository;
-  users: { getEmail(id: string): Promise<string | null> };
 };
 
 declare global {
@@ -83,7 +80,5 @@ export const getContainer = cache(async (): Promise<Container> => {
     products: createProductRepository(db),
     fetcher: createHttpProductPageFetcher({ allowPrivateHosts: config.allowPrivateHosts }),
     claims: createClaimRepository(db),
-    inquiries: createInquiryRepository(db),
-    users: createUserDirectory(db),
   };
 });

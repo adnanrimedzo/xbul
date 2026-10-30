@@ -25,6 +25,16 @@ test('the owner edits specs; others cannot see the form', async ({ page }) => {
   await page.getByRole('button', { name: /save specs/i }).click();
   await expect(page.getByText('1,500 m', { exact: false })).toBeVisible();
 });
+test('the owner edits contact details; visitors cannot see the form', async ({ page }) => {
+  await page.goto('/m/indigo-mill');
+  await expect(page.getByRole('button', { name: /edit contact details/i })).toHaveCount(0);
+  await signIn(page, 'mill@example.test');
+  await page.goto('/m/indigo-mill');
+  await page.getByRole('button', { name: /edit contact details/i }).click();
+  await page.getByLabel('Phone').fill('+90 212 555 0100');
+  await page.getByRole('button', { name: /save contact/i }).click();
+  await expect(page.getByRole('link', { name: '+90 212 555 0100' })).toHaveAttribute('href', 'tel:+902125550100');
+});
 test('mill page lists articles', async ({ page }) => {
   await page.goto('/m/indigo-mill');
   await expect(page.getByRole('link', { name: /60219\/1/ })).toHaveAttribute('href', '/m/indigo-mill/a/60219-1');

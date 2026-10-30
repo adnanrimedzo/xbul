@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { cache } from 'react';
 import { CopyLinkButton } from '@/app/_components/copy-link-button';
-import { InquiryForm } from '@/app/_components/inquiry-form';
+import { SupplierContact } from '@/app/_components/supplier-contact';
 import { GarmentGrid } from '@/app/_components/ui/garment-grid';
 import { GarmentTile } from '@/app/_components/ui/garment-tile';
 import { getArticlePageView } from '@/modules/discovery';
@@ -51,7 +51,7 @@ export default async function ArticlePage({ params }: PageProps<'/m/[company]/a/
         Mills / <Link href={`/m/${company.slug}`}>{company.name}</Link> / <span className="text-accent">{article.code}</span>
       </nav>
 
-      {/* Mockup .arthead. The inquiry form's button and panel are flex items of this row, so an opened form wraps below it. */}
+      {/* Mockup .arthead. */}
       <div className="flex flex-wrap items-end gap-x-2 px-5 pt-2.5 pb-[18px] [&_button]:min-h-10 [&_button]:w-auto">
         <div className="flex-1 max-[760px]:mb-3.5 max-[760px]:basis-full">
           <h1 className="text-[64px] leading-[0.9] font-bold tracking-[-0.02em] max-[760px]:text-[44px]">
@@ -62,9 +62,11 @@ export default async function ArticlePage({ params }: PageProps<'/m/[company]/a/
           <div className="mt-2 text-[12px]">
             By <b className="text-accent">{company.name}</b> · {company.city}, {company.country}
           </div>
+          <div className="mt-2.5">
+            <SupplierContact contact={company.contact} />
+          </div>
         </div>
         <CopyLinkButton url={shareUrl} label="Copy link" />
-        <InquiryForm companyId={company.id} companyName={company.name} articleId={article.id} kind="swatch" label="Request swatch" />
       </div>
 
       <dl className="flex border-t border-ink max-[760px]:flex-wrap">

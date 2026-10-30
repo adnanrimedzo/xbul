@@ -26,7 +26,15 @@ export async function getCompanyPageView(db: Db, companySlug: string): Promise<C
     .orderBy(desc(claims.createdAt));
 
   return {
-    company: { id: c.id, slug: c.slug, name: c.name, city: c.city, country: c.country, ownerUserId: c.ownerUserId },
+    company: {
+      id: c.id,
+      slug: c.slug,
+      name: c.name,
+      city: c.city,
+      country: c.country,
+      contact: { email: c.contactEmail, phone: c.contactPhone, website: c.website },
+      ownerUserId: c.ownerUserId,
+    },
     articles: articleRows,
     garments: garments.map(({ kind, claimId, ...tile }) => ({ ...toTile(tile, kind), claimId })),
   };
