@@ -3,8 +3,9 @@ import { requireViewer } from '@/server/viewer';
 import { OnboardingForm } from './onboarding-form';
 
 export default async function OnboardingPage() {
-  const { company, email } = await requireViewer();
+  const { company, email, isAdmin } = await requireViewer();
   if (company) redirect('/add');
+  if (isAdmin) redirect('/admin/claims'); // an admin is here to review, and filling this form in would publish a supplier
   return (
     <div className="grid min-h-[420px] grid-cols-[1fr_1.4fr] max-[1100px]:grid-cols-1">
       <div className="border-r border-ink px-5 py-7 max-[1100px]:border-r-0 max-[1100px]:border-b">
