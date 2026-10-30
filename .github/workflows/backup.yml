@@ -1,0 +1,36 @@
+name: Back up the database
+
+on:
+  schedule:
+    - cron: '0 3 * * 1' # Mondays, 03:00 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # The client must be at least the server's version, or pg_dump refuses and this job fails, which emails the repository owner.
+      - name: Dump
+        run: docker run --rm -e DATABASE_URL postgres:17 sh -c 'pg_dump -Fc "$DATABASE_URL"' > backup.dump
+        env:
+          DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
+      - name: Refuse an empty dump
+        run: test -s backup.dump
+      # Goes only to the private bucket: never upload this as a workflow artifact, because it holds personal data.
+      - name: Upload
+        run: pnpm wrangler r2 object put "xbul-backups/db/$(date -u +%F).dump" --file backup.dump --remote
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
