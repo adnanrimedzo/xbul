@@ -1,34 +1,180 @@
 @import "tailwindcss";
 
-/* Garm design tokens (docs/design/mockup-pages-v1.html). No radius, no shadows: 1px ink lines between bands. */
+/* xbul.io brand tokens and rules: docs/design/DESIGN.md. Layout and shapes (inset rounded frames, pills, panels of cards) follow the Optivio reference. */
 @theme {
-  --color-ink: #000000;
-  --color-paper: #ffffff;
-  --color-accent: #F0721F;
-  --color-muted: #707070;
-  --font-sans: var(--font-space-grotesk), sans-serif;
+  --color-ink: #0f1012;
+  --color-paper: #f2f3f4;
+  --color-line: #d9dadc;
+  --color-muted: #5a5e65;
+  --color-accent: #bf3f0a;
+  --color-accent-dark: #ff7a3d;
+  --color-verified: #1b7f3b;
 
-  --animate-ticker: ticker 84s linear infinite; /* the mockup's ~20px/s over the ticker's wider half */
-  @keyframes ticker {
-    to { transform: translateX(-50%); }
-  }
+  --font-sans: var(--font-archivo), "Segoe UI", Arial, sans-serif;
+  --font-mono: var(--font-plex-mono), Menlo, Consolas, monospace;
+
+  --radius-frame: 2.5rem;
+  --radius-panel: 2rem;
+  --radius-card: 1.5rem;
 }
 
 @layer base {
-  /* UA styles reset text-transform on buttons; the mockup's buttons inherit the uppercase. Inputs keep what was typed. */
   button {
-    text-transform: inherit;
     cursor: pointer;
   }
   button:disabled {
     cursor: not-allowed;
   }
+  :focus-visible {
+    outline: 2px solid var(--color-ink);
+    outline-offset: 2px;
+  }
+  .on-ink :focus-visible {
+    outline-color: #fff;
+  }
 }
 
-/* Denim twill placeholder, from the mockup's .denim. */
-@utility denim {
-  background:
-    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.07) 0 2px, transparent 2px 6px),
-    repeating-linear-gradient(-45deg, rgba(0, 0, 0, 0.14) 0 1px, transparent 1px 5px),
-    linear-gradient(160deg, #4a6796, #1d2d4f 60%, #121c33);
+@layer components {
+  .page {
+    margin-inline: auto;
+    width: 100%;
+    max-width: calc(1120px + 3rem);
+    padding: 2rem 1.5rem 4rem;
+  }
+  .page-title {
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+    overflow-wrap: anywhere;
+  }
+  .section-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+  .panel {
+    border-radius: var(--radius-panel);
+    background: var(--color-paper);
+    padding: 1rem;
+  }
+  @media (min-width: 640px) {
+    .panel {
+      padding: 1.5rem;
+    }
+  }
+  .card {
+    border-radius: var(--radius-card);
+    background: #fff;
+    padding: 1.5rem;
+  }
+  .field {
+    width: 100%;
+    min-height: 3rem;
+    border: 1px solid var(--color-muted);
+    border-radius: 0.75rem;
+    background: #fff;
+    padding: 0.625rem 1rem;
+    font-weight: 400;
+  }
+  .field-label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    font-weight: 600;
+  }
+  .alert {
+    border: 1px solid var(--color-accent);
+    border-radius: 0.75rem;
+    background: #fff;
+    padding: 0.75rem 1rem;
+  }
+  .link {
+    color: var(--color-accent);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    overflow-wrap: anywhere;
+    transition: color 150ms ease-out;
+  }
+  .link:hover {
+    color: var(--color-ink);
+  }
+  .on-ink .link {
+    color: var(--color-accent-dark);
+  }
+  .on-ink .link:hover {
+    color: #fff;
+  }
+  .site-header {
+    border-radius: var(--radius-frame);
+  }
+  /* On the home page the header and the hero read as one dark frame. */
+  .site-header:has(+ main [data-hero]) {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+
+  /* The home hero's art: a field of dots with the loupe moving over it. The orange dots stay still while the lens moves, so it reads as looking through glass. */
+  .dot-field {
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(circle, rgb(255 255 255 / 0.5) 1.5px, transparent 2px);
+    background-size: 14px 14px;
+    mask-image: radial-gradient(ellipse 42% 45% at 8% 82%, #000 15%, transparent 100%), radial-gradient(ellipse 48% 60% at 96% 28%, #000 15%, transparent 100%);
+  }
+  .loupe {
+    --size: 240px;
+    position: absolute;
+    top: 12%;
+    right: 3%;
+    width: var(--size);
+    height: var(--size);
+    animation: loupe-drift 36s ease-in-out infinite alternate;
+  }
+  .loupe-lens {
+    position: absolute;
+    left: 6.25%;
+    top: 6.25%;
+    width: 68.75%;
+    height: 68.75%;
+    overflow: hidden;
+    border-radius: 50%;
+    background: var(--color-ink);
+  }
+  .loupe-dots {
+    position: absolute;
+    inset: -240px;
+    background-image: radial-gradient(circle, var(--color-accent-dark) 3.5px, transparent 4px);
+    background-size: 28px 28px;
+    animation: loupe-still 36s ease-in-out infinite alternate;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .loupe,
+    .loupe-dots {
+      animation: none;
+    }
+  }
+}
+
+@keyframes loupe-drift {
+  from {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(-30px, 90px);
+  }
+  to {
+    transform: translate(10px, 150px);
+  }
+}
+@keyframes loupe-still {
+  from {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(30px, -90px);
+  }
+  to {
+    transform: translate(-10px, -150px);
+  }
 }

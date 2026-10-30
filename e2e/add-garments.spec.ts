@@ -11,7 +11,7 @@ test('a supplier pastes links, fixes a blocked one by hand, and publishes', asyn
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Add products');
   await expect(page.getByText(/paste the brand links for products you.ve made or can make/i)).toBeVisible();
   await expect(page.getByText('Fetched products appear here.')).toBeVisible();
-  await expect(page.getByText('"We made this" shows as declared until verified.')).toBeVisible();
+  await expect(page.getByText('"We made this" shows without the Verified badge until evidence is reviewed.')).toBeVisible();
   await page.getByLabel(/brand links/i).fill('http://localhost:4010/washed-denim-jacket.html\nhttp://localhost:4010/blocked.html\nnot a url');
   await page.getByRole('button', { name: /fetch/i }).click();
   const rows = page.getByTestId('preview-row');

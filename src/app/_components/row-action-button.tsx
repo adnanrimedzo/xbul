@@ -10,7 +10,7 @@ export function RowActionButton({ action, label, confirmLabel }: { action: () =>
   const [state, formAction, pending] = useActionState<ActionResult | null>(action, null);
   const [armed, setArmed] = useState(false);
   return (
-    <form action={formAction} className="flex flex-col items-start gap-1.5">
+    <form action={formAction} className="flex flex-col items-start gap-2">
       <Button
         variant="ghost"
         type="submit"
@@ -24,7 +24,7 @@ export function RowActionButton({ action, label, confirmLabel }: { action: () =>
         {armed ? confirmLabel : label}
       </Button>
       {state && !state.ok && (
-        <p role="alert" className="border border-accent px-2 py-1 text-[11px] normal-case">
+        <p role="alert" className="alert">
           {state.error}
         </p>
       )}

@@ -5,9 +5,6 @@ import { Button } from '@/app/_components/ui/button';
 import type { CompanyContact } from '@/modules/supplier';
 import { updateContactAction } from './actions';
 
-const label = 'flex flex-col gap-1.5 text-[11px] font-semibold';
-const input = 'border border-ink p-2.5 text-[12px] font-normal normal-case focus:outline-2 focus:outline-accent';
-
 export function EditContactForm({ contact }: { contact: CompanyContact }) {
   const [open, setOpen] = useState(false);
   const [state, formAction, pending] = useActionState(updateContactAction, null);
@@ -21,27 +18,27 @@ export function EditContactForm({ contact }: { contact: CompanyContact }) {
       <div id={formId}>
         {open && (
           // Remounting on a saved change resets the uncontrolled fields to the new values.
-          <form key={JSON.stringify(contact)} action={formAction} className="mt-3 grid max-w-[640px] grid-cols-2 gap-3 max-[760px]:grid-cols-1">
-            <label className={label}>
+          <form key={JSON.stringify(contact)} action={formAction} className="mt-4 grid max-w-[640px] gap-4 sm:grid-cols-2">
+            <label className="field-label">
               Contact email
-              <input name="email" type="email" maxLength={254} autoComplete="email" defaultValue={contact.email ?? ''} className={input} />
+              <input name="email" type="email" maxLength={254} autoComplete="email" defaultValue={contact.email ?? ''} className="field" />
             </label>
-            <label className={label}>
+            <label className="field-label">
               Phone
-              <input name="phone" type="tel" maxLength={30} autoComplete="tel" defaultValue={contact.phone ?? ''} className={input} />
+              <input name="phone" type="tel" maxLength={30} autoComplete="tel" defaultValue={contact.phone ?? ''} className="field" />
             </label>
-            <label className={`${label} col-span-full`}>
+            <label className="field-label col-span-full">
               Website
-              <input name="website" inputMode="url" maxLength={2048} autoComplete="url" placeholder="example.com" defaultValue={contact.website ?? ''} className={input} />
+              <input name="website" inputMode="url" maxLength={2048} autoComplete="url" placeholder="example.com" defaultValue={contact.website ?? ''} className="field" />
             </label>
             <div className="col-span-full flex flex-col gap-3">
               {state && !state.ok && (
-                <p role="alert" className="border border-accent px-3 py-2 text-[12px] normal-case">
+                <p role="alert" className="alert">
                   {state.error}
                 </p>
               )}
               {state?.ok && (
-                <p role="status" className="border border-ink px-3 py-2 text-[12px] normal-case">
+                <p role="status" className="font-semibold">
                   Contact saved.
                 </p>
               )}

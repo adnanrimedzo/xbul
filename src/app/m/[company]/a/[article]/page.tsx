@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { cache } from 'react';
 import { CopyLinkButton } from '@/app/_components/copy-link-button';
 import { SupplierContact } from '@/app/_components/supplier-contact';
+import { ClaimTag } from '@/app/_components/ui/claim-tag';
 import { GarmentGrid } from '@/app/_components/ui/garment-grid';
 import { GarmentTile } from '@/app/_components/ui/garment-tile';
 import { getArticlePageView } from '@/modules/discovery';
@@ -40,71 +41,59 @@ export default async function ArticlePage({ params }: PageProps<'/m/[company]/a/
 
   const shareUrl = `${config.baseUrl}/m/${company.slug}/a/${article.slug}`;
   const { specs } = article;
-  const brands = [...new Set(garments.map((g) => g.brand))];
 
   return (
-    <div>
-      <nav aria-label="Breadcrumb" className="p-3 text-center text-[11px]">
-        Suppliers / <Link href={`/m/${company.slug}`}>{company.name}</Link> / <span className="text-accent">{article.code}</span>
-      </nav>
-
-      {/* Mockup .arthead. */}
-      <div className="flex flex-wrap items-end gap-x-2 px-5 pt-2.5 pb-[18px] [&_button]:min-h-10 [&_button]:w-auto">
-        <div className="flex-1 max-[760px]:mb-3.5 max-[760px]:basis-full">
-          <h1 className="text-[64px] leading-[0.9] font-bold tracking-[-0.02em] max-[760px]:text-[44px]">
-            Code{' '}
-            <br />
-            {article.code}
-          </h1>
-          <div className="mt-2 text-[12px]">
-            By <b className="text-accent">{company.name}</b> · {company.city}, {company.country}
-          </div>
-          <div className="mt-2.5">
-            <SupplierContact contact={company.contact} />
-          </div>
+    <div className="page flex flex-col gap-10">
+      <div className="panel p-6! sm:p-10!">
+        <nav aria-label="Breadcrumb">
+          <Link href={`/m/${company.slug}`} className="link">
+            {company.name}
+          </Link>{' '}
+          / <span className="font-mono text-sm">{article.code}</span>
+        </nav>
+        <div className="mt-3 flex flex-wrap items-end justify-between gap-4">
+          <h1 className="page-title">Code {article.code}</h1>
+          <CopyLinkButton url={shareUrl} label="Copy link" />
         </div>
-        <CopyLinkButton url={shareUrl} label="Copy link" />
-      </div>
-
-      <dl className="flex border-t border-ink max-[760px]:flex-wrap">
-        {[
-          ['Weight', specs.weight ?? DASH],
-          ['Composition', specs.composition ?? DASH],
-          ['Finish', specs.finish ?? DASH],
-          ['MOQ / lead', specs.moq === null && specs.leadTimeWeeks === null ? DASH : `${specs.moq ?? DASH} · ${lead(specs)}`],
-        ].map(([name, value]) => (
-          <div key={name} className="flex-1 border-r border-ink px-5 py-3 text-[11px] last:border-r-0 max-[760px]:basis-1/2 max-[760px]:border-b max-[760px]:nth-[2n]:border-r-0">
-            <dt>{name}</dt>
-            <dd className="mt-0.5 text-[15px] font-semibold">{value}</dd>
-          </div>
-        ))}
-      </dl>
-
-      {viewer?.userId === company.ownerUserId && (
-        <div className="border-t border-ink px-5 py-3">
-          <EditSpecsForm articleId={article.id} specs={specs} />
+        <p className="mt-2 text-lg">
+          By {company.name}, {company.city}, {company.country}
+        </p>
+        <div className="mt-5">
+          <h2 className="mb-1 font-semibold">Contact directly</h2>
+          <SupplierContact contact={company.contact} />
         </div>
-      )}
-
-      <div className="flex flex-wrap justify-between gap-x-4 border-t border-ink px-5 py-3 text-[12px] font-semibold">
-        <span>
-          Linked to {garments.length} {garments.length === 1 ? 'product' : 'products'}
-        </span>
-        <span>{brands.join(' · ')}</span>
-      </div>
-      {garments.length > 0 && (
-        <GarmentGrid>
-          {garments.map((g) => (
-            <GarmentTile
-              key={g.productId}
-              tile={g}
-              href={`/p/${g.productId}`}
-              tag={g.kind === 'original' ? 'Original' : 'Equivalent'}
-              tagTone={g.kind === 'original' ? 'accent' : 'muted'}
-            />
+        <dl className="mt-6 grid grid-cols-2 gap-2 lg:grid-cols-4">
+          {[
+            ['Weight', specs.weight ?? DASH],
+            ['Composition', specs.composition ?? DASH],
+            ['Finish', specs.finish ?? DASH],
+            ['MOQ and lead time', specs.moq === null && specs.leadTimeWeeks === null ? DASH : `${specs.moq ?? DASH} · ${lead(specs)}`],
+          ].map(([name, value]) => (
+            <div key={name} className="card p-4!">
+              <dt className="text-sm text-muted">{name}</dt>
+              <dd className="mt-1 font-semibold">{value}</dd>
+            </div>
           ))}
-        </GarmentGrid>
-      )}
+        </dl>
+        {viewer?.userId === company.ownerUserId && (
+          <div className="mt-5">
+            <EditSpecsForm articleId={article.id} specs={specs} />
+          </div>
+        )}
+      </div>
+
+      <section aria-labelledby="linked-title">
+        <h2 id="linked-title" className="section-title mb-5">
+          Linked to {garments.length} {garments.length === 1 ? 'product' : 'products'}
+        </h2>
+        {garments.length > 0 && (
+          <GarmentGrid>
+            {garments.map((g) => (
+              <GarmentTile key={g.productId} tile={g} href={`/p/${g.productId}`} tag={g.kind && <ClaimTag kind={g.kind} />} />
+            ))}
+          </GarmentGrid>
+        )}
+      </section>
     </div>
   );
 }

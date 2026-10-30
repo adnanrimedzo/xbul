@@ -5,9 +5,10 @@ import { cache } from 'react';
 import { z } from 'zod';
 import { CopyLinkButton } from '@/app/_components/copy-link-button';
 import { SupplierContact } from '@/app/_components/supplier-contact';
-import { Badge } from '@/app/_components/ui/badge';
 import { Chip } from '@/app/_components/ui/chip';
+import { ClaimTag } from '@/app/_components/ui/claim-tag';
 import { GarmentImage } from '@/app/_components/ui/garment-image';
+import { VerifiedExplanation, VerifiedInline } from '@/app/_components/ui/verified';
 import { getProductPageView, type ClaimGroup, type ClaimView } from '@/modules/discovery';
 import type { ArticleSpecs } from '@/modules/supplier';
 import { getContainer } from '@/server/container';
@@ -39,51 +40,56 @@ export async function generateMetadata({ params }: PageProps<'/p/[id]'>): Promis
   return { title, description, openGraph: { title, description, url: `${config.baseUrl}/p/${product.id}`, images: product.imageUrl ? [product.imageUrl] : [] } };
 }
 
+function ClaimCard({ claim, testId }: { claim: ClaimView; testId: string }) {
+  const { company, article, kind, status, note } = claim;
+  const specs = article && [kind === 'original' && `Code ${article.code}`, kind === 'original' && article.specs.weight, kind === 'original' && article.specs.composition, moq(article.specs), leadTime(article.specs)];
+  return (
+    <li data-testid={testId} className="card flex flex-col gap-3">
+      <div>
+        <h3 className="section-title">
+          <Link href={`/m/${company.slug}`} className="hover:underline">
+            {company.name}
+          </Link>
+        </h3>
+        <p className="text-muted">
+          {company.city}, {company.country}
+        </p>
+      </div>
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+        <ClaimTag kind={kind} />
+        {status === 'verified' && <VerifiedInline />}
+      </div>
+      {note && <p>{note}</p>}
+      {specs && (
+        <div className="flex flex-wrap gap-1.5">
+          {specs
+            .filter((chip) => typeof chip === 'string')
+            .map((chip) => (
+              <Chip key={chip}>{chip}</Chip>
+            ))}
+        </div>
+      )}
+      <SupplierContact contact={company.contact} />
+    </li>
+  );
+}
+
 // One side of the product: who made the fabric, or who made the garment. Nothing to show means no section.
 function SupplierSection({ title, testId, group: { originals, equivalents } }: { title: string; testId: string; group: ClaimGroup }) {
   if (originals.length === 0 && equivalents.length === 0) return null;
   return (
-    <section data-testid={testId} aria-labelledby={`${testId}-title`} className="border-t border-ink pt-3.5">
-      <h2 id={`${testId}-title`} className="text-[16px] font-bold">
+    <section data-testid={testId} aria-labelledby={`${testId}-title`} className="panel">
+      <h2 id={`${testId}-title`} className="section-title px-2 pt-2 pb-4">
         {title}
       </h2>
-      {originals.map((c) => (
-        <section key={c.claimId} data-testid="original-claim" className="py-3.5">
-          <div className="mb-2.5 flex items-center justify-between text-[11px] font-semibold">
-            <h3>Original</h3>
-            <Badge tone={c.status === 'verified' ? 'accent' : 'outline'}>{c.status === 'verified' ? 'Verified' : 'Declared'}</Badge>
-          </div>
-          <div className="mb-2.5 text-[16px] font-semibold">{c.company.name}</div>
-          {c.article && (
-            <div className="mb-3 flex flex-wrap gap-1.5">
-              {[`Code ${c.article.code}`, c.article.specs.weight, c.article.specs.composition, moq(c.article.specs), leadTime(c.article.specs)]
-                .filter((chip) => chip !== null)
-                .map((chip) => (
-                  <Chip key={chip}>{chip}</Chip>
-                ))}
-            </div>
-          )}
-          <SupplierContact contact={c.company.contact} />
-        </section>
-      ))}
-
-      {equivalents.length > 0 && (
-        <section className="py-3.5">
-          <h3 className="mb-2.5 flex justify-between text-[11px] font-semibold">
-            Can make an equivalent <span>{equivalents.length}</span>
-          </h3>
-          {equivalents.map((c) => (
-            <div key={c.claimId} data-testid="equivalent-claim" className="border-b border-[#ddd] py-3 last:border-b-0">
-              <div className="text-[13px] font-semibold">{c.company.name}</div>
-              {c.note && <div className="mt-[3px] text-[11px] text-muted normal-case">{c.note}</div>}
-              {c.article && <div className="mt-[5px] text-[10px]">{[moq(c.article.specs), leadTime(c.article.specs)].filter((fact) => fact !== null).join(' · ')}</div>}
-              <div className="mt-2.5">
-                <SupplierContact contact={c.company.contact} />
-              </div>
-            </div>
-          ))}
-        </section>
-      )}
+      <ul className="flex flex-col gap-2">
+        {originals.map((c) => (
+          <ClaimCard key={c.claimId} claim={c} testId="original-claim" />
+        ))}
+        {equivalents.map((c) => (
+          <ClaimCard key={c.claimId} claim={c} testId="equivalent-claim" />
+        ))}
+      </ul>
     </section>
   );
 }
@@ -92,41 +98,39 @@ export default async function ProductPage({ params }: PageProps<'/p/[id]'>) {
   const [{ product, fabric, garment }, { config }] = await Promise.all([loadView((await params).id), getContainer()]);
   const host = new URL(product.sourceUrl).hostname.replace(/^www\./, '');
   const shareUrl = `${config.baseUrl}/p/${product.id}`;
+  const anyVerified = [...fabric.originals, ...garment.originals].some((c) => c.status === 'verified');
 
   return (
-    // Mockup .item: photo left, panel right; stacked below 760px.
-    <div className="grid grid-cols-[1.25fr_1fr] max-[760px]:grid-cols-1">
-      <div className="border-r border-ink max-[760px]:border-r-0 max-[760px]:border-b">
-        <GarmentImage
-          src={product.imageUrl}
-          alt={`${product.brand} — ${product.name}`}
-          credit={{ host, href: product.sourceUrl }}
-          className="aspect-square border-b border-ink"
-        />
-      </div>
-      <div className="self-start px-5 pt-[22px] pb-10">
-        <Link href="/" className="mb-3.5 block text-[11px]">
-          ← Back
-        </Link>
-        <div className="text-[11px] text-muted">{product.brand}</div>
-        <h1 className="mt-0.5 mb-1.5 text-[20px] font-semibold">{product.name}</h1>
-        <div className="mb-[18px] text-[11px] text-muted">
-          {product.composition && `${product.composition} · `}
-          <a href={product.sourceUrl} target="_blank" rel="noopener noreferrer" className="border-b border-ink text-ink">
-            View on {host} ↗
-          </a>
+    <div className="page">
+      <Link href="/" className="link">
+        Back to search
+      </Link>
+      <div className="mt-4 grid items-start gap-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
+        <div className="lg:sticky lg:top-6">
+          <GarmentImage src={product.imageUrl} alt={`${product.brand} — ${product.name}`} credit={{ host, href: product.sourceUrl }} className="aspect-[4/3] rounded-panel lg:aspect-[4/5]" />
         </div>
+        <div className="flex min-w-0 flex-col gap-4">
+          <div className="mb-2">
+            <p className="font-mono text-sm text-muted">{product.brand}</p>
+            <h1 className="page-title mt-1">{product.name}</h1>
+            <p className="mt-2">
+              {product.composition && <span className="text-muted">{product.composition} · </span>}
+              <a href={product.sourceUrl} target="_blank" rel="noopener noreferrer" className="link font-mono text-sm">
+                View on {host} ↗
+              </a>
+            </p>
+          </div>
 
-        <SupplierSection title="Who made the fabric" testId="fabric-suppliers" group={fabric} />
-        <SupplierSection title="Who made the garment" testId="garment-suppliers" group={garment} />
+          <SupplierSection title="Who made the fabric" testId="fabric-suppliers" group={fabric} />
+          <SupplierSection title="Who made the garment" testId="garment-suppliers" group={garment} />
+          {anyVerified && <VerifiedExplanation className="px-2 py-4 sm:px-6" />}
 
-        <Link href="/add" className="flex justify-between border-t border-ink py-3 text-[12px] font-medium">
-          Are you a supplier? Claim this product <span className="text-[16px] leading-none text-accent">+</span>
-        </Link>
-        {/* Mockup .acc "Share this page", with the article page's copy button. */}
-        <div className="flex items-center justify-between gap-3 border-t border-ink py-3 text-[12px] font-medium">
-          Share this page
-          <CopyLinkButton url={shareUrl} label="Copy link" />
+          <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-t border-line px-2 pt-5 sm:px-6">
+            <Link href="/add" className="link font-semibold">
+              Are you a supplier? Claim this product
+            </Link>
+            <CopyLinkButton url={shareUrl} label="Copy link" />
+          </div>
         </div>
       </div>
     </div>

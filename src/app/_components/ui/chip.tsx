@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
 
 export function Chip({ children }: { children: ReactNode }) {
-  return <span className="border border-ink px-2 py-1 text-[11px]">{children}</span>;
+  return <span className="inline-block rounded-full border border-line bg-white px-3 py-1 font-mono text-sm">{children}</span>;
 }

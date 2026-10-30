@@ -4,7 +4,7 @@ import { signIn } from './helpers';
 test('the code page shows the supplier’s own products only', async ({ page }) => {
   await page.goto('/m/indigo-mill/a/60219-1');
   await expect(page.getByRole('heading', { level: 1 })).toHaveText('Code 60219/1');
-  await expect(page.getByLabel('Breadcrumb')).toHaveText('Suppliers / Indigo Mill / 60219/1');
+  await expect(page.getByLabel('Breadcrumb')).toHaveText('Indigo Mill / 60219/1');
   await expect(page.getByText(/^linked to \d+ products?$/i)).toBeVisible();
   await expect(page.getByText('Cropped Denim Blazer')).toBeVisible();
   await expect(page.getByText('Denizli Indigo')).toHaveCount(0);

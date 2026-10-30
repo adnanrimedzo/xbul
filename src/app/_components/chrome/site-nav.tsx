@@ -1,34 +1,36 @@
 import Link from 'next/link';
 import { signOutAction } from '@/app/_actions/sign-out';
+import { LinkButton } from '@/app/_components/ui/button';
 import type { Viewer } from '@/server/viewer';
 
-const group = 'flex gap-7 max-[760px]:gap-3.5';
+const item = 'inline-flex min-h-11 items-center rounded-sm font-semibold transition-colors duration-150 hover:text-accent-dark';
 
 export function SiteNav({ viewer }: { viewer: Viewer | null }) {
   const company = viewer?.company;
   return (
-    <nav aria-label="Main" className="flex flex-wrap justify-between gap-x-7 gap-y-2 border-y border-ink px-5 py-2.5 text-[12px] font-medium">
-      <div className={group}>
-        <Link href="/">Search</Link>
-        {/* Phase 1 has no supplier directory, so My company is the viewer's own company page and only suppliers see it. */}
-        {company && <Link href={`/m/${company.slug}`}>My company</Link>}
-      </div>
-      <div className={group}>
-        {company && <Link href="/add">Add products</Link>}
-        {viewer?.isAdmin && (
-          <>
-            <Link href="/admin/claims">Admin</Link>
-            <Link href="/admin/stats">Stats</Link>
-          </>
-        )}
-        {viewer ? (
-          <form action={signOutAction}>
-            <button type="submit">Sign out</button>
-          </form>
-        ) : (
-          <Link href="/sign-in">Sign in</Link>
-        )}
-      </div>
+    <nav aria-label="Main" className="flex flex-wrap items-center gap-x-6 gap-y-1">
+      {company && (
+        <>
+          <Link href={`/m/${company.slug}`} className={item}>My company</Link>
+          <Link href="/add" className={item}>Add products</Link>
+        </>
+      )}
+      {viewer?.isAdmin && (
+        <>
+          <Link href="/admin/claims" className={item}>Admin</Link>
+          <Link href="/admin/stats" className={item}>Stats</Link>
+        </>
+      )}
+      {viewer ? (
+        <form action={signOutAction}>
+          <button type="submit" className={item}>Sign out</button>
+        </form>
+      ) : (
+        <>
+          <Link href="/#for-suppliers" className={`${item} max-[400px]:hidden`}>For suppliers</Link>
+          <LinkButton variant="onDark" href="/sign-in">Sign in</LinkButton>
+        </>
+      )}
     </nav>
   );
 }

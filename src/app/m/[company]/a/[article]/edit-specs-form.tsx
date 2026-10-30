@@ -5,9 +5,6 @@ import { Button } from '@/app/_components/ui/button';
 import type { ArticleSpecs } from '@/modules/supplier';
 import { editArticleSpecsAction } from './actions';
 
-const label = 'flex flex-col gap-1.5 text-[11px] font-semibold';
-const input = 'border border-ink p-2.5 text-[12px] font-normal normal-case focus:outline-2 focus:outline-accent';
-
 export function EditSpecsForm({ articleId, specs }: { articleId: string; specs: ArticleSpecs }) {
   const [open, setOpen] = useState(false);
   const [state, formAction, pending] = useActionState(editArticleSpecsAction, null);
@@ -21,36 +18,36 @@ export function EditSpecsForm({ articleId, specs }: { articleId: string; specs: 
       <div id={formId}>
         {open && (
           // Remounting on a saved change resets the uncontrolled fields to the new values.
-          <form key={JSON.stringify(specs)} action={formAction} className="mt-3 grid max-w-[640px] grid-cols-2 gap-3 max-[760px]:grid-cols-1">
+          <form key={JSON.stringify(specs)} action={formAction} className="mt-4 grid max-w-[640px] gap-4 sm:grid-cols-2">
             <input type="hidden" name="articleId" value={articleId} />
-            <label className={label}>
+            <label className="field-label">
               Weight
-              <input name="weight" maxLength={60} placeholder="12.5 oz or 240 g/m²" defaultValue={specs.weight ?? ''} className={input} />
+              <input name="weight" maxLength={60} placeholder="12.5 oz or 240 g/m²" defaultValue={specs.weight ?? ''} className="field" />
             </label>
-            <label className={label}>
+            <label className="field-label">
               Composition
-              <input name="composition" maxLength={120} defaultValue={specs.composition ?? ''} className={input} />
+              <input name="composition" maxLength={120} defaultValue={specs.composition ?? ''} className="field" />
             </label>
-            <label className={label}>
+            <label className="field-label">
               Finish
-              <input name="finish" maxLength={80} defaultValue={specs.finish ?? ''} className={input} />
+              <input name="finish" maxLength={80} defaultValue={specs.finish ?? ''} className="field" />
             </label>
-            <label className={label}>
+            <label className="field-label">
               MOQ
-              <input name="moq" maxLength={60} placeholder="1,000 m or 500 pieces" defaultValue={specs.moq ?? ''} className={input} />
+              <input name="moq" maxLength={60} placeholder="1,000 m or 500 pieces" defaultValue={specs.moq ?? ''} className="field" />
             </label>
-            <label className={label}>
+            <label className="field-label">
               Lead time (weeks)
-              <input name="leadTimeWeeks" type="number" min={0} max={52} step={1} inputMode="numeric" defaultValue={specs.leadTimeWeeks ?? ''} className={input} />
+              <input name="leadTimeWeeks" type="number" min={0} max={52} step={1} inputMode="numeric" defaultValue={specs.leadTimeWeeks ?? ''} className="field" />
             </label>
             <div className="col-span-full flex flex-col gap-3">
               {state && !state.ok && (
-                <p role="alert" className="border border-accent px-3 py-2 text-[12px] normal-case">
+                <p role="alert" className="alert">
                   {state.error}
                 </p>
               )}
               {state?.ok && (
-                <p role="status" className="border border-ink px-3 py-2 text-[12px] normal-case">
+                <p role="status" className="font-semibold">
                   Specs saved.
                 </p>
               )}

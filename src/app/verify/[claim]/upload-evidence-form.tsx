@@ -27,7 +27,7 @@ export function UploadEvidenceForm({ claimId, maxBytes, maxFiles }: { claimId: s
 
   return (
     <form ref={formRef} action={formAction} className="flex max-w-[640px] flex-col gap-2">
-      <label className="flex flex-col gap-1.5 text-[11px] font-semibold">
+      <label className="field-label">
         Add a document
         <input
           type="file"
@@ -43,19 +43,19 @@ export function UploadEvidenceForm({ claimId, maxBytes, maxFiles }: { claimId: s
             if (big) e.currentTarget.value = '';
             else formRef.current?.requestSubmit();
           }}
-          className="border border-ink p-2.5 text-[12px] font-normal normal-case file:mr-3 file:border-0 file:bg-transparent file:font-semibold focus:outline-2 focus:outline-accent"
+          className="field file:mr-3 file:cursor-pointer file:rounded-full file:border file:border-ink file:px-3 file:py-1 file:font-semibold"
         />
       </label>
-      <p id={hintId} className="text-[11px] text-muted normal-case">
+      <p id={hintId} className="text-sm text-muted">
         PDF, JPG or PNG, up to {maxFiles} files of {maxBytes / 1024 / 1024} MB each.
       </p>
       {pending && (
-        <p role="status" className="text-[11px] normal-case">
+        <p role="status">
           Uploading…
         </p>
       )}
       {error && (
-        <p role="alert" className="border border-accent px-3 py-2 text-[12px] normal-case">
+        <p role="alert" className="alert">
           {error}
         </p>
       )}

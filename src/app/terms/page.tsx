@@ -12,13 +12,13 @@ const SECTIONS = [
 
 export default function TermsPage() {
   return (
-    <div className="px-5 pt-7 pb-10">
-      <h1 className="text-[64px] leading-[0.9] font-bold tracking-[-0.02em] max-[760px]:text-[44px]">Terms</h1>
-      <div className="mt-6 flex max-w-[640px] flex-col gap-5 text-[12px]">
+    <div className="page">
+      <h1 className="page-title">Terms</h1>
+      <div className="mt-8 flex max-w-[70ch] flex-col gap-6">
         {SECTIONS.map(([title, body]) => (
           <section key={title}>
-            <h2 className="text-[16px] font-bold">{title}</h2>
-            <p className="mt-1 normal-case">{body}</p>
+            <h2 className="section-title">{title}</h2>
+            <p className="mt-2">{body}</p>
           </section>
         ))}
       </div>

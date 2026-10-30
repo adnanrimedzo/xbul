@@ -21,7 +21,7 @@ test('an admin sees the search it just ran counted', async ({ page }) => {
   const before = Number(await page.getByTestId('stat-searches').textContent());
   await page.goto('/');
   await page.getByPlaceholder(/paste a product link/i).fill('https://example.com/counted');
-  await page.getByRole('button', { name: /^find$/i }).click();
+  await page.getByRole('button', { name: /^find suppliers$/i }).click();
   await expect(page.getByText(/no supplier has tagged/i)).toBeVisible();
   await page.goto('/admin/stats');
   await expect(page.getByTestId('stat-searches')).toHaveText(String(before + 1));

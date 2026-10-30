@@ -1,21 +1,17 @@
 import Link from 'next/link';
+import type { ReactNode } from 'react';
 import type { GarmentTile as Tile } from '@/modules/discovery';
 import { GarmentImage } from './garment-image';
 
-export function GarmentTile({ tile, href, tag, tagTone = 'muted' }: { tile: Tile; href: string; tag: string; tagTone?: 'accent' | 'muted' }) {
+export function GarmentTile({ tile, href, tag }: { tile: Tile; href: string; tag: ReactNode }) {
   const label = `${tile.brand} — ${tile.name}`;
   const host = new URL(tile.sourceUrl).hostname.replace(/^www\./, '');
   return (
-    <Link href={href} data-testid="garment-tile" className="block">
-      <div className="relative">
-        <GarmentImage src={tile.imageUrl} alt={label} className="aspect-[4/5]" />
-        {/* Mockup .src. Plain text: a credit link here would nest an <a> inside the tile link. */}
-        {tile.imageUrl && <span className="absolute bottom-2 left-2.5 text-[10px] text-paper opacity-85">Photo: {host}</span>}
-      </div>
-      <div className="flex justify-between gap-3 px-3 py-2.5 text-[11px] font-medium">
-        <span>{label}</span>
-        <span className={`shrink-0 text-right ${tagTone === 'accent' ? 'text-accent' : 'text-muted'}`}>{tag}</span>
-      </div>
+    <Link href={href} data-testid="garment-tile" className="group block rounded-card">
+      <GarmentImage src={tile.imageUrl} alt={label} credit={{ host }} className="aspect-[4/5] rounded-card" />
+      <p className="mt-3 font-mono text-sm text-muted">{tile.brand}</p>
+      <p className="mt-0.5 leading-snug font-semibold group-hover:underline">{tile.name}</p>
+      <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-muted">{tag}</div>
     </Link>
   );
 }

@@ -16,34 +16,28 @@ export default async function AdminClaimsPage() {
   const rows = await listPendingReviews(db);
 
   return (
-    <div>
-      <div className="px-5 pt-7 pb-[18px]">
-        <h1 className="text-[64px] leading-[0.9] font-bold tracking-[-0.02em] max-[760px]:text-[44px]">Admin</h1>
-        <div className="mt-2 text-[12px]">Originals sent in for review, longest waiting first</div>
-      </div>
+    <div className="page">
+      <h1 className="page-title">To review: {rows.length}</h1>
+      <p className="mt-2 text-lg">Originals sent in for review, longest waiting first.</p>
 
-      <div className="flex justify-between border-t border-ink px-5 py-3 text-[12px] font-semibold">
-        <h2>To review</h2>
-        <span>{rows.length}</span>
-      </div>
       {rows.length > 0 ? (
-        <ul>
+        <ul className="panel mt-6 flex flex-col gap-2">
           {rows.map((row) => (
-            <li key={row.claimId} data-testid="pending-review" className="flex flex-wrap items-start justify-between gap-x-6 gap-y-4 border-t border-ink px-5 py-4">
-              <div className="flex min-w-0 flex-col gap-1.5 text-[12px]">
-                <Link href={`/p/${row.product.id}`} className="self-start border-b border-ink text-[16px] font-semibold">
+            <li key={row.claimId} data-testid="pending-review" className="card flex flex-wrap items-start justify-between gap-x-6 gap-y-4">
+              <div className="flex min-w-0 flex-col gap-1.5">
+                <Link href={`/p/${row.product.id}`} className="section-title self-start hover:underline">
                   {row.product.brand} — {row.product.name}
                 </Link>
-                <div>
-                  {row.company.name} <span className="text-muted">· {SCOPE_LABEL[row.scope]}</span>
-                </div>
+                <p>
+                  {row.company.name}, {SCOPE_LABEL[row.scope].toLowerCase()}
+                </p>
                 <ul aria-label="Documents" className="flex flex-col gap-1">
                   {row.evidence.map((file) => (
                     <li key={file.id}>
-                      <a href={`/api/evidence/${file.id}`} className="border-b border-ink normal-case">
+                      <a href={`/api/evidence/${file.id}`} className="link">
                         {file.fileName}
                       </a>{' '}
-                      <span className="text-muted">{size(file.sizeBytes)}</span>
+                      <span className="text-sm text-muted">{size(file.sizeBytes)}</span>
                     </li>
                   ))}
                 </ul>
@@ -56,7 +50,7 @@ export default async function AdminClaimsPage() {
           ))}
         </ul>
       ) : (
-        <p className="border-t border-ink px-5 py-6 text-[12px] text-muted normal-case">Nothing to review.</p>
+        <p className="panel mt-6 p-8! text-muted">Nothing to review.</p>
       )}
     </div>
   );

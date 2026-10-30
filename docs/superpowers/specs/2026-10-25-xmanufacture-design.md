@@ -1,7 +1,7 @@
 # xmanufacture — Design
 
 **Date:** 2026-10-25 · **Status:** draft for review
-**Mockups:** `docs/design/mockup-pages-v1.html` (open in a browser; tabs at the top switch pages)
+**Design rules:** `docs/design/DESIGN.md`
 
 ## 1. Intent
 

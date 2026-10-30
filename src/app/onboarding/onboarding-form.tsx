@@ -8,55 +8,52 @@ const KINDS = [
   ['fabric_mill', 'We make fabric'],
   ['garment_maker', 'We make garments'],
 ] as const;
-const label = 'flex flex-col gap-1.5 text-[11px] font-semibold';
-const radio = 'flex items-center gap-2 text-[12px] font-normal';
-const input = 'border border-ink p-2.5 text-[12px] font-normal normal-case focus:outline-2 focus:outline-accent';
 
 export function OnboardingForm({ defaultEmail }: { defaultEmail: string }) {
   const [state, formAction, pending] = useActionState(completeOnboardingAction, null);
   const values = state?.values; // after a failed submit React resets the form to these defaults
 
   return (
-    <form action={formAction} className="flex flex-col gap-4">
-      <fieldset className="flex flex-col gap-2">
-        <legend className="mb-1 text-[11px] font-semibold">What does your company make?</legend>
+    <form action={formAction} className="flex flex-col gap-5">
+      <fieldset className="flex flex-col gap-1">
+        <legend className="mb-1 font-semibold">What does your company make?</legend>
         {KINDS.map(([value, text]) => (
-          <label key={value} className={radio}>
-            <input type="radio" name="kind" value={value} required defaultChecked={values?.kind === value} className="size-4 accent-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent" />
+          <label key={value} className="flex min-h-11 items-center gap-3">
+            <input type="radio" name="kind" value={value} required defaultChecked={values?.kind === value} className="size-5 accent-ink" />
             {text}
           </label>
         ))}
       </fieldset>
-      <label className={label}>
+      <label className="field-label">
         Company name
-        <input name="companyName" autoComplete="organization" defaultValue={values?.companyName} className={input} />
+        <input name="companyName" autoComplete="organization" defaultValue={values?.companyName} className="field" />
       </label>
-      <label className={label}>
+      <label className="field-label">
         City
-        <input name="city" autoComplete="address-level2" defaultValue={values?.city} className={input} />
+        <input name="city" autoComplete="address-level2" defaultValue={values?.city} className="field" />
       </label>
-      <label className={label}>
+      <label className="field-label">
         Country
-        <input name="country" autoComplete="country" placeholder="Two-letter code" defaultValue={values?.country} className={input} />
+        <input name="country" autoComplete="country" placeholder="Two-letter code" defaultValue={values?.country} className="field" />
       </label>
       <fieldset className="flex flex-col gap-4">
-        <legend className="mb-1 text-[11px] font-semibold">How buyers reach you (at least one)</legend>
-        <p className="text-[12px] normal-case">These are shown publicly on your page.</p>
-        <label className={label}>
+        <legend className="font-semibold">How buyers reach you (at least one)</legend>
+        <p className="text-muted">These are shown publicly on your page.</p>
+        <label className="field-label">
           Contact email
-          <input name="contactEmail" type="email" maxLength={254} autoComplete="email" defaultValue={values ? values.contactEmail : defaultEmail} className={input} />
+          <input name="contactEmail" type="email" maxLength={254} autoComplete="email" defaultValue={values ? values.contactEmail : defaultEmail} className="field" />
         </label>
-        <label className={label}>
+        <label className="field-label">
           Phone
-          <input name="phone" type="tel" maxLength={30} autoComplete="tel" defaultValue={values?.phone} className={input} />
+          <input name="phone" type="tel" maxLength={30} autoComplete="tel" defaultValue={values?.phone} className="field" />
         </label>
-        <label className={label}>
+        <label className="field-label">
           Website
-          <input name="website" inputMode="url" maxLength={2048} autoComplete="url" placeholder="example.com" defaultValue={values?.website} className={input} />
+          <input name="website" inputMode="url" maxLength={2048} autoComplete="url" placeholder="example.com" defaultValue={values?.website} className="field" />
         </label>
       </fieldset>
       {state && !state.ok && (
-        <p role="alert" className="border border-accent px-3 py-2 text-[12px] normal-case">
+        <p role="alert" className="alert">
           {state.error}
         </p>
       )}

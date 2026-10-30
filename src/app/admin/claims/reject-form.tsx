@@ -8,15 +8,15 @@ import { rejectReviewAction } from './actions';
 export function RejectForm({ claimId }: { claimId: string }) {
   const [state, formAction, pending] = useActionState(rejectReviewAction.bind(null, claimId), null);
   return (
-    <form action={formAction} className="flex flex-col items-start gap-1.5">
+    <form action={formAction} className="flex flex-col items-start gap-2">
       <div className="flex flex-wrap items-end gap-2">
-        <label className="flex flex-col gap-1 text-[11px] font-semibold">
+        <label className="field-label">
           Reason
           <input
             name="note"
             required
             maxLength={500}
-            className="w-[260px] max-w-full border border-ink p-2 text-[12px] font-normal normal-case focus:outline-2 focus:outline-accent"
+            className="field w-[260px]! max-w-full"
           />
         </label>
         <Button variant="ghost" type="submit" disabled={pending}>
@@ -24,7 +24,7 @@ export function RejectForm({ claimId }: { claimId: string }) {
         </Button>
       </div>
       {state && !state.ok && (
-        <p role="alert" className="border border-accent px-2 py-1 text-[11px] normal-case">
+        <p role="alert" className="alert">
           {state.error}
         </p>
       )}
