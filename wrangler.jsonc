@@ -30,5 +30,27 @@
     "MAIL_FROM": "xbul <hello@xbul.ai>"
   },
   // Workers Logs: request logs and console output (e.g. a failed owner notification) in the dashboard.
-  "observability": { "enabled": true }
+  "observability": { "enabled": true },
+  // A page runs several queries, so the worker runs beside the Neon database (docs/deploy.md).
+  "placement": { "region": "aws:eu-central-1" },
+  "env": {
+    // Test data only. Bindings and vars aren't inherited, so staging repeats each one with its own resource.
+    "staging": {
+      "name": "xbul-staging",
+      "services": [{ "binding": "WORKER_SELF_REFERENCE", "service": "xbul-staging" }],
+      "hyperdrive": [
+        {
+          "binding": "HYPERDRIVE",
+          "id": "<HYPERDRIVE_STAGING_ID>",
+          "localConnectionString": "postgres://postgres:postgres@localhost:5432/xbul"
+        }
+      ],
+      "r2_buckets": [{ "binding": "EVIDENCE", "bucket_name": "xbul-evidence-staging" }],
+      "vars": {
+        "PUBLIC_BASE_URL": "https://staging.xbul.ai",
+        "MAIL_FROM": "xbul staging <hello@xbul.ai>"
+      },
+      "observability": { "enabled": true }
+    }
+  }
 }
