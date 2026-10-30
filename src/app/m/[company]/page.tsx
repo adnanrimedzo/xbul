@@ -8,12 +8,14 @@ import { Chip } from '@/app/_components/ui/chip';
 import { GarmentGrid } from '@/app/_components/ui/garment-grid';
 import { GarmentTile } from '@/app/_components/ui/garment-tile';
 import { getCompanyPageView } from '@/modules/discovery';
+import type { CompanyKind } from '@/modules/supplier';
 import { getContainer } from '@/server/container';
 import { getViewer } from '@/server/viewer';
 import { withdrawClaimAction } from './actions';
 import { EditContactForm } from './edit-contact-form';
 
 const SLUG = /^[a-z0-9-]{1,120}$/;
+const KIND_LABEL: Record<CompanyKind, string> = { fabric_mill: 'Fabric mill', garment_maker: 'Garment maker' };
 
 // Shared by generateMetadata and the page, so the view is read once per request.
 const loadView = cache(async (slug: string) => {
@@ -25,7 +27,7 @@ const loadView = cache(async (slug: string) => {
 export async function generateMetadata({ params }: PageProps<'/m/[company]'>): Promise<Metadata> {
   const { company } = await loadView((await params).company);
   const { config } = await getContainer();
-  const title = `${company.name} — fabric mill`;
+  const title = `${company.name} — ${KIND_LABEL[company.kind]}`;
   const description = `${company.city}, ${company.country}`;
   return { title, description, openGraph: { title, description, url: `${config.baseUrl}/m/${company.slug}` } };
 }
@@ -38,7 +40,8 @@ export default async function MillPage({ params }: PageProps<'/m/[company]'>) {
     <div>
       <div className="px-5 pt-7 pb-[18px]">
         <h1 className="text-[64px] leading-[0.9] font-bold tracking-[-0.02em] max-[760px]:text-[44px]">{company.name}</h1>
-        <div className="mt-2 text-[12px]">
+        <div className="mt-2 text-[12px] font-semibold">{KIND_LABEL[company.kind]}</div>
+        <div className="mt-0.5 text-[12px]">
           {company.city}, {company.country}
         </div>
         <div className="mt-2.5">

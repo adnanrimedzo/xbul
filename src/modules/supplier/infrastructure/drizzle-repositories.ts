@@ -1,7 +1,7 @@
 import { and, eq, type SQL } from 'drizzle-orm';
 import type { Db } from '@/shared/db/client';
 import type { Article } from '../domain/article';
-import type { Company } from '../domain/company';
+import type { Company, CompanyKind } from '../domain/company';
 import type { ArticleRepository, CompanyRepository } from '../domain/repositories';
 import { articles, companies } from './schema';
 
@@ -10,7 +10,7 @@ const toCompany = (r: typeof companies.$inferSelect): Company =>
     id: r.id,
     slug: r.slug,
     name: r.name,
-    kind: 'fabric_mill',
+    kind: r.kind as CompanyKind,
     city: r.city,
     country: r.country,
     ownerUserId: r.ownerUserId,

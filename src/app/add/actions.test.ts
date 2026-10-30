@@ -9,12 +9,12 @@ import { addManualProductAction, previewGarmentsAction, publishGarmentsAction } 
 
 const container = vi.hoisted(() => ({ current: null as unknown }));
 // `refuse` makes requireMill throw, as it does when it redirects a visitor who is not a signed-in mill.
-const viewer = vi.hoisted(() => ({ refuse: null as Error | null }));
+const viewer = vi.hoisted(() => ({ refuse: null as Error | null, company: { id: '', slug: '', kind: 'fabric_mill' } }));
 vi.mock('@/server/container', () => ({ getContainer: async () => container.current }));
 vi.mock('@/server/viewer', () => ({
   requireMill: async () => {
     if (viewer.refuse) throw viewer.refuse;
-    return { company: { id: DEMO.companies.indigo, slug: DEMO.companySlugs.indigo } };
+    return { company: viewer.company };
   },
 }));
 
@@ -25,6 +25,7 @@ afterEach(() => vi.restoreAllMocks());
 
 async function setup(overrides: { findByCanonicalUrl?: (url: string) => Promise<null> } = {}) {
   viewer.refuse = null;
+  viewer.company = { id: DEMO.companies.indigo, slug: DEMO.companySlugs.indigo, kind: 'fabric_mill' };
   const db = await createTestDb();
   await seedDemo(db);
   const products = createProductRepository(db);
@@ -148,8 +149,16 @@ it('publishes the ready rows under the mill from the session, then goes to its p
   ).rejects.toMatchObject({ digest: expect.stringContaining(`/m/${DEMO.companySlugs.indigo}`) });
 
   const article = await articles.findByCode(DEMO.companies.indigo, '60777/2');
-  expect(await claims.findByProductAndCompany(coded!, DEMO.companies.indigo)).toMatchObject({ kind: 'equivalent', articleId: article!.id });
+  expect(await claims.findByProductAndCompany(coded!, DEMO.companies.indigo)).toMatchObject({ kind: 'equivalent', scope: 'fabric', articleId: article!.id });
   expect(await claims.findByProductAndCompany(plain!, DEMO.companies.indigo)).toMatchObject({ kind: 'original', articleId: null });
+});
+
+it("files a garment maker's claims under the garment scope", async () => {
+  const { claims } = await setup();
+  viewer.company = { id: DEMO.companies.anka, slug: DEMO.companySlugs.anka, kind: 'garment_maker' };
+  await expect(publishGarmentsAction([{ productId: DEMO.products.armani, articleCode: '', kind: 'original' }]))
+    .rejects.toMatchObject({ digest: expect.stringContaining(`/m/${DEMO.companySlugs.anka}`) });
+  expect(await claims.findByProductAndCompany(DEMO.products.armani, DEMO.companies.anka)).toMatchObject({ kind: 'original', scope: 'garment' });
 });
 
 it.each([

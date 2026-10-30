@@ -1,15 +1,16 @@
 import { expect, it } from 'vitest';
-import { createCompany, normalizeContact } from './company';
+import { claimScopeOf, createCompany, normalizeContact } from './company';
 
 const contact = { email: 'sales@x.test' };
+const kind = 'fabric_mill' as const;
 
 it('creates a company with trimmed name, slug and upper-case country', () => {
-  const c = createCompany({ name: '  Indigo Mill ', city: 'Istanbul', country: 'tr', ownerUserId: 'u1', contact });
+  const c = createCompany({ name: '  Indigo Mill ', city: 'Istanbul', country: 'tr', ownerUserId: 'u1', contact, kind });
   expect(c).toMatchObject({ name: 'Indigo Mill', slug: 'indigo-mill', country: 'TR', kind: 'fabric_mill' });
 });
 
 it('keeps the normalized contact on the company', () => {
-  const c = createCompany({ name: 'Indigo Mill', city: 'Istanbul', country: 'TR', ownerUserId: 'u1', contact: { email: 'Sales@X.test', website: 'x.test' } });
+  const c = createCompany({ name: 'Indigo Mill', city: 'Istanbul', country: 'TR', ownerUserId: 'u1', contact: { email: 'Sales@X.test', website: 'x.test' }, kind });
   expect(c.contact).toEqual({ email: 'sales@x.test', phone: null, website: 'https://x.test/' });
 });
 
@@ -19,8 +20,14 @@ it.each([
   [{ city: '' }, 'company.city_invalid'],
   [{ contact: {} }, 'company.contact_required'],
 ])('rejects %j', (patch, code) =>
-  expect(() => createCompany({ name: 'Indigo Mill', city: 'Istanbul', country: 'TR', ownerUserId: 'u1', contact, ...patch }))
+  expect(() => createCompany({ name: 'Indigo Mill', city: 'Istanbul', country: 'TR', ownerUserId: 'u1', contact, kind, ...patch }))
     .toThrow(expect.objectContaining({ code })));
+
+it('rejects an unknown kind', () =>
+  expect(() => createCompany({ name: 'Taypa', city: 'Istanbul', country: 'TR', ownerUserId: 'u1', contact: { email: 'a@b.test' }, kind: 'wizard' as never }))
+    .toThrow(expect.objectContaining({ code: 'company.kind_invalid' })));
+
+it.each([['fabric_mill', 'fabric'], ['garment_maker', 'garment']] as const)('%s claims %s', (k, scope) => expect(claimScopeOf(k)).toBe(scope));
 
 it('needs at least one way to reach the supplier', () => {
   expect(() => normalizeContact({})).toThrow(expect.objectContaining({ code: 'company.contact_required' }));

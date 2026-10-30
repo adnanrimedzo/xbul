@@ -10,21 +10,28 @@ const contact = { email: 'sales@x.test' };
 
 it('registers one company per owner', async () => {
   const repos = createSupplierRepositories(await createTestDb());
-  await registerCompany(repos, { name: 'Indigo Mill', city: 'Istanbul', country: 'TR', ownerUserId: 'u1', contact });
-  await expect(registerCompany(repos, { name: 'Other', city: 'Bursa', country: 'TR', ownerUserId: 'u1', contact }))
+  await registerCompany(repos, { name: 'Indigo Mill', city: 'Istanbul', country: 'TR', ownerUserId: 'u1', contact, kind: 'fabric_mill' });
+  await expect(registerCompany(repos, { name: 'Other', city: 'Bursa', country: 'TR', ownerUserId: 'u1', contact, kind: 'fabric_mill' }))
     .rejects.toMatchObject({ code: 'company.already_registered' });
+});
+
+it('persists the kind it was registered with', async () => {
+  const repos = createSupplierRepositories(await createTestDb());
+  const c = await registerCompany(repos, { name: 'Anka Garments', city: 'Istanbul', country: 'TR', ownerUserId: 'u1', contact, kind: 'garment_maker' });
+  expect(c.kind).toBe('garment_maker');
+  expect((await repos.companies.findById(c.id))?.kind).toBe('garment_maker');
 });
 
 it('suffixes colliding company slugs', async () => {
   const repos = createSupplierRepositories(await createTestDb());
-  const a = await registerCompany(repos, { name: 'Indigo Mill', city: 'Istanbul', country: 'TR', ownerUserId: 'u1', contact });
-  const b = await registerCompany(repos, { name: 'INDIGO MILL', city: 'Izmir', country: 'TR', ownerUserId: 'u2', contact });
+  const a = await registerCompany(repos, { name: 'Indigo Mill', city: 'Istanbul', country: 'TR', ownerUserId: 'u1', contact, kind: 'fabric_mill' });
+  const b = await registerCompany(repos, { name: 'INDIGO MILL', city: 'Izmir', country: 'TR', ownerUserId: 'u2', contact, kind: 'fabric_mill' });
   expect([a.slug, b.slug]).toEqual(['indigo-mill', 'indigo-mill-2']);
 });
 
 it('upserts articles by normalized code and suffixes colliding slugs', async () => {
   const repos = createSupplierRepositories(await createTestDb());
-  const c = await registerCompany(repos, { name: 'Indigo Mill', city: 'Istanbul', country: 'TR', ownerUserId: 'u1', contact });
+  const c = await registerCompany(repos, { name: 'Indigo Mill', city: 'Istanbul', country: 'TR', ownerUserId: 'u1', contact, kind: 'fabric_mill' });
   const a1 = await upsertArticle(repos, { companyId: c.id, code: ' 60219/1' });
   const a2 = await upsertArticle(repos, { companyId: c.id, code: '60219/1' });
   const a3 = await upsertArticle(repos, { companyId: c.id, code: '60219-1' });
@@ -34,7 +41,7 @@ it('upserts articles by normalized code and suffixes colliding slugs', async () 
 
 it('only the owner edits specs', async () => {
   const repos = createSupplierRepositories(await createTestDb());
-  const c = await registerCompany(repos, { name: 'Indigo Mill', city: 'Istanbul', country: 'TR', ownerUserId: 'u1', contact });
+  const c = await registerCompany(repos, { name: 'Indigo Mill', city: 'Istanbul', country: 'TR', ownerUserId: 'u1', contact, kind: 'fabric_mill' });
   const a = await upsertArticle(repos, { companyId: c.id, code: '60219/1' });
   await expect(editArticleSpecs(repos, { userId: 'u2', articleId: a.id, specs: { moq: '10 m' } })).rejects.toMatchObject({ code: 'auth.forbidden' });
   expect((await editArticleSpecs(repos, { userId: 'u1', articleId: a.id, specs: { moq: '1,500 m' } })).specs.moq).toBe('1,500 m');
@@ -42,7 +49,7 @@ it('only the owner edits specs', async () => {
 
 it('persists specs and reads back plain domain objects', async () => {
   const repos = createSupplierRepositories(await createTestDb());
-  const c = await registerCompany(repos, { name: 'Indigo Mill', city: 'Istanbul', country: 'tr', ownerUserId: 'u1', contact });
+  const c = await registerCompany(repos, { name: 'Indigo Mill', city: 'Istanbul', country: 'tr', ownerUserId: 'u1', contact, kind: 'fabric_mill' });
   const a = await upsertArticle(repos, { companyId: c.id, code: '60219/1' });
   await editArticleSpecs(repos, { userId: 'u1', articleId: a.id, specs: { weight: '12.5 oz', composition: '98% CO 2% EA', leadTimeWeeks: 6 } });
   expect(await repos.companies.findBySlug('indigo-mill')).toEqual(c);
@@ -63,7 +70,7 @@ it('rejects spec edits for a missing article', async () => {
 
 it('the owner updates the contact details and a round trip returns them', async () => {
   const repos = createSupplierRepositories(await createTestDb());
-  const c = await registerCompany(repos, { name: 'Indigo Mill', city: 'Istanbul', country: 'TR', ownerUserId: 'u1', contact: { email: 'sales@indigo.test' } });
+  const c = await registerCompany(repos, { name: 'Indigo Mill', city: 'Istanbul', country: 'TR', ownerUserId: 'u1', contact: { email: 'sales@indigo.test' }, kind: 'fabric_mill' });
   expect(c.contact).toEqual({ email: 'sales@indigo.test', phone: null, website: null });
   const updated = await updateCompanyContact(repos, { userId: 'u1', contact: { email: '', phone: '+90 212 555 0100', website: 'indigo.test' } });
   expect(updated.contact).toEqual({ email: null, phone: '+90 212 555 0100', website: 'https://indigo.test/' });
@@ -72,7 +79,7 @@ it('the owner updates the contact details and a round trip returns them', async 
 
 it('refuses to clear every contact detail', async () => {
   const repos = createSupplierRepositories(await createTestDb());
-  await registerCompany(repos, { name: 'Indigo Mill', city: 'Istanbul', country: 'TR', ownerUserId: 'u1', contact: { email: 'sales@indigo.test' } });
+  await registerCompany(repos, { name: 'Indigo Mill', city: 'Istanbul', country: 'TR', ownerUserId: 'u1', contact: { email: 'sales@indigo.test' }, kind: 'fabric_mill' });
   await expect(updateCompanyContact(repos, { userId: 'u1', contact: {} })).rejects.toMatchObject({ code: 'company.contact_required' });
   expect((await repos.companies.findByOwner('u1'))?.contact.email).toBe('sales@indigo.test');
 });

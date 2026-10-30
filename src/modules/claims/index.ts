@@ -1,4 +1,4 @@
-export type { Claim, ClaimKind, ClaimStatus } from './domain/claim';
+export type { Claim, ClaimKind, ClaimScope, ClaimStatus } from './domain/claim';
 export { declareClaim, redeclareClaim, verifyClaim } from './domain/claim';
 export { rankClaims } from './domain/rank-claims';
 export type { ClaimRepository } from './domain/repositories';

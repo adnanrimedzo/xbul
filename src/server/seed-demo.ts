@@ -3,7 +3,7 @@ import type { Db } from '@/shared/db/client';
 import { createProduct, createProductRepository } from '@/modules/catalog';
 import { createClaimRepository, declareClaim, verifyClaim, type ClaimKind } from '@/modules/claims';
 import { user } from '@/modules/identity';
-import { createArticle, createCompany, createSupplierRepositories, companies, withSpecs } from '@/modules/supplier';
+import { claimScopeOf, createArticle, createCompany, createSupplierRepositories, companies, withSpecs } from '@/modules/supplier';
 import { DEMO } from './demo-ids';
 
 const BASE = new Date('2026-01-01T09:00:00Z');
@@ -22,20 +22,22 @@ export async function seedDemo(db: Db): Promise<void> {
     { key: 'mill', name: 'Indigo Mill' },
     { key: 'denizli', name: 'Denizli Indigo' },
     { key: 'bursa', name: 'Bursa Weave' },
+    { key: 'maker', name: 'Anka Garments' },
   ] as const;
   await db.insert(user).values(
     people.map((p) => ({ id: DEMO.users[p.key], name: p.name, email: DEMO.emails[p.key], emailVerified: true, createdAt: BASE, updatedAt: BASE })),
   );
 
-  const mills = [
-    { key: 'indigo', owner: 'mill', name: 'Indigo Mill', city: 'Istanbul', website: 'https://indigo-mill.example' },
-    { key: 'denizli', owner: 'denizli', name: 'Denizli Indigo', city: 'Denizli', website: null },
-    { key: 'bursa', owner: 'bursa', name: 'Bursa Weave', city: 'Bursa', website: null },
+  const suppliers = [
+    { key: 'indigo', owner: 'mill', kind: 'fabric_mill', name: 'Indigo Mill', city: 'Istanbul', website: 'https://indigo-mill.example' },
+    { key: 'denizli', owner: 'denizli', kind: 'fabric_mill', name: 'Denizli Indigo', city: 'Denizli', website: null },
+    { key: 'bursa', owner: 'bursa', kind: 'fabric_mill', name: 'Bursa Weave', city: 'Bursa', website: null },
+    { key: 'anka', owner: 'maker', kind: 'garment_maker', name: 'Anka Garments', city: 'Istanbul', website: null },
   ] as const;
-  for (const m of mills) {
+  for (const m of suppliers) {
     const ownerUserId = DEMO.users[m.owner];
     const contact = { email: `sales@${DEMO.companySlugs[m.key]}.example`, website: m.website };
-    const company = createCompany({ name: m.name, city: m.city, country: 'TR', ownerUserId, contact }, BASE);
+    const company = createCompany({ name: m.name, city: m.city, country: 'TR', ownerUserId, contact, kind: m.kind }, BASE);
     await companyRepo.save({ ...company, id: DEMO.companies[m.key] });
   }
 
@@ -62,6 +64,7 @@ export async function seedDemo(db: Db): Promise<void> {
   // createdAt strictly increases down this list: the discovery ordering tests depend on it.
   const claims: { product: keyof typeof DEMO.products; company: keyof typeof DEMO.companies; article: string | null; kind: ClaimKind; note?: string; verified?: true }[] = [
     { product: 'guess', company: 'indigo', article: DEMO.articles.indigo60219, kind: 'original', verified: true },
+    { product: 'guess', company: 'anka', article: null, kind: 'original', verified: true },
     { product: 'guess', company: 'denizli', article: null, kind: 'equivalent', note: 'Same twill, 13 oz, rigid. Swatch in stock.' },
     { product: 'guess', company: 'bursa', article: null, kind: 'equivalent' },
     { product: 'liujo', company: 'indigo', article: DEMO.articles.indigo60409, kind: 'original' },
@@ -69,7 +72,8 @@ export async function seedDemo(db: Db): Promise<void> {
   ];
   for (const [i, c] of claims.entries()) {
     const now = at(i + 1);
-    const claim = declareClaim({ productId: DEMO.products[c.product], companyId: DEMO.companies[c.company], articleId: c.article, kind: c.kind, note: c.note }, now);
+    const scope = claimScopeOf(suppliers.find((s) => s.key === c.company)!.kind);
+    const claim = declareClaim({ productId: DEMO.products[c.product], companyId: DEMO.companies[c.company], articleId: c.article, kind: c.kind, scope, note: c.note }, now);
     await claimRepo.save(c.verified ? verifyClaim(claim, now) : claim);
   }
 }

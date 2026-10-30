@@ -6,7 +6,7 @@ import { toActionError, type ActionResult } from '@/app/_lib/action-result';
 import { errorMessage } from '@/app/_lib/error-messages';
 import { addProductManually, canonicalizeProductUrl, getProduct, importProduct, type Product } from '@/modules/catalog';
 import { publishGarments } from '@/modules/claims';
-import { upsertArticle } from '@/modules/supplier';
+import { claimScopeOf, upsertArticle } from '@/modules/supplier';
 import { getContainer } from '@/server/container';
 import { requireMill } from '@/server/viewer';
 import { DomainError } from '@/shared/domain/errors';
@@ -131,7 +131,7 @@ export async function publishGarmentsAction(
         getProduct: (id) => getProduct({ products }, id),
         upsertArticle: (input) => upsertArticle({ articles }, input),
       },
-      { companyId: company.id, items: parsed.data.map((item) => ({ ...item, articleCode: item.articleCode || null })) },
+      { companyId: company.id, scope: claimScopeOf(company.kind), items: parsed.data.map((item) => ({ ...item, articleCode: item.articleCode || null })) },
     );
   } catch (e) {
     return toActionError(e);

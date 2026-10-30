@@ -1,12 +1,14 @@
 'use server';
 
 import { redirect } from 'next/navigation';
+import { z } from 'zod';
 import { toActionError, type ActionResult } from '@/app/_lib/action-result';
 import { createSupplierRepositories, registerCompany } from '@/modules/supplier';
 import { getContainer } from '@/server/container';
 import { requireViewer } from '@/server/viewer';
+import { DomainError } from '@/shared/domain/errors';
 
-export type OnboardingValues = { companyName: string; city: string; country: string; contactEmail: string; phone: string; website: string };
+export type OnboardingValues = { kind: string; companyName: string; city: string; country: string; contactEmail: string; phone: string; website: string };
 
 // A failed submit echoes what was typed: React resets the form after an action, and the supplier would lose its fields.
 // Lengths, the country code and the contact details are the domain's (they have messages).
@@ -20,6 +22,7 @@ export async function completeOnboardingAction(
     return typeof value === 'string' ? value.trim() : '';
   };
   const values: OnboardingValues = {
+    kind: text('kind'),
     companyName: text('companyName'),
     city: text('city'),
     country: text('country'),
@@ -28,9 +31,13 @@ export async function completeOnboardingAction(
     website: text('website'),
   };
 
+  const kind = z.enum(['fabric_mill', 'garment_maker']).safeParse(values.kind);
+  if (!kind.success) return { ...toActionError(new DomainError('company.kind_invalid')), values };
+
   const { db } = await getContainer();
   try {
     await registerCompany(createSupplierRepositories(db), {
+      kind: kind.data,
       name: values.companyName,
       city: values.city,
       country: values.country,

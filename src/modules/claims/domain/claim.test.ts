@@ -1,7 +1,7 @@
 import { expect, it } from 'vitest';
 import { declareClaim, redeclareClaim, verifyClaim } from './claim';
 
-const base = { productId: 'p', companyId: 'c', articleId: 'a', kind: 'original' as const };
+const base = { productId: 'p', companyId: 'c', articleId: 'a', kind: 'original' as const, scope: 'fabric' as const };
 
 it('normalizes notes', () => {
   expect(declareClaim({ ...base, note: '   ' }).note).toBeNull();
@@ -29,6 +29,12 @@ it('verifying keeps createdAt and bumps updatedAt', () => {
   expect(verifyClaim(c, later)).toMatchObject({ id: c.id, createdAt: c.createdAt, updatedAt: later });
 });
 
+it('keeps the scope when a claim is redeclared', () => {
+  const c = declareClaim({ ...base, scope: 'garment' });
+  expect(c.scope).toBe('garment');
+  expect(redeclareClaim(c, { articleId: null, kind: 'equivalent' }).scope).toBe('garment');
+});
+
 it('drops verification when kind or article changes, keeps it for note edits', () => {
   const v = verifyClaim(declareClaim(base));
   expect(redeclareClaim(v, { articleId: 'a', kind: 'equivalent' }).status).toBe('declared');
@@ -40,6 +46,6 @@ it('redeclaring keeps identity and createdAt, replaces kind, article and note, b
   const c = declareClaim({ ...base, note: 'old' }, new Date(2026, 0, 1));
   const later = new Date(2026, 0, 2);
   const r = redeclareClaim(c, { articleId: null, kind: 'equivalent' }, later);
-  expect(r).toMatchObject({ id: c.id, productId: 'p', companyId: 'c', articleId: null, kind: 'equivalent', note: null, createdAt: c.createdAt, updatedAt: later });
+  expect(r).toMatchObject({ id: c.id, productId: 'p', companyId: 'c', scope: 'fabric', articleId: null, kind: 'equivalent', note: null, createdAt: c.createdAt, updatedAt: later });
   expect(() => redeclareClaim(c, { articleId: 'a', kind: 'original', note: 'x'.repeat(281) })).toThrow(expect.objectContaining({ code: 'claim.note_too_long' }));
 });

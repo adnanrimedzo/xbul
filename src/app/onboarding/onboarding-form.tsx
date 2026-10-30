@@ -4,7 +4,12 @@ import { useActionState } from 'react';
 import { Button } from '@/app/_components/ui/button';
 import { completeOnboardingAction } from './actions';
 
+const KINDS = [
+  ['fabric_mill', 'We make fabric'],
+  ['garment_maker', 'We make garments'],
+] as const;
 const label = 'flex flex-col gap-1.5 text-[11px] font-semibold';
+const radio = 'flex items-center gap-2 text-[12px] font-normal';
 const input = 'border border-ink p-2.5 text-[12px] font-normal normal-case focus:outline-2 focus:outline-accent';
 
 export function OnboardingForm({ defaultEmail }: { defaultEmail: string }) {
@@ -13,6 +18,15 @@ export function OnboardingForm({ defaultEmail }: { defaultEmail: string }) {
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
+      <fieldset className="flex flex-col gap-2">
+        <legend className="mb-1 text-[11px] font-semibold">What does your company make?</legend>
+        {KINDS.map(([value, text]) => (
+          <label key={value} className={radio}>
+            <input type="radio" name="kind" value={value} required defaultChecked={values?.kind === value} className="size-4 accent-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent" />
+            {text}
+          </label>
+        ))}
+      </fieldset>
       <label className={label}>
         Company name
         <input name="companyName" autoComplete="organization" defaultValue={values?.companyName} className={input} />

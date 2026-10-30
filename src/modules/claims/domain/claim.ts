@@ -3,6 +3,8 @@ import { newId } from '@/shared/domain/ids';
 
 export type ClaimKind = 'original' | 'equivalent';
 export type ClaimStatus = 'declared' | 'verified';
+// Which side of the product the claiming company made: the fabric or the garment.
+export type ClaimScope = 'fabric' | 'garment';
 
 export type Claim = Readonly<{
   id: string;
@@ -10,6 +12,7 @@ export type Claim = Readonly<{
   companyId: string;
   articleId: string | null;
   kind: ClaimKind;
+  scope: ClaimScope;
   status: ClaimStatus;
   note: string | null;
   createdAt: Date;
@@ -25,7 +28,7 @@ const normalizeNote = (raw: string | null | undefined): string | null => {
 };
 
 export function declareClaim(
-  input: { productId: string; companyId: string; articleId: string | null; kind: ClaimKind; note?: string | null },
+  input: { productId: string; companyId: string; articleId: string | null; kind: ClaimKind; scope: ClaimScope; note?: string | null },
   now: Date = new Date(),
 ): Claim {
   return Object.freeze({
@@ -34,6 +37,7 @@ export function declareClaim(
     companyId: input.companyId,
     articleId: input.articleId,
     kind: input.kind,
+    scope: input.scope,
     status: 'declared',
     note: normalizeNote(input.note),
     createdAt: now,

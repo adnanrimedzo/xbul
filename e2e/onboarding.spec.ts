@@ -4,6 +4,7 @@ import { signIn } from './helpers';
 test('a new mill signs in, registers its company and lands on Add', async ({ page }) => {
   await signIn(page, 'new-mill@example.test');
   await expect(page).toHaveURL(/\/onboarding/);
+  await page.getByRole('radio', { name: /we make fabric/i }).check();
   await page.getByLabel(/company name/i).fill('Aksu Denim');
   await page.getByLabel(/city/i).fill('Istanbul');
   await page.getByLabel(/country/i).fill('TR');
@@ -14,6 +15,19 @@ test('a new mill signs in, registers its company and lands on Add', async ({ pag
   await expect(page.getByRole('link', { name: 'sales@aksu-denim.test' })).toHaveAttribute('href', 'mailto:sales@aksu-denim.test');
 });
 
+test('a garment maker registers and its claims count as garment claims', async ({ page }) => {
+  await signIn(page, 'new-maker@example.test');
+  await page.getByRole('radio', { name: /we make garments/i }).check();
+  await page.getByLabel(/company name/i).fill('Yeni Konfeksiyon');
+  await page.getByLabel(/city/i).fill('Istanbul');
+  await page.getByLabel(/country/i).fill('TR');
+  await page.getByLabel(/contact email/i).fill('a@yeni.test');
+  await page.getByRole('button', { name: /continue/i }).click();
+  await expect(page).toHaveURL(/\/add$/);
+  await page.goto('/m/yeni-konfeksiyon');
+  await expect(page.getByText('Garment maker')).toBeVisible();
+});
+
 test('someone who already has a company skips onboarding', async ({ page }) => {
   await signIn(page, 'mill@example.test');
   await expect(page).toHaveURL(/\/add$/);
@@ -21,6 +35,7 @@ test('someone who already has a company skips onboarding', async ({ page }) => {
 
 test('onboarding errors are shown inline', async ({ page }) => {
   await signIn(page, 'bad-mill@example.test');
+  await page.getByRole('radio', { name: /we make fabric/i }).check();
   await page.getByLabel(/company name/i).fill('A');
   await page.getByLabel(/city/i).fill('Istanbul');
   await page.getByLabel(/country/i).fill('TR');
@@ -31,6 +46,7 @@ test('onboarding errors are shown inline', async ({ page }) => {
 test('a supplier must give a way to be reached', async ({ page }) => {
   await signIn(page, 'no-contact-mill@example.test');
   await expect(page.getByLabel(/contact email/i)).toHaveValue('no-contact-mill@example.test'); // defaults to the sign-in email
+  await page.getByRole('radio', { name: /we make fabric/i }).check();
   await page.getByLabel(/company name/i).fill('Quiet Mill');
   await page.getByLabel(/city/i).fill('Istanbul');
   await page.getByLabel(/country/i).fill('TR');
@@ -38,5 +54,6 @@ test('a supplier must give a way to be reached', async ({ page }) => {
   await page.getByRole('button', { name: /continue/i }).click();
   await expect(page.getByText('Add an email, phone or website so buyers can reach you.')).toBeVisible();
   await expect(page.getByLabel(/company name/i)).toHaveValue('Quiet Mill'); // what was typed stays
+  await expect(page.getByRole('radio', { name: /we make fabric/i })).toBeChecked();
   await expect(page).toHaveURL(/\/onboarding/);
 });

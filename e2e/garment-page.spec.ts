@@ -4,11 +4,18 @@ import { DEMO } from '../src/server/demo-ids';
 const url = `/p/${DEMO.products.guess}`;
 test('a visitor can reach the original supplier and an equivalent directly, with no account', async ({ page }) => {
   await page.goto(url);
-  const original = page.getByTestId('original-claim');
+  const original = page.getByTestId('fabric-suppliers').getByTestId('original-claim');
   await expect(original).toContainText('Indigo Mill'); await expect(original).toContainText('Verified'); await expect(original).toContainText('60219/1');
   await expect(original.getByRole('link', { name: 'sales@indigo-mill.example' })).toHaveAttribute('href', 'mailto:sales@indigo-mill.example');
   await expect(page.getByTestId('equivalent-claim').first().getByTestId('supplier-contact')).toBeVisible();
   await expect(page.getByRole('button', { name: /request/i })).toHaveCount(0);
+});
+test('the garment page shows who made the fabric and who made the garment', async ({ page }) => {
+  await page.goto(url);
+  await expect(page.getByTestId('fabric-suppliers').getByTestId('original-claim')).toContainText('Indigo Mill');
+  const garment = page.getByTestId('garment-suppliers');
+  await expect(garment.getByTestId('original-claim')).toContainText('Anka Garments');
+  await expect(garment.getByTestId('original-claim')).toContainText('Verified');
 });
 test('the copied garment link carries no handle', async ({ page, context }) => {
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
@@ -20,7 +27,7 @@ test('the copied garment link carries no handle', async ({ page, context }) => {
 test('link previews carry title and description', async ({ request }) => {
   const html = await (await request.get(url)).text();
   expect(html).toContain('<meta property="og:title" content="GUESS — Cropped Denim Blazer"');
-  expect(html).toMatch(/<meta property="og:description" content="Fabric by Indigo Mill \(article 60219\/1\) · 2 mills can make an equivalent"/);
+  expect(html).toMatch(/<meta property="og:description" content="Fabric by Indigo Mill \(article 60219\/1\) · Garment by Anka Garments · 2 suppliers can make an equivalent"/);
 });
 test('unknown product is a 404, with the site chrome and a way home', async ({ page }) => {
   expect((await page.goto('/p/not-a-uuid'))?.status()).toBe(404);

@@ -1,9 +1,9 @@
 import { eq } from 'drizzle-orm';
 import type { Db } from '@/shared/db/client';
 import { products } from '@/modules/catalog';
-import { claims, rankClaims, type ClaimKind, type ClaimStatus } from '@/modules/claims';
-import { articles, companies } from '@/modules/supplier';
-import type { ClaimView, ProductPageView } from './types';
+import { claims, rankClaims, type ClaimKind, type ClaimScope, type ClaimStatus } from '@/modules/claims';
+import { articles, companies, type CompanyKind } from '@/modules/supplier';
+import type { ClaimGroup, ClaimView, ProductPageView } from './types';
 
 export async function getProductPageView(db: Db, productId: string): Promise<ProductPageView | null> {
   const [p] = await db
@@ -20,7 +20,7 @@ export async function getProductPageView(db: Db, productId: string): Promise<Pro
     .leftJoin(articles, eq(claims.articleId, articles.id))
     .where(eq(claims.productId, productId));
 
-  const views: ClaimView[] = rows.map(({ claim, company, article }) => ({
+  const toView = ({ claim, company, article }: (typeof rows)[number]): ClaimView => ({
     claimId: claim.id,
     kind: claim.kind as ClaimKind,
     status: claim.status as ClaimStatus,
@@ -30,6 +30,7 @@ export async function getProductPageView(db: Db, productId: string): Promise<Pro
       id: company.id,
       slug: company.slug,
       name: company.name,
+      kind: company.kind as CompanyKind,
       city: company.city,
       country: company.country,
       contact: { email: company.contactEmail, phone: company.contactPhone, website: company.website },
@@ -40,8 +41,11 @@ export async function getProductPageView(db: Db, productId: string): Promise<Pro
       code: article.code,
       specs: { weight: article.weight, composition: article.composition, finish: article.finish, moq: article.moq, leadTimeWeeks: article.leadTimeWeeks },
     },
-  }));
+  });
 
-  const ranked = rankClaims(views);
-  return { product: p, originals: ranked.filter((c) => c.kind === 'original'), equivalents: ranked.filter((c) => c.kind === 'equivalent') };
+  const group = (scope: ClaimScope): ClaimGroup => {
+    const ranked = rankClaims(rows.filter((r) => r.claim.scope === scope).map(toView));
+    return { originals: ranked.filter((c) => c.kind === 'original'), equivalents: ranked.filter((c) => c.kind === 'equivalent') };
+  };
+  return { product: p, fabric: group('fabric'), garment: group('garment') };
 }

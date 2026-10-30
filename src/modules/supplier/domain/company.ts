@@ -5,11 +5,18 @@ import { slugify } from '@/shared/domain/slug';
 export type CompanyContact = Readonly<{ email: string | null; phone: string | null; website: string | null }>;
 export type ContactInput = { email?: string | null; phone?: string | null; website?: string | null };
 
+export type CompanyKind = 'fabric_mill' | 'garment_maker';
+
+// A company is either a fabric mill or a garment maker, and its claims count for that side only.
+// Plain strings, not the claims module's type: a domain file may not import another module.
+const SCOPE_OF: Record<CompanyKind, 'fabric' | 'garment'> = { fabric_mill: 'fabric', garment_maker: 'garment' };
+export const claimScopeOf = (kind: CompanyKind): 'fabric' | 'garment' => SCOPE_OF[kind];
+
 export type Company = Readonly<{
   id: string;
   slug: string;
   name: string;
-  kind: 'fabric_mill';
+  kind: CompanyKind;
   city: string;
   country: string;
   ownerUserId: string;
@@ -40,7 +47,7 @@ export function normalizeContact(input: ContactInput): CompanyContact {
 }
 
 export function createCompany(
-  input: { name: string; city: string; country: string; ownerUserId: string; contact: ContactInput },
+  input: { name: string; city: string; country: string; ownerUserId: string; contact: ContactInput; kind: CompanyKind },
   now: Date = new Date(),
 ): Company {
   const name = input.name.trim();
@@ -50,6 +57,7 @@ export function createCompany(
   if (city.length < 1 || city.length > 60) throw new DomainError('company.city_invalid');
   const country = input.country.trim().toUpperCase();
   if (!/^[A-Z]{2}$/.test(country)) throw new DomainError('company.country_invalid');
+  if (!Object.hasOwn(SCOPE_OF, input.kind)) throw new DomainError('company.kind_invalid');
   const contact = normalizeContact(input.contact);
-  return Object.freeze({ id: newId(), slug, name, kind: 'fabric_mill', city, country, ownerUserId: input.ownerUserId, contact, createdAt: now });
+  return Object.freeze({ id: newId(), slug, name, kind: input.kind, city, country, ownerUserId: input.ownerUserId, contact, createdAt: now });
 }

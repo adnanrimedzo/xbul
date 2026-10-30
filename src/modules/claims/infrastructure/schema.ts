@@ -11,6 +11,7 @@ export const claims = pgTable(
     companyId: uuid('company_id').notNull().references(() => companies.id, { onDelete: 'cascade' }),
     articleId: uuid('article_id').references(() => articles.id, { onDelete: 'set null' }),
     kind: text('kind').notNull(),
+    scope: text('scope').notNull().default('fabric'),
     status: text('status').notNull().default('declared'),
     note: text('note'),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
@@ -18,6 +19,6 @@ export const claims = pgTable(
   },
   (t) => [
     uniqueIndex('claims_product_company_uq').on(t.productId, t.companyId),
-    uniqueIndex('claims_one_verified_original').on(t.productId).where(sql`kind = 'original' and status = 'verified'`),
+    uniqueIndex('claims_one_verified_original').on(t.productId, t.scope).where(sql`kind = 'original' and status = 'verified'`),
   ],
 );

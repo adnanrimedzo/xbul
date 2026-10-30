@@ -60,7 +60,7 @@ it('says a claim that no longer exists is gone', async () => {
 it('explains that another mill is already verified as the original', async () => {
   const { claims, claimId } = await setup();
   expect(await verifyClaimAction(claimId)).toEqual({ ok: true, data: undefined }); // Indigo is now the verified original of Liu-Jo
-  const rival = declareClaim({ productId: DEMO.products.liujo, companyId: DEMO.companies.denizli, articleId: null, kind: 'original' });
+  const rival = declareClaim({ productId: DEMO.products.liujo, companyId: DEMO.companies.denizli, articleId: null, kind: 'original', scope: 'fabric' });
   await claims.save(rival);
-  expect(await verifyClaimAction(rival.id)).toEqual({ ok: false, error: 'Another mill is already verified as the original for this garment.' });
+  expect(await verifyClaimAction(rival.id)).toEqual({ ok: false, error: 'Another supplier is already verified as the original for this product.' });
 });

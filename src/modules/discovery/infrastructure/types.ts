@@ -1,7 +1,7 @@
 import type { ClaimKind, ClaimStatus } from '@/modules/claims';
-import type { ArticleSpecs, CompanyContact } from '@/modules/supplier';
+import type { ArticleSpecs, CompanyContact, CompanyKind } from '@/modules/supplier';
 
-export type CompanyRef = { id: string; slug: string; name: string; city: string; country: string; contact: CompanyContact };
+export type CompanyRef = { id: string; slug: string; name: string; kind: CompanyKind; city: string; country: string; contact: CompanyContact };
 
 export type ClaimView = {
   claimId: string;
@@ -13,10 +13,14 @@ export type ClaimView = {
   article: { id: string; slug: string; code: string; specs: ArticleSpecs } | null;
 };
 
+// Each list is ranked: the verified original first, then declared originals, then equivalents (see rankClaims).
+export type ClaimGroup = { originals: ClaimView[]; equivalents: ClaimView[] };
+
+// Who made the fabric and who made the garment are separate lists, each with its own verified original.
 export type ProductPageView = {
   product: { id: string; brand: string; name: string; imageUrl: string | null; composition: string | null; sourceUrl: string };
-  originals: ClaimView[];
-  equivalents: ClaimView[];
+  fabric: ClaimGroup;
+  garment: ClaimGroup;
 };
 
 export type GarmentTile = {

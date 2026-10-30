@@ -1,13 +1,14 @@
 // Fixed ids for the demo data. No imports: Playwright specs import this file directly.
 export const DEMO = {
-  users: { mill: 'demo-user-mill', denizli: 'demo-user-denizli', bursa: 'demo-user-bursa' },
-  emails: { mill: 'mill@example.test', denizli: 'denizli@example.test', bursa: 'bursa@example.test' },
+  users: { mill: 'demo-user-mill', denizli: 'demo-user-denizli', bursa: 'demo-user-bursa', maker: 'demo-user-maker' },
+  emails: { mill: 'mill@example.test', denizli: 'denizli@example.test', bursa: 'bursa@example.test', maker: 'maker@example.test' },
   companies: {
     indigo: '5c1d0a10-0000-4000-8000-000000000001',
     denizli: '5c1d0a10-0000-4000-8000-000000000002',
     bursa: '5c1d0a10-0000-4000-8000-000000000003',
+    anka: '5c1d0a10-0000-4000-8000-000000000004',
   },
-  companySlugs: { indigo: 'indigo-mill', denizli: 'denizli-indigo', bursa: 'bursa-weave' },
+  companySlugs: { indigo: 'indigo-mill', denizli: 'denizli-indigo', bursa: 'bursa-weave', anka: 'anka-garments' },
   articles: {
     indigo60219: '5c1d0a20-0000-4000-8000-000000000001',
     indigo60409: '5c1d0a20-0000-4000-8000-000000000002',

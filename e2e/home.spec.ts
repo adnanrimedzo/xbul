@@ -17,7 +17,7 @@ test('an untagged link says so and invites mills', async ({ page }) => {
 test('recently tagged grid', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByTestId('garment-tile').first()).toBeVisible();
-  await expect(page.getByText('1 original · 2 equiv.', { exact: false })).toBeVisible();
+  await expect(page.getByText('2 original · 2 equiv.', { exact: false })).toBeVisible();
 });
 test('the find input shows a keyboard focus ring', async ({ page }) => {
   await page.goto('/');

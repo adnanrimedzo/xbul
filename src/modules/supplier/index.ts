@@ -1,5 +1,5 @@
-export type { Company, CompanyContact, ContactInput } from './domain/company';
-export { createCompany, normalizeContact } from './domain/company';
+export type { Company, CompanyContact, CompanyKind, ContactInput } from './domain/company';
+export { claimScopeOf, createCompany, normalizeContact } from './domain/company';
 export type { Article, ArticleSpecs } from './domain/article';
 export { createArticle, normalizeArticleCode, withSpecs } from './domain/article';
 export type { ArticleRepository, CompanyRepository } from './domain/repositories';

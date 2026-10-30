@@ -2,7 +2,7 @@ import { and, desc, eq } from 'drizzle-orm';
 import type { Db } from '@/shared/db/client';
 import { products } from '@/modules/catalog';
 import { claims } from '@/modules/claims';
-import { articles, companies } from '@/modules/supplier';
+import { articles, companies, type CompanyKind } from '@/modules/supplier';
 import { tileColumns, toTile } from './garment-tiles';
 import type { ArticlePageView } from './types';
 
@@ -28,6 +28,7 @@ export async function getArticlePageView(db: Db, companySlug: string, articleSlu
       id: c.id,
       slug: c.slug,
       name: c.name,
+      kind: c.kind as CompanyKind,
       city: c.city,
       country: c.country,
       contact: { email: c.contactEmail, phone: c.contactPhone, website: c.website },

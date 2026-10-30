@@ -1,6 +1,6 @@
 import { and, eq, type SQL } from 'drizzle-orm';
 import type { Db } from '@/shared/db/client';
-import type { Claim, ClaimKind, ClaimStatus } from '../domain/claim';
+import type { Claim, ClaimKind, ClaimScope, ClaimStatus } from '../domain/claim';
 import type { ClaimRepository } from '../domain/repositories';
 import { claims } from './schema';
 
@@ -11,6 +11,7 @@ const toClaim = (r: typeof claims.$inferSelect): Claim =>
     companyId: r.companyId,
     articleId: r.articleId,
     kind: r.kind as ClaimKind,
+    scope: r.scope as ClaimScope,
     status: r.status as ClaimStatus,
     note: r.note,
     createdAt: r.createdAt,
@@ -33,7 +34,7 @@ export function createClaimRepository(db: Db): ClaimRepository {
     findById: (id) => claimBy(eq(claims.id, id)),
     findByProductAndCompany: (productId, companyId) => claimBy(and(eq(claims.productId, productId), eq(claims.companyId, companyId))),
     existsForProduct: async (productId) => (await claimBy(eq(claims.productId, productId))) !== null,
-    findVerifiedOriginal: (productId) =>
-      claimBy(and(eq(claims.productId, productId), eq(claims.kind, 'original'), eq(claims.status, 'verified'))),
+    findVerifiedOriginal: (productId, scope) =>
+      claimBy(and(eq(claims.productId, productId), eq(claims.scope, scope), eq(claims.kind, 'original'), eq(claims.status, 'verified'))),
   };
 }
