@@ -2,8 +2,8 @@ import { expect, test } from '@playwright/test';
 
 test('chrome renders', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByText('xmanufacture', { exact: false }).first()).toBeVisible();
-  await expect(page.getByRole('banner').getByRole('link', { name: 'xmanufacture' })).toHaveAttribute('href', '/');
+  await expect(page.getByText('xbul', { exact: false }).first()).toBeVisible();
+  await expect(page.getByRole('banner').getByRole('link', { name: 'xbul' })).toHaveAttribute('href', '/');
   await expect(page.getByText(/istanbul/i)).toHaveCount(0); // the header has no clock
 });
 test('pages refuse to be framed', async ({ request }) => {

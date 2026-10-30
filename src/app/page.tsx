@@ -32,7 +32,7 @@ export default async function Home() {
       </div>
 
       <div className="border-b border-ink px-5 py-[26px] text-center text-[12px]">
-        <p>Welcome to xmanufacture.</p>
+        <p>Welcome to xbul.</p>
         <h2 className="mt-1 text-[15px] font-bold">Recently tagged products</h2>
       </div>
 

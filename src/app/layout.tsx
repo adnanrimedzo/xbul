@@ -14,7 +14,7 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: 'xmanufacture',
+  title: 'xbul',
   description: 'Find the supplier behind any product.',
 };
 

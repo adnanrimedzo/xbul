@@ -1,6 +1,6 @@
-# xmanufacture
+# xbul
 
-A B2B discovery site for suppliers: fabric mills first, then garment makers. A supplier pastes the links of brand products it made or can make, adds its product code, and gets a shareable page per product and per code. Buyers find the supplier behind a product and contact it directly, by email, phone or website. There are no agents and no request form. It is not a traceability tool. See the [design spec](docs/superpowers/specs/2026-10-25-xmanufacture-design.md).
+A B2B discovery site for suppliers: fabric mills first, then garment makers. A supplier pastes the links of brand products it made or can make, adds its product code, and gets a shareable page per product and per code. Buyers find the supplier behind a product and contact it directly, by email, phone or website. There are no agents and no request form. It is not a traceability tool. See the [design spec](docs/superpowers/specs/2026-10-25-xbul-design.md).
 
 ## Setup
 

@@ -24,8 +24,8 @@ export function createAuth(deps: { db: Db; mailer: Mailer; baseUrl: string; secr
         sendMagicLink: ({ email, url }) =>
           deps.mailer.send({
             to: email,
-            subject: 'Your xmanufacture sign-in link',
-            text: `Sign in to xmanufacture:\n\n${url}\n\nThis link expires in 10 minutes.`,
+            subject: 'Your xbul sign-in link',
+            text: `Sign in to xbul:\n\n${url}\n\nThis link expires in 10 minutes.`,
           }),
       }),
       nextCookies(),
