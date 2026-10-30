@@ -6,6 +6,22 @@ test('non-admins are sent home', async ({ page }) => {
   await page.goto('/admin/claims');
   await expect(page).toHaveURL('http://localhost:3100/');
 });
+test('an admin sees the search it just ran counted', async ({ page }) => {
+  await signIn(page, 'admin@example.test');
+  await page.goto('/admin/stats');
+  const before = Number(await page.getByTestId('stat-searches').textContent());
+  await page.goto('/');
+  await page.getByPlaceholder(/paste a product link/i).fill('https://example.com/counted');
+  await page.getByRole('button', { name: /^find$/i }).click();
+  await expect(page.getByText(/no supplier has tagged/i)).toBeVisible();
+  await page.goto('/admin/stats');
+  await expect(page.getByTestId('stat-searches')).toHaveText(String(before + 1));
+});
+test('non-admins can’t see stats', async ({ page }) => {
+  await signIn(page, 'mill@example.test');
+  await page.goto('/admin/stats');
+  await expect(page).toHaveURL('http://localhost:3100/');
+});
 test('the request inbox is gone', async ({ page }) => {
   expect((await page.goto('/requests'))?.status()).toBe(404);
 });

@@ -1,7 +1,14 @@
 import { getCloudflareContext } from '@opennextjs/cloudflare';
 import { after } from 'next/server';
 import { cache } from 'react';
-import { createHttpProductPageFetcher, createProductRepository, type ProductPageFetcher, type ProductRepository } from '@/modules/catalog';
+import {
+  createHttpProductPageFetcher,
+  createProductRepository,
+  createSearchLog,
+  type ProductPageFetcher,
+  type ProductRepository,
+  type SearchLog,
+} from '@/modules/catalog';
 import {
   createClaimRepository,
   createEvidenceRepository,
@@ -27,6 +34,7 @@ export type Container = {
   articles: ArticleRepository;
   products: ProductRepository;
   fetcher: ProductPageFetcher;
+  searches: SearchLog;
   claims: ClaimRepository;
   evidence: EvidenceRepository;
   evidenceStore: EvidenceStore;
@@ -96,6 +104,7 @@ export const getContainer = cache(async (): Promise<Container> => {
     articles,
     products: createProductRepository(db),
     fetcher: createHttpProductPageFetcher({ allowPrivateHosts: config.allowPrivateHosts }),
+    searches: createSearchLog(db),
     claims: createClaimRepository(db),
     evidence: createEvidenceRepository(db),
     evidenceStore,

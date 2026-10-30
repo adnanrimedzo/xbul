@@ -8,4 +8,6 @@ export { addProductManually } from './application/add-product-manually';
 export { findProductByUrl, getProduct } from './application/find-product';
 export { createProductRepository } from './infrastructure/drizzle-product-repository';
 export { createHttpProductPageFetcher } from './infrastructure/http-product-page-fetcher';
-export { products } from './infrastructure/schema';
+export { products, searchEvents } from './infrastructure/schema';
+export type { SearchLog } from './infrastructure/search-log';
+export { createSearchLog } from './infrastructure/search-log';

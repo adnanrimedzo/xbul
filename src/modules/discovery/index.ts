@@ -1,6 +1,7 @@
-export type { ArticlePageView, ClaimGroup, ClaimView, CompanyPageView, CompanyRef, GarmentTile, PendingReview, ProductPageView } from './infrastructure/types';
+export type { ArticlePageView, ClaimGroup, ClaimView, CompanyPageView, CompanyRef, GarmentTile, PendingReview, PlatformStats, ProductPageView } from './infrastructure/types';
 export { getProductPageView } from './infrastructure/product-page-view';
 export { getArticlePageView } from './infrastructure/article-page-view';
 export { getCompanyPageView } from './infrastructure/company-page-view';
 export { listRecentlyTagged } from './infrastructure/recently-tagged';
 export { listPendingReviews } from './infrastructure/pending-reviews';
+export { getPlatformStats } from './infrastructure/platform-stats';

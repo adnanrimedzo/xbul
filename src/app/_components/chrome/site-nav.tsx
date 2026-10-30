@@ -15,7 +15,12 @@ export function SiteNav({ viewer }: { viewer: Viewer | null }) {
       </div>
       <div className={group}>
         {company && <Link href="/add">Add products</Link>}
-        {viewer?.isAdmin && <Link href="/admin/claims">Admin</Link>}
+        {viewer?.isAdmin && (
+          <>
+            <Link href="/admin/claims">Admin</Link>
+            <Link href="/admin/stats">Stats</Link>
+          </>
+        )}
         {viewer ? (
           <form action={signOutAction}>
             <button type="submit">Sign out</button>

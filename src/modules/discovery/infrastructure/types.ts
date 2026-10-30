@@ -55,3 +55,6 @@ export type PendingReview = {
   company: { slug: string; name: string };
   evidence: { id: string; fileName: string; sizeBytes: number }[];
 };
+
+// How the platform stands against the launch targets of 20-30 suppliers, 200-300 products and 10-20 searching customers.
+export type PlatformStats = { suppliers: number; taggedProducts: number; searches: number; matchedSearches: number; distinctSearchers: number };

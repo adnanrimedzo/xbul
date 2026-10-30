@@ -1,12 +1,14 @@
 import { beforeAll, expect, it } from 'vitest';
 import type { Db } from '@/shared/db/client';
 import { createTestDb } from '@/shared/db/testing';
+import { createSearchLog } from '@/modules/catalog';
 import { createClaimRepository, createEvidence, createEvidenceRepository, declareClaim, rejectReview, submitForReview } from '@/modules/claims';
 import { DEMO } from '@/server/demo-ids';
 import { seedDemo } from '@/server/seed-demo';
 import {
   getArticlePageView,
   getCompanyPageView,
+  getPlatformStats,
   getProductPageView,
   listPendingReviews,
   listRecentlyTagged,
@@ -100,4 +102,15 @@ it('lists the claims waiting for review, longest waiting first, with their files
 it('seedDemo is idempotent', async () => {
   await seedDemo(db);
   expect((await getCompanyPageView(db, 'indigo-mill'))?.garments).toHaveLength(2);
+});
+
+it('counts suppliers, tagged products, searches and distinct searchers', async () => {
+  const own = await createTestDb();
+  await seedDemo(own);
+  const log = createSearchLog(own);
+  await log.record({ matched: true, visitorHash: 'a' });
+  await log.record({ matched: false, visitorHash: 'a' });
+  await log.record({ matched: true, visitorHash: 'b' });
+  await log.record({ matched: false, visitorHash: null });
+  expect(await getPlatformStats(own)).toEqual({ suppliers: 4, taggedProducts: 3, searches: 4, matchedSearches: 2, distinctSearchers: 2 });
 });
