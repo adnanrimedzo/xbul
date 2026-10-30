@@ -18,7 +18,7 @@ export function readConfig(env: Record<string, string | undefined> = process.env
   const baseUrl = value('PUBLIC_BASE_URL')?.replace(/\/+$/, '');
   if (!baseUrl) throw new Error('PUBLIC_BASE_URL is required');
   if (!/^https?:$/.test(URL.parse(baseUrl)?.protocol ?? '')) {
-    throw new Error(`PUBLIC_BASE_URL must be an http(s) URL such as https://xbul.ai, got "${baseUrl}"`);
+    throw new Error(`PUBLIC_BASE_URL must be an http(s) URL such as https://xbul.io, got "${baseUrl}"`);
   }
   const resendApiKey = value('RESEND_API_KEY');
   // The console mailer prints magic links, which are bearer tokens, so production logs must never get them.
@@ -32,7 +32,7 @@ export function readConfig(env: Record<string, string | undefined> = process.env
     authSecret,
     adminEmails: (env.ADMIN_EMAILS ?? '').split(',').map((e) => e.trim().toLowerCase()).filter(Boolean),
     resendApiKey,
-    mailFrom: value('MAIL_FROM') ?? 'xbul <hello@xbul.ai>',
+    mailFrom: value('MAIL_FROM') ?? 'xbul <hello@xbul.io>',
     mailLogFile: value('MAIL_LOG_FILE'),
     allowPrivateHosts: env.FETCH_ALLOW_PRIVATE_HOSTS === '1',
     evidenceDir: value('EVIDENCE_DIR') ?? './.data/evidence',

@@ -7,12 +7,12 @@ const prod = config;
 const staging = config.env.staging;
 
 test('production points at the real origin', () => {
-  expect(prod.vars.PUBLIC_BASE_URL).toBe('https://xbul.ai');
+  expect(prod.vars.PUBLIC_BASE_URL).toBe('https://xbul.io');
 });
 
 test('staging shares nothing with production', () => {
   expect(staging.name).toBe('xbul-staging');
-  expect(staging.vars.PUBLIC_BASE_URL).toBe('https://staging.xbul.ai');
+  expect(staging.vars.PUBLIC_BASE_URL).toBe('https://staging.xbul.io');
   expect(staging.r2_buckets[0].binding).toBe('EVIDENCE');
   expect(staging.r2_buckets[0].bucket_name).toBe('xbul-evidence-staging');
   expect(staging.r2_buckets[0].bucket_name).not.toBe(prod.r2_buckets[0].bucket_name);

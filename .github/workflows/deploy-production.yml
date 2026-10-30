@@ -34,7 +34,7 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.PRODUCTION_DATABASE_URL }}
       - run: pnpm run deploy
-      - run: node scripts/smoke.mjs https://xbul.ai
+      - run: node scripts/smoke.mjs https://xbul.io
       - name: How to roll back
         if: failure()
         run: echo "The live check failed. It does not roll back on its own. See 'A deploy went wrong' in docs/runbook.md."

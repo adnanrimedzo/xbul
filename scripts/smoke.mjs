@@ -1,4 +1,4 @@
-// Read-only check of a running site: node scripts/smoke.mjs https://xbul.ai
+// Read-only check of a running site: node scripts/smoke.mjs https://xbul.io
 const origin = process.argv[2];
 if (!origin) {
   console.error('Usage: node scripts/smoke.mjs <origin>');

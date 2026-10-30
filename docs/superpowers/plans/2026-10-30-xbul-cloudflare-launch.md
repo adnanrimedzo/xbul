@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development or superpowers:executing-plans to implement Part 1 task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking. Part 2 is a rollout that uses the owner's accounts: never run it without the owner's go-ahead for that stage.
 
-**Goal:** Put xbul live on `https://xbul.ai` on Cloudflare, with a staging copy, automated checks, backups, monitoring and a tested way back, ready for the first invited suppliers.
+**Goal:** Put xbul live on `https://xbul.io` on Cloudflare, with a staging copy, automated checks, backups, monitoring and a tested way back, ready for the first invited suppliers.
 
 **Architecture:** One Next.js app runs as a Cloudflare Worker through OpenNext, in two environments, staging and production. Each environment has its own Worker, Hyperdrive config, Neon database and R2 bucket. GitHub Actions tests every push, deploys `main` to staging on its own, and deploys production only when the owner starts it by hand.
 
@@ -18,7 +18,7 @@
 | Hosting | Cloudflare Workers Paid, $5/month | The free plan's 10 ms CPU per request is too low to render pages. Paid includes 10M requests, 30M CPU ms and Hyperdrive. |
 | Database | Neon Launch for production, Neon Free for staging | Free keeps only 6 hours of restore history. Launch keeps up to 7 days, with no minimum monthly fee. |
 | Region | Neon `aws-eu-central-1` (Frankfurt) with the Worker placed next to it | The first suppliers and buyers are in Turkey and Europe. A page runs several queries, so running the Worker beside the database costs one trip to the visitor rather than one per query. Confirm the region in Neon's list when creating the project. |
-| Staging address | `https://staging.xbul.ai` | Real sign-in cookies and email links behave as in production. It holds test data only and asks search engines to stay out. |
+| Staging address | `https://staging.xbul.io` | Real sign-in cookies and email links behave as in production. It holds test data only and asks search engines to stay out. |
 | Production deploys | Started by hand | At launch the owner should choose when real suppliers see a change. |
 | Rollback | `wrangler rollback`, no automatic rollback | A rollback restores code, not the database, so a person should decide. |
 | Backups | Neon's 7-day history, plus a weekly dump to a private R2 bucket kept for 90 days | Neon's history covers mistakes. The dump covers losing the Neon project or account. |
@@ -26,7 +26,7 @@
 
 ## Global Constraints
 
-- The product name is `xbul` and the production origin is exactly `https://xbul.ai`.
+- The product name is `xbul` and the production origin is exactly `https://xbul.io`.
 - Production and staging never share a database, bucket, secret or Worker.
 - No `.env*` file except `.env.example` may exist when a Worker is built; `scripts/no-env-files.mjs` enforces this.
 - Evidence buckets are never public: no custom domain and no `r2.dev` URL.
@@ -66,11 +66,11 @@ Read `wrangler.jsonc`, remove its comments with `/^\s*\/\/.*$/gm` (every comment
 const prod = config; const staging = config.env.staging;
 
 test('production points at the real origin', () => {
-  expect(prod.vars.PUBLIC_BASE_URL).toBe('https://xbul.ai');
+  expect(prod.vars.PUBLIC_BASE_URL).toBe('https://xbul.io');
 });
 test('staging shares nothing with production', () => {
   expect(staging.name).toBe('xbul-staging');
-  expect(staging.vars.PUBLIC_BASE_URL).toBe('https://staging.xbul.ai');
+  expect(staging.vars.PUBLIC_BASE_URL).toBe('https://staging.xbul.io');
   expect(staging.r2_buckets[0].binding).toBe('EVIDENCE');
   expect(staging.r2_buckets[0].bucket_name).toBe('xbul-evidence-staging');
   expect(staging.r2_buckets[0].bucket_name).not.toBe(prod.r2_buckets[0].bucket_name);
@@ -98,7 +98,7 @@ In `wrangler.jsonc`, add top-level `"placement": { "region": "aws:eu-central-1" 
 - `services`: `WORKER_SELF_REFERENCE` → `xbul-staging`
 - `hyperdrive`: `HYPERDRIVE`, id `<HYPERDRIVE_STAGING_ID>`, the same `localConnectionString` as production
 - `r2_buckets`: `EVIDENCE` → `xbul-evidence-staging`
-- `vars`: `PUBLIC_BASE_URL` = `https://staging.xbul.ai`, `MAIL_FROM` = `xbul staging <hello@xbul.ai>`
+- `vars`: `PUBLIC_BASE_URL` = `https://staging.xbul.io`, `MAIL_FROM` = `xbul staging <hello@xbul.io>`
 - `observability`: `{ "enabled": true }`
 
 In `package.json`, add:
@@ -211,7 +211,7 @@ git commit -m "feat(ops): add a health check, an outage page and a live smoke ch
 ```ts
 // src/app/robots.txt/route.test.ts
 test('production allows the public site and blocks private paths', async () => {
-  vi.stubEnv('PUBLIC_BASE_URL', 'https://xbul.ai');
+  vi.stubEnv('PUBLIC_BASE_URL', 'https://xbul.io');
   const text = await (await GET()).text();
   expect(text).toContain('Allow: /');
   for (const path of ['/admin/', '/add', '/api/', '/verify/', '/onboarding', '/sign-in']) {
@@ -219,7 +219,7 @@ test('production allows the public site and blocks private paths', async () => {
   }
 });
 test('anywhere else blocks everything', async () => {
-  vi.stubEnv('PUBLIC_BASE_URL', 'https://staging.xbul.ai');
+  vi.stubEnv('PUBLIC_BASE_URL', 'https://staging.xbul.io');
   const text = await (await GET()).text();
   expect(text).toContain('Disallow: /');
   expect(text).not.toContain('Allow: /');
@@ -258,7 +258,7 @@ Privacy must say:
 - Searches: no IP address is stored, only a hash that changes daily.
 - Backups: database backups are kept for 90 days. Evidence files aren't in them.
 - Service providers: Cloudflare, Neon, Resend.
-- Contact: `hello@xbul.ai`.
+- Contact: `hello@xbul.io`.
 
 Terms must say:
 - Suppliers are responsible for what they claim and must have the right to share what they upload.
@@ -300,8 +300,8 @@ Use Node 22 and pnpm 10, install with `pnpm install --frozen-lockfile`, and pin 
 | Workflow | Trigger | Steps |
 |---|---|---|
 | `ci.yml` | every pull request, and callable by the deploy workflows | lint, typecheck, `pnpm test`, install Chromium, `pnpm e2e`. Upload the Playwright report and test logs on failure, so the one unexplained unit test failure seen after the Phase 2 merge can be identified if it returns. |
-| `deploy-staging.yml` | push to `main` | run `ci.yml`, then `DATABASE_URL=$STAGING_DATABASE_URL pnpm db:migrate`, `pnpm run deploy:staging`, `node scripts/smoke.mjs https://staging.xbul.ai` |
-| `deploy-production.yml` | `workflow_dispatch` only, `main` only, GitHub environment `production` | run `ci.yml`, then `DATABASE_URL=$PRODUCTION_DATABASE_URL pnpm db:migrate`, `pnpm run deploy`, `node scripts/smoke.mjs https://xbul.ai`. If the smoke check fails, the job fails and prints the rollback steps from `docs/runbook.md`. It doesn't roll back itself. |
+| `deploy-staging.yml` | push to `main` | run `ci.yml`, then `DATABASE_URL=$STAGING_DATABASE_URL pnpm db:migrate`, `pnpm run deploy:staging`, `node scripts/smoke.mjs https://staging.xbul.io` |
+| `deploy-production.yml` | `workflow_dispatch` only, `main` only, GitHub environment `production` | run `ci.yml`, then `DATABASE_URL=$PRODUCTION_DATABASE_URL pnpm db:migrate`, `pnpm run deploy`, `node scripts/smoke.mjs https://xbul.io`. If the smoke check fails, the job fails and prints the rollback steps from `docs/runbook.md`. It doesn't roll back itself. |
 
 Set `concurrency` on each deploy workflow so two deploys of one environment can't overlap, and `permissions: contents: read`. Secrets must not appear in commands that echo them.
 
@@ -373,7 +373,7 @@ Make it match Part 2: staging first, `--env staging` on every Wrangler command f
 It must contain:
 - **Every day during launch:** check `/admin/claims` and `/admin/stats`, and look through Workers Logs for `[evidence] could not delete`, `[db]` and `[health]`.
 - **Every month:** run a restore with `scripts/verify-restore.sh` on the latest dump, and compare the bills to the table in Part 2.
-- **The site is down:** `node scripts/smoke.mjs https://xbul.ai`, `/api/health`, Neon's status page, Cloudflare's status page, Workers Logs, in that order.
+- **The site is down:** `node scripts/smoke.mjs https://xbul.io`, `/api/health`, Neon's status page, Cloudflare's status page, Workers Logs, in that order.
 - **A deploy went wrong:** `pnpm wrangler rollback --message "<why>"` for production, with `--env staging` for staging. Then check whether that release included a migration. The previous code must still work against the new schema, which the add-first rule guarantees.
 - **Restore the database:** use Neon's instant restore for anything within 7 days, and a dump for anything older. Pause sign-ups by telling the suppliers first. Run `scripts/verify-restore.sh` on the dump before using it.
 - **Rotate a secret:** `pnpm wrangler secret put <NAME>`. Rotating `BETTER_AUTH_SECRET` signs everyone out and re-counts visitor hashes once.
@@ -397,20 +397,20 @@ Tick a stage's check before starting the next one.
 
 ### Stage 0: Decisions and purchases (You)
 
-- [ ] Buy `xbul.ai`, or confirm you own it, and move its DNS to Cloudflare. Check the price first: `.ai` domains cost far more than `.com` and often have a minimum term.
+- [ ] Move `xbul.io`'s DNS to Cloudflare.
 - [ ] Decide which legal entity runs the site. Replace `xbul` as the operator on `/privacy` and `/terms`.
 - [ ] Have someone qualified review both pages. The site holds customers' invoices from Turkey and Europe, so ask specifically about KVKK and GDPR.
 - [ ] Create a private GitHub repository and add it as the remote (Agent can push, on your go-ahead).
 - [ ] Answer your brother's open question: is Turkish needed at launch? It isn't in this plan.
 
-**Check:** `dig NS xbul.ai` shows Cloudflare's name servers.
+**Check:** `dig NS xbul.io` shows Cloudflare's name servers.
 
 ### Stage 1: Accounts (You)
 
 - [ ] Cloudflare: Workers Paid; enable R2 once under **R2 Object Storage**; set a billing notification.
 - [ ] Neon: `xbul-production` on Launch, with history set to 7 days, and `xbul-staging` on Free. Both in Frankfurt.
-- [ ] Resend: add `xbul.ai`, add its DNS records in Cloudflare, wait for "verified". Create one API key per environment.
-- [ ] Cloudflare Email Routing: forward `hello@xbul.ai` to your own inbox. Without this, replies to sign-in mail and the contact address on `/privacy` go nowhere. Check that Resend's records and these don't conflict.
+- [ ] Resend: add `xbul.io`, add its DNS records in Cloudflare, wait for "verified". Create one API key per environment.
+- [ ] Cloudflare Email Routing: forward `hello@xbul.io` to your own inbox. Without this, replies to sign-in mail and the contact address on `/privacy` go nowhere. Check that Resend's records and these don't conflict.
 - [ ] Cloudflare API token from the **Edit Cloudflare Workers** template, limited to this account. Confirm it can write to R2, because the backup job needs that.
 - [ ] GitHub secrets from Task 4.
 - [ ] `pnpm wrangler login` on your machine.
@@ -426,9 +426,9 @@ Run every Wrangler command here with `--env staging`.
 - [ ] `pnpm wrangler r2 bucket create xbul-evidence-staging`, then add the 90-day lifecycle rule on `evidence/`.
 - [ ] Secrets: `BETTER_AUTH_SECRET` (new, not shared with production), `RESEND_API_KEY` and `ADMIN_EMAILS` (You enter these at the prompt).
 - [ ] Move `.env.local` out of the project root, run `pnpm run deploy:staging`, then put it back.
-- [ ] Attach `staging.xbul.ai` as a custom domain.
+- [ ] Attach `staging.xbul.io` as a custom domain.
 
-**Check:** `node scripts/smoke.mjs https://staging.xbul.ai` passes, and a push to `main` deploys staging through GitHub Actions.
+**Check:** `node scripts/smoke.mjs https://staging.xbul.io` passes, and a push to `main` deploys staging through GitHub Actions.
 
 ### Stage 3: Prove it works on staging (You and Agent)
 
@@ -452,14 +452,14 @@ This is the first time real Cloudflare, Neon, R2 and Resend are used together, s
 - [ ] `pnpm wrangler r2 bucket create xbul-backups`, and a 90-day rule on `db/`.
 - [ ] Secrets, all new: `BETTER_AUTH_SECRET`, `RESEND_API_KEY`, `ADMIN_EMAILS`.
 - [ ] Run `pnpm run deploy` from your machine with `.env.local` moved out, so the worker exists. Its address isn't live yet, because `workers.dev` is off.
-- [ ] Attach `xbul.ai` as a custom domain, and redirect `www.xbul.ai` to it with a redirect rule.
+- [ ] Attach `xbul.io` as a custom domain, and redirect `www.xbul.io` to it with a redirect rule.
 - [ ] Turn on **Always Use HTTPS**.
 - [ ] Start `deploy-production.yml` from GitHub, which now passes its smoke check.
 - [ ] Add the one rate limiting rule the Free plan allows: path `/`, more than 50 requests in 10 seconds per IP, block for 10 seconds. It limits anonymous search spam and no real visitor hits it. The sign-in limiter already exists in the app.
 - [ ] Run step 10 of `docs/deploy.md` with a test supplier and keep that supplier. Start `backup.yml` by hand, download the dump, and run `scripts/verify-restore.sh` on it. Then delete the test supplier as `docs/runbook.md` describes.
-- [ ] Add `https://xbul.ai/api/health` to a free external uptime monitor, emailing you when it fails. Cloudflare can't tell you when Cloudflare itself can't reach the site.
+- [ ] Add `https://xbul.io/api/health` to a free external uptime monitor, emailing you when it fails. Cloudflare can't tell you when Cloudflare itself can't reach the site.
 
-**Check:** `node scripts/smoke.mjs https://xbul.ai` passes; step 10 of `docs/deploy.md` passed; the verified restore shows the expected tables; the monitor shows up; no bucket has a public URL.
+**Check:** `node scripts/smoke.mjs https://xbul.io` passes; step 10 of `docs/deploy.md` passed; the verified restore shows the expected tables; the monitor shows up; no bucket has a public URL.
 
 ### Stage 5: First suppliers (You)
 
@@ -479,7 +479,7 @@ Check these at sign-up. Only the figures marked as checked were confirmed in cur
 | Neon Free for staging | $0 | Checked |
 | Resend | Free tier should cover sign-in links at this size | Not checked |
 | GitHub, uptime monitor | $0 at this size, subject to GitHub's private-repository Actions minutes | Not checked |
-| `xbul.ai` | Yearly fee | Not checked |
+| `xbul.io` | Yearly fee | Not checked |
 
 ### Not in this plan
 

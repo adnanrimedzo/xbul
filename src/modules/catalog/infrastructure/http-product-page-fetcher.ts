@@ -3,7 +3,7 @@ import { assertPublicHttpUrl, parseHttpUrl } from '../domain/product-url';
 
 const MAX_REDIRECTS = 5;
 const HEADERS = {
-  'user-agent': 'Mozilla/5.0 (compatible; xbul-bot/1.0; +https://xbul.ai/bot)',
+  'user-agent': 'Mozilla/5.0 (compatible; xbul-bot/1.0; +https://xbul.io/bot)',
   accept: 'text/html',
   'accept-language': 'en',
 };

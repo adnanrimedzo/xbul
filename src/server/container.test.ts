@@ -20,7 +20,7 @@ const bucket = { put: vi.fn(async () => {}), get: vi.fn(async () => null), delet
 
 beforeEach(() => {
   vi.stubEnv('BETTER_AUTH_SECRET', 's'.repeat(32));
-  vi.stubEnv('PUBLIC_BASE_URL', 'https://xbul.ai');
+  vi.stubEnv('PUBLIC_BASE_URL', 'https://xbul.io');
   vi.stubEnv('DATABASE_URL', '');
   workers.env = { HYPERDRIVE: { connectionString: hyperdrive }, EVIDENCE: bucket };
   workers.waitUntil = [];

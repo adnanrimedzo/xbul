@@ -6,7 +6,7 @@ There are two environments that share nothing. **Do every step for staging first
 
 | | Staging | Production |
 |---|---|---|
-| Address | `https://staging.xbul.ai` | `https://xbul.ai` |
+| Address | `https://staging.xbul.io` | `https://xbul.io` |
 | Worker | `xbul-staging` | `xbul` |
 | Neon project | `xbul-staging` (Free plan) | `xbul-production` (Launch plan) |
 | Hyperdrive config | `xbul-db-staging` | `xbul-db` |
@@ -15,7 +15,7 @@ There are two environments that share nothing. **Do every step for staging first
 | Deploy command | `pnpm run deploy:staging` | `pnpm run deploy` |
 
 You need:
-- a Cloudflare account with `xbul.ai`'s DNS on Cloudflare
+- a Cloudflare account with `xbul.io`'s DNS on Cloudflare
 - a Cloudflare Workers Paid plan: the free plan's CPU time (10 ms per request) and subrequest count (50 per request) are too low for rendering pages and for fetching the link previews on `/add`
 - R2 enabled on that account. Do this once in the Cloudflare dashboard, under **R2 Object Storage**. Step 4 fails until you have.
 - a Neon account
@@ -100,19 +100,19 @@ Production refuses to start without `RESEND_API_KEY`. Without it, magic links (w
 
 ## 6. Set up email
 
-1. In Resend, add `xbul.ai` and create the DNS records it lists.
+1. In Resend, add `xbul.io` and create the DNS records it lists.
 2. Wait until Resend shows the domain as verified. Sign-in doesn't work until then.
-3. In Cloudflare, open **Email → Email Routing** for `xbul.ai` and forward `hello@xbul.ai` to your own inbox. Sign-in mail is sent from that address, and `/privacy` and `/terms` give it as the contact, so replies must reach you. Check that the records from step 1 and these don't conflict.
+3. In Cloudflare, open **Email → Email Routing** for `xbul.io` and forward `hello@xbul.io` to your own inbox. Sign-in mail is sent from that address, and `/privacy` and `/terms` give it as the contact, so replies must reach you. Check that the records from step 1 and these don't conflict.
 
 `MAIL_FROM` is already set in `wrangler.jsonc`.
 
 ## 7. Check the public address
 
-`PUBLIC_BASE_URL` in `wrangler.jsonc` is already `https://xbul.ai` for production and `https://staging.xbul.ai` for staging. It is the only origin setting: sign-in uses it too, and `/robots.txt` blocks all search engines unless it is exactly `https://xbul.ai`.
+`PUBLIC_BASE_URL` in `wrangler.jsonc` is already `https://xbul.io` for production and `https://staging.xbul.io` for staging. It is the only origin setting: sign-in uses it too, and `/robots.txt` blocks all search engines unless it is exactly `https://xbul.io`.
 
 The `workers.dev` address and version preview addresses are turned off in `wrangler.jsonc`, so a worker can't be reached until step 9 gives it a custom domain.
 
-Sign-in cookies and magic links are bound to one origin, so a link sent from `xbul.ai` fails on `www.xbul.ai`. Step 9 redirects `www`.
+Sign-in cookies and magic links are bound to one origin, so a link sent from `xbul.io` fails on `www.xbul.io`. Step 9 redirects `www`.
 
 ## 8. Deploy
 
@@ -136,7 +136,7 @@ In the Cloudflare dashboard:
 3. Enter the address from the table above.
 
 For production, also:
-- Redirect `www.xbul.ai` to `https://xbul.ai` with a Cloudflare redirect rule.
+- Redirect `www.xbul.io` to `https://xbul.io` with a Cloudflare redirect rule.
 - Turn on **SSL/TLS → Edge Certificates → Always Use HTTPS**.
 
 ## 10. Smoke-test
@@ -144,7 +144,7 @@ For production, also:
 First the read-only check, which also runs after every automated deploy:
 
 ```bash
-node scripts/smoke.mjs https://staging.xbul.ai
+node scripts/smoke.mjs https://staging.xbul.io
 ```
 
 Then by hand, on the same address:
@@ -183,7 +183,7 @@ What then runs:
 ## 12. Protect and watch production
 
 - **Check the first backup.** While the test supplier from step 10 still exists, start `Back up the database` by hand, download the dump from the `xbul-backups` bucket in the dashboard, then run `bash scripts/verify-restore.sh <dump file>`. A database with no companies fails this check on purpose. Delete the downloaded file afterwards.
-- **Uptime monitor.** Add `https://xbul.ai/api/health` to a free external uptime monitor that emails you. It has to be outside Cloudflare, so it can tell you when Cloudflare can't reach the site.
+- **Uptime monitor.** Add `https://xbul.io/api/health` to a free external uptime monitor that emails you. It has to be outside Cloudflare, so it can tell you when Cloudflare can't reach the site.
 - **Rate limit.** Under **Security → WAF → Rate limiting rules**, add the one rule the Free plan allows: path equals `/`, more than 50 requests in 10 seconds per IP, block for 10 seconds. It limits anonymous search spam, and no real visitor reaches it. Sign-in has its own limiter in the app.
 - **Billing.** Set a billing notification in Cloudflare and Neon.
 

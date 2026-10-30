@@ -12,7 +12,7 @@ describe('readConfig', () => {
 
   it('treats blank values as unset and reads the optional switches', () => {
     expect(readConfig({ DATABASE_URL: '  ', BETTER_AUTH_SECRET: secret, PUBLIC_BASE_URL: 'http://x', ADMIN_EMAILS: ',, ,', RESEND_API_KEY: '', MAIL_FROM: '' }))
-      .toEqual({ databaseUrl: null, baseUrl: 'http://x', authSecret: secret, adminEmails: [], resendApiKey: null, mailFrom: 'xbul <hello@xbul.ai>', mailLogFile: null, allowPrivateHosts: false, evidenceDir: './.data/evidence' });
+      .toEqual({ databaseUrl: null, baseUrl: 'http://x', authSecret: secret, adminEmails: [], resendApiKey: null, mailFrom: 'xbul <hello@xbul.io>', mailLogFile: null, allowPrivateHosts: false, evidenceDir: './.data/evidence' });
     expect(readConfig({ BETTER_AUTH_SECRET: secret, PUBLIC_BASE_URL: 'http://x', RESEND_API_KEY: 're_1', MAIL_LOG_FILE: '.outbox/mail.log', FETCH_ALLOW_PRIVATE_HOSTS: '1', EVIDENCE_DIR: '/var/evidence' }))
       .toMatchObject({ resendApiKey: 're_1', mailLogFile: '.outbox/mail.log', allowPrivateHosts: true, evidenceDir: '/var/evidence' });
   });
@@ -22,13 +22,13 @@ describe('readConfig', () => {
   });
 
   it('rejects a base url that is not an http(s) URL', () => {
-    for (const url of ['xbul.ai', 'localhost:3000', 'ftp://xbul.ai']) {
+    for (const url of ['xbul.io', 'localhost:3000', 'ftp://xbul.io']) {
       expect(() => readConfig({ BETTER_AUTH_SECRET: secret, PUBLIC_BASE_URL: url }), url).toThrow(/PUBLIC_BASE_URL must be an http\(s\) URL/);
     }
   });
 
   it('refuses the console mailer in production unless it is allowed, so magic links never land in logs', () => {
-    const prod = { BETTER_AUTH_SECRET: secret, PUBLIC_BASE_URL: 'https://xbul.ai', NODE_ENV: 'production' };
+    const prod = { BETTER_AUTH_SECRET: secret, PUBLIC_BASE_URL: 'https://xbul.io', NODE_ENV: 'production' };
     expect(() => readConfig(prod)).toThrow(/RESEND_API_KEY/);
     expect(readConfig({ ...prod, RESEND_API_KEY: 're_1' }).resendApiKey).toBe('re_1');
     expect(readConfig({ ...prod, ALLOW_CONSOLE_MAILER: '1' }).resendApiKey).toBeNull();
@@ -37,7 +37,7 @@ describe('readConfig', () => {
 
 describe('resolveDatabaseUrl', () => {
   it('prefers DATABASE_URL, then Hyperdrive, then local PGlite', () => {
-    const base = readConfig({ BETTER_AUTH_SECRET: 's'.repeat(32), PUBLIC_BASE_URL: 'https://xbul.ai' });
+    const base = readConfig({ BETTER_AUTH_SECRET: 's'.repeat(32), PUBLIC_BASE_URL: 'https://xbul.io' });
     expect(resolveDatabaseUrl({ ...base, databaseUrl: 'postgres://a' }, null)).toBe('postgres://a');
     expect(resolveDatabaseUrl(base, { env: { HYPERDRIVE: { connectionString: 'postgres://hd' } } })).toBe('postgres://hd');
     expect(resolveDatabaseUrl(base, null)).toBe('./.data/dev');

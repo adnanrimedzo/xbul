@@ -25,8 +25,8 @@ How to look after the live site. Setting it up is in [deploy.md](deploy.md). Com
 
 Check these in order, and stop when you find the cause:
 
-1. `node scripts/smoke.mjs https://xbul.ai` shows which parts fail.
-2. `https://xbul.ai/api/health` answers 503 when the database can't be reached.
+1. `node scripts/smoke.mjs https://xbul.io` shows which parts fail.
+2. `https://xbul.io/api/health` answers 503 when the database can't be reached.
 3. Neon's status page, then Cloudflare's status page.
 4. Workers Logs, for the error behind it.
 5. If it started right after a deploy, roll back (below).

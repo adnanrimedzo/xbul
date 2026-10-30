@@ -26,8 +26,8 @@
   // Public settings. Secrets (BETTER_AUTH_SECRET, RESEND_API_KEY, ADMIN_EMAILS) go in with `wrangler secret put`.
   // PUBLIC_BASE_URL is the one canonical origin (sign-in included): pick apex or www and use it everywhere.
   "vars": {
-    "PUBLIC_BASE_URL": "https://xbul.ai",
-    "MAIL_FROM": "xbul <hello@xbul.ai>"
+    "PUBLIC_BASE_URL": "https://xbul.io",
+    "MAIL_FROM": "xbul <hello@xbul.io>"
   },
   // Workers Logs: request logs and console output (e.g. a failed owner notification) in the dashboard.
   "observability": { "enabled": true },
@@ -52,8 +52,8 @@
       ],
       "r2_buckets": [{ "binding": "EVIDENCE", "bucket_name": "xbul-evidence-staging" }],
       "vars": {
-        "PUBLIC_BASE_URL": "https://staging.xbul.ai",
-        "MAIL_FROM": "xbul staging <hello@xbul.ai>"
+        "PUBLIC_BASE_URL": "https://staging.xbul.io",
+        "MAIL_FROM": "xbul staging <hello@xbul.io>"
       },
       "observability": { "enabled": true }
     }
