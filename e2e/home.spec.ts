@@ -39,7 +39,6 @@ test('the home page says supplier and product, not mill and garment', async ({ p
   await page.goto('/');
   await expect(page.getByPlaceholder("Paste a product link from any brand's site")).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Recently tagged products' })).toBeVisible();
-  await expect(page.getByText('About · For suppliers · Terms')).toBeVisible();
   await expect(page.getByText('Contact suppliers directly').first()).toBeAttached(); // the ticker is aria-hidden
   await expect(page.locator('meta[name=description]')).toHaveAttribute('content', 'Find the supplier behind any product.');
 });

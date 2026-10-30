@@ -80,7 +80,8 @@ export default async function VerifyPage({ params }: PageProps<'/verify/[claim]'
               </p>
             )}
             <p className="max-w-[640px] normal-case">
-              Upload an invoice, order or correspondence with the customer. Cover prices if you like. Files are private and deleted once reviewed.
+              Upload an invoice, order or correspondence with the customer. Cover prices if you like. Your documents stay private and are deleted once reviewed.{' '}
+              <Link href="/privacy" className="border-b border-ink">Privacy</Link>
             </p>
             <FileList files={files} claimId={claim.id} editable />
             <UploadEvidenceForm claimId={claim.id} maxBytes={MAX_EVIDENCE_BYTES} maxFiles={MAX_EVIDENCE_FILES} />
