@@ -6,6 +6,9 @@ export default defineConfig({
     include: ['src/**/*.test.ts'],
     environment: 'node',
     passWithNoTests: true,
+    // Starting PGlite takes about 3 s when test files run in parallel, and more on a busy machine or a small CI runner.
+    testTimeout: 30_000,
+    hookTimeout: 30_000,
   },
   resolve: {
     alias: { '@': fileURLToPath(new URL('./src', import.meta.url)) },
