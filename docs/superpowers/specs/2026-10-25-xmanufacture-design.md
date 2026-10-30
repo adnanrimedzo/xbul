@@ -124,9 +124,45 @@ It is a B2B **sales and discovery** platform. It is **not** a traceability or Di
 - **Phase 2:** proof upload for verification, team members, Turkish UI, garment makers, browse by brand and category, a fallback for blocked sites, sharing from the phone (PWA share target) or a Chrome extension.
 - **Phase 3:** revenue (mill subscription, paid visibility, fees per request), visual search, and analytics for mills (views and requests per article).
 
-## 11. Open questions (for the user and the brother)
+## 11. The brother's answers (received 2026-10-30)
 
-1. Confirm with the brother that the platform is neutral, with competitors' equivalents listed under his garments.
-2. Success after the first month is still unanswered. *Claude's proposal:* the brother's mill has posted 30 or more garments as links instead of screenshots, 3 or more other mills have joined, and 10 or more buyer requests have been sent.
-3. Is Turkish UI needed in Phase 1 for the mill staff?
-4. Units: metres for MOQ and ounces for denim weight. Do non-denim fabrics need g/m² instead?
+These override earlier sections where they conflict. The code doesn't reflect the "Changes" list yet.
+
+**Confirmed, no change needed**
+- **Neutral listing stays.** Some suppliers may object to competitors under their products, but most won't.
+- **Publishing is the supplier's call.** Whether to name a brand is up to each supplier, not the platform. No private-link mode is needed.
+- **Specs stay optional.** Suppliers enter them if they want to.
+- **No commission** runs through the platform.
+
+**Changes to the product**
+- **Garment makers (konfeksiyon) are needed from the start,** not in Phase 2.
+- **Beyond clothing and beyond Turkey.** Clothing comes first, but the model must extend to all industrial products, on a global marketplace. Domain language and copy shouldn't assume fabric, denim or Turkey.
+- **Verified means evidence.** A supplier who wants the badge submits invoices and correspondence with the customer to the platform team.
+- **Buyers have three levels.** Anyone can search without signing up. A free member also sees suppliers' current listings and ratings. A paying member gets detailed supplier information.
+- **Revenue.** Buyers pay a monthly subscription for supplier detail. Suppliers pay to rank higher among equivalents, and pay for the verified badge. This replaces the Phase 3 revenue idea in section 10.
+- **Platform support is by email,** for technical questions to the platform team. The brother speaks as the platform's operator, not as a user of it.
+
+**Success after the first month:** 20–30 suppliers have added 200–300 products, and 10–20 customers have searched. The app doesn't record searches yet, so this can't be measured today.
+
+**First suppliers to invite:** garment makers Taypa and Fashionpoint; mills Indigo Tunel and EGR.
+
+**Second round of answers (2026-10-30)**
+- **No agents.** "Agent" came from an early draft; forget it. The agent role, handles and `?via=` credit go. This overrides the agent parts of sections 2, 3, 5, 6 and 8.
+- **No request form.** Buyers reach the supplier directly through the supplier's contact details, and the platform doesn't relay anything. The Inquiry context, the Requests inbox and request emails go. This overrides flow 3 in section 3 and the Inquiry row in section 5.
+- **Ratings:** customers rate their experience with a supplier. This needs buyer accounts, so it comes with them.
+- **The name** "xmanufacture" stays for now and changes later.
+
+**Decided by Claude for the next phase (each can be overridden)**
+- **Contact details are public** with no account needed, because the brother said buyers should reach the manufacturer directly. A supplier gives at least one of email, phone or website at onboarding and can edit them.
+- **One kind per company:** a company is either a fabric mill or a garment maker. A firm that does both picks one for now.
+- **A garment page has two lists:** who made the fabric and who made the garment. Each list follows the existing order (verified original, declared originals, equivalents), and each can have one verified original.
+- **Specs become free text** except lead time, so a supplier writes "1,000 m" or "12.5 oz" or "240 g/m²" in their own units.
+- **Copy says "supplier", not "mill",** and the home headline stops mentioning fabric. Code names for the existing tables and routes stay, to keep the change small.
+- **The Istanbul clock is removed,** because the marketplace is global.
+- **Evidence:** PDF, JPG or PNG, up to 5 files of 10 MB each, in private storage that only the owning supplier and admins can reach. An admin approves or rejects with a note. The files are deleted once decided, and the decision, who made it and when are kept, because invoices are sensitive and shouldn't be held longer than needed.
+- **Searches:** each home search is counted with whether it matched, plus a salted daily hash of the visitor's IP so distinct visitors can be counted without storing an address. An admin stats page shows suppliers, products, searches and distinct searchers against the success target.
+- **English only for now.** Turkish wasn't answered, so it stays in the next phase after this one.
+
+**Not in this phase:** buyer accounts, ratings, the paid subscription, paid ranking, the paid badge, other industries' company kinds and a second language. The evidence flow is what the paid badge will later plug into.
+
+**Open question:** whether Turkish is needed for launch.
