@@ -76,7 +76,7 @@ export default async function VerifyPage({ params }: PageProps<'/verify/[claim]'
           <>
             {rejected && (
               <p className="max-w-[640px] border border-accent px-3 py-2 normal-case">
-                Rejected: {claim.reviewNote}. Add new documents and submit again.
+                Rejected: {claim.reviewNote?.replace(/\.$/, '')}. Add new documents and submit again.
               </p>
             )}
             <p className="max-w-[640px] normal-case">

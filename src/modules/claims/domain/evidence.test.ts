@@ -38,10 +38,41 @@ it('cleans the file name and never uses it in the storage key', () => {
 it('keeps only the last part of a path, drops direction overrides, trims, shortens and falls back', () => {
   const nameOf = (fileName: string) => createEvidence({ claimId: 'c1', fileName, bytes: PDF }).fileName;
   expect(nameOf('C:\\Users\\me\\invoice 3.pdf')).toBe('invoice 3.pdf');
-  expect(nameOf('invoice\u202Efdp.exe')).toBe('invoicefdp.exe');
+  expect(nameOf('invoice\u202Efdp.exe')).toBe('invoicefdp.exe.pdf');
   expect(nameOf('  a.pdf ')).toBe('a.pdf');
   expect(nameOf(`${'x'.repeat(200)}.pdf`)).toHaveLength(120);
-  expect(nameOf('')).toBe('evidence');
-  expect(nameOf('dir/')).toBe('evidence');
-  expect(nameOf('\u0001\u0002')).toBe('evidence');
+  expect(nameOf('')).toBe('evidence.pdf');
+  expect(nameOf('dir/')).toBe('evidence.pdf');
+  expect(nameOf('\u0001\u0002')).toBe('evidence.pdf');
+});
+
+// The operating system picks the program that opens a saved file from its extension, so a name never keeps one
+// the bytes don't have: `%PDF-` followed by a script, called invoice.hta, would otherwise download as a script.
+it('gives a name the extension of the type found in the bytes, after any other it had', () => {
+  const nameOf = (fileName: string, bytes = PDF) => createEvidence({ claimId: 'c1', fileName, bytes }).fileName;
+  for (const dangerous of ['invoice.hta', 'invoice.html', 'invoice.exe', 'invoice.pdf.hta', 'invoice.svg', 'invoice.']) {
+    expect(nameOf(dangerous), dangerous).toBe(`${dangerous}.pdf`);
+  }
+  expect(nameOf('invoice')).toBe('invoice.pdf');
+  expect(nameOf('scan.pdf', PNG)).toBe('scan.pdf.png');
+  expect(nameOf('photo.png', JPG)).toBe('photo.png.jpg');
+  expect(nameOf('photo', PNG)).toBe('photo.png');
+});
+
+it('keeps an extension the name already has for its type, in the case it was written', () => {
+  const nameOf = (fileName: string, bytes = PDF) => createEvidence({ claimId: 'c1', fileName, bytes }).fileName;
+  expect(nameOf('invoice.pdf')).toBe('invoice.pdf');
+  expect(nameOf('INVOICE.PDF')).toBe('INVOICE.PDF');
+  expect(nameOf('Scan.Png', PNG)).toBe('Scan.Png');
+  for (const name of ['a.jpg', 'a.jpeg', 'A.JPG', 'A.JpEg']) expect(nameOf(name, JPG), name).toBe(name);
+});
+
+it('never lets the 120-character limit cut the extension off', () => {
+  const nameOf = (fileName: string, bytes = PDF) => createEvidence({ claimId: 'c1', fileName, bytes }).fileName;
+  const long = nameOf(`${'x'.repeat(300)}.hta`);
+  expect(long).toHaveLength(120);
+  expect(long.endsWith('x.pdf')).toBe(true);
+  expect(nameOf(`${'x'.repeat(300)}.hta`, JPG)).toMatch(/x\.jpg$/);
+  expect(nameOf(`${'y'.repeat(300)}.JPEG`, JPG)).toMatch(/y\.JPEG$/);
+  expect(Array.from(nameOf(`${'😀'.repeat(300)}.exe`))).toHaveLength(120); // counted in characters, as before
 });

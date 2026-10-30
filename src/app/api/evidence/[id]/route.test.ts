@@ -59,3 +59,11 @@ it('answers everyone else with an empty 404, the same as for an id that does not
     }
   }
 });
+
+it('downloads a file under a name that ends in its real type, whatever extension it was uploaded with', async () => {
+  const id = await setup('invoice.hta'); // PDF bytes, so it passes as a PDF; the name must not make the system run it as a script
+  session.viewer = { isAdmin: true, company: null };
+  const response = await get(id);
+  expect(response.headers.get('content-type')).toBe('application/pdf');
+  expect(response.headers.get('content-disposition')).toBe(`attachment; filename="invoice.hta.pdf"; filename*=UTF-8''invoice.hta.pdf`);
+});

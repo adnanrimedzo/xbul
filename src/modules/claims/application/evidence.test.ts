@@ -84,7 +84,7 @@ it('answers an unknown id and a file whose bytes are gone with nothing, the same
   const owner = { isAdmin: false, companyId: ids.indigo };
   expect(await readEvidence(deps, { evidenceId: crypto.randomUUID(), viewer: { isAdmin: true, companyId: null } })).toBeNull();
   const e = await addEvidence(deps, { companyId: ids.indigo, claimId: ids.claim, fileName: 'a.pdf', bytes: JPG });
-  expect(await readEvidence(deps, { evidenceId: e.id, viewer: owner })).toMatchObject({ evidence: { id: e.id, contentType: 'image/jpeg', fileName: 'a.pdf' } });
+  expect(await readEvidence(deps, { evidenceId: e.id, viewer: owner })).toMatchObject({ evidence: { id: e.id, contentType: 'image/jpeg', fileName: 'a.pdf.jpg' } }); // a name never keeps an extension the bytes don't have
   stored.clear();
   expect(await readEvidence(deps, { evidenceId: e.id, viewer: owner })).toBeNull();
 });

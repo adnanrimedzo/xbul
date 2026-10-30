@@ -1,5 +1,6 @@
 'use client';
 
+import { unstable_rethrow } from 'next/navigation';
 import { useActionState, useId, useRef, useState } from 'react';
 import type { ActionResult } from '@/app/_lib/action-result';
 import { errorMessage } from '@/app/_lib/error-messages';
@@ -13,7 +14,9 @@ export function UploadEvidenceForm({ claimId, maxBytes, maxFiles }: { claimId: s
   const [state, formAction, pending] = useActionState(async (prev: ActionResult | null, form: FormData): Promise<ActionResult> => {
     try {
       return await uploadEvidenceAction(claimId, prev, form);
-    } catch {
+    } catch (e) {
+      unstable_rethrow(e); // an expired session redirects to sign-in, which isn't a failed upload
+      console.error('[verify] upload failed', e);
       return { ok: false, error: FAILED }; // the request itself failed (a body past the limit, a dropped connection): say so here, don't unmount the page
     }
   }, null);
