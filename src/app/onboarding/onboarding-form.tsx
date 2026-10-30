@@ -37,7 +37,7 @@ export function OnboardingForm({ defaultEmail }: { defaultEmail: string }) {
       </label>
       <label className={label}>
         Country
-        <input name="country" autoComplete="country" placeholder="TR" defaultValue={values?.country} className={input} />
+        <input name="country" autoComplete="country" placeholder="Two-letter code" defaultValue={values?.country} className={input} />
       </label>
       <fieldset className="flex flex-col gap-4">
         <legend className="mb-1 text-[11px] font-semibold">How buyers reach you (at least one)</legend>

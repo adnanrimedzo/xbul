@@ -200,7 +200,7 @@ export function AddGarmentsForm() {
             id="brand-links"
             name="links"
             required
-            placeholder="https://www.brand.com/denim-jacket"
+            placeholder="https://www.brand.com/products/item-123"
             className="h-[170px] w-full resize-none border border-ink p-3 text-[12px] normal-case focus:outline-2 focus:outline-accent"
           />
           <div className="mt-1.5 flex items-center justify-between gap-3">

@@ -16,7 +16,7 @@ const MESSAGES: Record<string, string> = {
   'company.already_registered': 'You have already registered a company.',
   'company.city_invalid': 'City must be 1–60 characters.',
   'company.contact_required': 'Add an email, phone or website so buyers can reach you.',
-  'company.country_invalid': 'Country must be a two-letter code, such as TR.',
+  'company.country_invalid': 'Country must be a two-letter country code.',
   'company.email_invalid': 'Enter a valid email address.',
   'company.kind_invalid': 'Choose fabric or garments.',
   'company.name_invalid': 'Company name must be 2–80 characters.',
