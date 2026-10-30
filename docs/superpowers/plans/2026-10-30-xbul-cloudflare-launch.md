@@ -440,7 +440,7 @@ This is the first time real Cloudflare, Neon, R2 and Resend are used together, s
 - [ ] **Speed:** open the home page, a product page and a supplier page from Turkey or over a Turkish connection, twice each, once after 10 idle minutes. Pages under about 1.5 seconds are fine. A slow first load after idling is Neon waking up. If that's a problem, turn off scale-to-zero on production, and expect the Neon bill to rise.
 - [ ] **Logs:** Workers Logs show no repeating errors after all of this.
 - [ ] **Rollback:** deploy a harmless change, run `pnpm wrangler rollback --env staging`, and confirm the old version answers.
-- [ ] **Outage:** pause the staging database in Neon, confirm the outage page shows and `/api/health` answers 503, then resume.
+- [ ] **Outage:** pause the staging database in Neon, confirm the outage page shows both signed in and signed out (they see different pages) and `/api/health` answers 503, then resume.
 
 **Check:** every item is done, and anything that failed is fixed or accepted by you in writing.
 
@@ -451,14 +451,15 @@ This is the first time real Cloudflare, Neon, R2 and Resend are used together, s
 - [ ] `pnpm wrangler r2 bucket create xbul-evidence`, and the 90-day rule on `evidence/`.
 - [ ] `pnpm wrangler r2 bucket create xbul-backups`, and a 90-day rule on `db/`.
 - [ ] Secrets, all new: `BETTER_AUTH_SECRET`, `RESEND_API_KEY`, `ADMIN_EMAILS`.
-- [ ] Start `deploy-production.yml` from GitHub.
+- [ ] Run `pnpm run deploy` from your machine with `.env.local` moved out, so the worker exists. Its address isn't live yet, because `workers.dev` is off.
 - [ ] Attach `xbul.ai` as a custom domain, and redirect `www.xbul.ai` to it with a redirect rule.
 - [ ] Turn on **Always Use HTTPS**.
+- [ ] Start `deploy-production.yml` from GitHub, which now passes its smoke check.
 - [ ] Add the one rate limiting rule the Free plan allows: path `/`, more than 50 requests in 10 seconds per IP, block for 10 seconds. It limits anonymous search spam and no real visitor hits it. The sign-in limiter already exists in the app.
-- [ ] Start `backup.yml` by hand, download the dump, and run `scripts/verify-restore.sh` on it.
+- [ ] Run step 10 of `docs/deploy.md` with a test supplier and keep that supplier. Start `backup.yml` by hand, download the dump, and run `scripts/verify-restore.sh` on it. Then delete the test supplier as `docs/runbook.md` describes.
 - [ ] Add `https://xbul.ai/api/health` to a free external uptime monitor, emailing you when it fails. Cloudflare can't tell you when Cloudflare itself can't reach the site.
 
-**Check:** `node scripts/smoke.mjs https://xbul.ai` passes; step 10 of `docs/deploy.md` passes with a test supplier, which is then removed; the verified restore shows the expected tables; the monitor shows up; no bucket has a public URL.
+**Check:** `node scripts/smoke.mjs https://xbul.ai` passes; step 10 of `docs/deploy.md` passed; the verified restore shows the expected tables; the monitor shows up; no bucket has a public URL.
 
 ### Stage 5: First suppliers (You)
 

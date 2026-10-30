@@ -51,9 +51,11 @@ Never run `pnpm seed` against production, because it loads demo data.
 ## 3. Create the Hyperdrive configs
 
 ```bash
-pnpm wrangler hyperdrive create xbul-db-staging --connection-string="<staging neon url>" --caching-disabled
-pnpm wrangler hyperdrive create xbul-db --connection-string="<production neon url>" --caching-disabled
+pnpm wrangler hyperdrive create xbul-db-staging --connection-string="<staging neon url>" --caching-disabled --update-config=false
+pnpm wrangler hyperdrive create xbul-db --connection-string="<production neon url>" --caching-disabled --update-config=false
 ```
+
+`--update-config=false` here and in step 4 stops Wrangler offering to add the new resource to `wrangler.jsonc`, where it would end up on the wrong worker.
 
 Paste each printed `id` into `wrangler.jsonc`: `<HYPERDRIVE_STAGING_ID>` for staging and `<HYPERDRIVE_ID>` for production. These ids aren't secret, so commit them.
 
@@ -64,16 +66,16 @@ Caching is disabled because Hyperdrive's query cache is not cleared when the app
 Suppliers send invoices and similar documents in for review. They go in a private R2 bucket, bound to the worker as `EVIDENCE` in `wrangler.jsonc`. The app serves them only to the supplier who sent them and to admins, and deletes them once a claim is decided.
 
 ```bash
-pnpm wrangler r2 bucket create xbul-evidence-staging
+pnpm wrangler r2 bucket create xbul-evidence-staging --update-config=false
 pnpm wrangler r2 bucket lifecycle add xbul-evidence-staging expire-evidence evidence/ --expire-days 90
-pnpm wrangler r2 bucket create xbul-evidence
+pnpm wrangler r2 bucket create xbul-evidence --update-config=false
 pnpm wrangler r2 bucket lifecycle add xbul-evidence expire-evidence evidence/ --expire-days 90
 ```
 
 Weekly database backups go in their own bucket, for production only. They hold personal data, so they expire too:
 
 ```bash
-pnpm wrangler r2 bucket create xbul-backups
+pnpm wrangler r2 bucket create xbul-backups --update-config=false
 pnpm wrangler r2 bucket lifecycle add xbul-backups expire-backups db/ --expire-days 90
 ```
 
@@ -107,6 +109,8 @@ Production refuses to start without `RESEND_API_KEY`. Without it, magic links (w
 ## 7. Check the public address
 
 `PUBLIC_BASE_URL` in `wrangler.jsonc` is already `https://xbul.ai` for production and `https://staging.xbul.ai` for staging. It is the only origin setting: sign-in uses it too, and `/robots.txt` blocks all search engines unless it is exactly `https://xbul.ai`.
+
+The `workers.dev` address and version preview addresses are turned off in `wrangler.jsonc`, so a worker can't be reached until step 9 gives it a custom domain.
 
 Sign-in cookies and magic links are bound to one origin, so a link sent from `xbul.ai` fails on `www.xbul.ai`. Step 9 redirects `www`.
 
@@ -151,7 +155,7 @@ Then by hand, on the same address:
 - On the **Get verified** page, uploading a PDF works and the file's link downloads it. The same link signed out answers 404.
 - Click **Submit for review**. Then sign in as an admin (an address in `ADMIN_EMAILS`) and open `/admin/claims`. The claim is listed, and the file's link downloads.
 - Click **Approve**, then **Confirm approve**. The product page now shows **Verified**, and the file's link answers 404, because approving deletes the documents.
-- Remove the test product from the supplier's page when you're done.
+- Remove the test product from the supplier's page when you're done. Keep the test supplier for now: on production, step 12's backup check needs at least one company. After that, delete it with **Delete a supplier or a user** in [runbook.md](runbook.md).
 - On `/`, search for a product link. Then open `/admin/stats` as an admin: **Searches** has gone up by one.
 
 ## 11. Turn on automated deploys
@@ -160,7 +164,7 @@ Push this repository to your private GitHub repository. In **Settings → Secret
 
 | Secret | Value |
 |---|---|
-| `CLOUDFLARE_API_TOKEN` | A token from the **Edit Cloudflare Workers** template, limited to this account. Confirm it can write to R2, because the backup job needs that. |
+| `CLOUDFLARE_API_TOKEN` | A token from the **Edit Cloudflare Workers** template, limited to this account. Confirm it can write to R2, because the backup job needs that. If the first deploy reports a permission error on Hyperdrive, add Hyperdrive edit permission to the token. |
 | `CLOUDFLARE_ACCOUNT_ID` | Shown on the Workers overview page |
 | `STAGING_DATABASE_URL` | The staging Neon connection string |
 | `PRODUCTION_DATABASE_URL` | The production Neon connection string |
@@ -178,7 +182,7 @@ What then runs:
 
 ## 12. Protect and watch production
 
-- **Check the first backup.** Start `Back up the database` by hand, download the dump from the `xbul-backups` bucket in the dashboard, then run `bash scripts/verify-restore.sh <dump file>`.
+- **Check the first backup.** While the test supplier from step 10 still exists, start `Back up the database` by hand, download the dump from the `xbul-backups` bucket in the dashboard, then run `bash scripts/verify-restore.sh <dump file>`. A database with no companies fails this check on purpose. Delete the downloaded file afterwards.
 - **Uptime monitor.** Add `https://xbul.ai/api/health` to a free external uptime monitor that emails you. It has to be outside Cloudflare, so it can tell you when Cloudflare can't reach the site.
 - **Rate limit.** Under **Security → WAF → Rate limiting rules**, add the one rule the Free plan allows: path equals `/`, more than 50 requests in 10 seconds per IP, block for 10 seconds. It limits anonymous search spam, and no real visitor reaches it. Sign-in has its own limiter in the app.
 - **Billing.** Set a billing notification in Cloudflare and Neon.

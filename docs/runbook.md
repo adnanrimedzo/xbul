@@ -47,7 +47,15 @@ After a rollback, `main` still holds the bad code, and the next push deploys to 
 
 1. Tell the suppliers first: anything saved after the restore point is lost.
 2. **Within 7 days:** use Neon's instant restore on `xbul-production`, which goes back to a chosen moment.
-3. **Older, or the Neon project is gone:** run `scripts/verify-restore.sh` on a dump, then load it into the database with `pg_restore --no-owner --no-privileges -d "<neon url>" <dump file>`. If it's a new Neon project, also create a new Hyperdrive config and update `wrangler.jsonc` and `PRODUCTION_DATABASE_URL`.
+3. **Older, or the Neon project is gone:** a dump only loads into an empty database, so use a new Neon project (Postgres 17, Frankfurt):
+
+   ```bash
+   bash scripts/verify-restore.sh <dump file>
+   docker run --rm -i postgres:17 pg_restore --no-owner --no-privileges -d "<new neon url>" < <dump file>
+   DATABASE_URL="<new neon url>" pnpm db:migrate
+   ```
+
+   The last line applies any migrations newer than the dump. Then create a new Hyperdrive config as in step 3 of [deploy.md](deploy.md), put its id in `wrangler.jsonc`, update the `PRODUCTION_DATABASE_URL` secret, and deploy.
 4. Run the smoke check.
 
 Uploaded documents aren't in the database, so a restore can list a file that has since been deleted. Its link answers 404. An admin rejects that claim with a note, and the supplier uploads again.
@@ -67,11 +75,44 @@ If a secret leaked, rotate it at its source too: Resend, Neon or Cloudflare. If 
 The kind can't be changed in the app. In Neon's SQL editor, with the company's id:
 
 ```sql
+begin;
 update companies set kind = 'garment_maker' where id = '<company id>';
 update claims set scope = 'garment' where company_id = '<company id>';
+commit;
 ```
 
 For the other direction, use `fabric_mill` and `fabric`. If the update fails on `claims_one_verified_original`, another supplier already holds the verified original for that product and scope, so remove the verification on one of them first.
+
+## Delete a supplier or a user
+
+Use this for a data request, or to remove a test supplier. The app can't do it. `/privacy` promises this and `/terms` allows it, so answer requests promptly.
+
+In Neon's SQL editor, find the company's id and owner, then its stored files:
+
+```sql
+select id, owner_user_id from companies where slug = '<company slug>';
+
+select e.storage_key
+from claim_evidence e join claims c on c.id = e.claim_id
+where c.company_id = '<company id>';
+```
+
+Delete each file listed. This has to come first, because deleting the company removes the only record of them:
+
+```bash
+pnpm wrangler r2 object delete "xbul-evidence/<storage key>" --remote
+```
+
+Then delete the company and its owner. The company's claims, codes and documents' rows go with it, and so do the owner's sessions:
+
+```sql
+begin;
+delete from companies where id = '<company id>';
+delete from "user" where id = '<owner user id>';
+commit;
+```
+
+For someone with no company, run only the `user` line. Products stay, because other suppliers may have tagged them. The person's data remains in database backups until those expire, within 90 days.
 
 ## Change the database schema
 
