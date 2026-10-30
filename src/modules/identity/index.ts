@@ -1,10 +1,4 @@
-export type { Profile, Role } from './domain/profile';
-export { createProfile } from './domain/profile';
-export type { ProfileRepository } from './domain/repositories';
-export { completeOnboarding } from './application/complete-onboarding';
 export type { Auth } from './infrastructure/auth';
 export { createAuth } from './infrastructure/auth';
-export { createProfileRepository } from './infrastructure/drizzle-profile-repository';
 export { createUserDirectory } from './infrastructure/user-directory';
 export { account, session, user, verification } from './infrastructure/auth-schema';
-export { profiles } from './infrastructure/schema';

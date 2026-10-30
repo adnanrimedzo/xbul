@@ -1,8 +1,7 @@
 // Fixed ids for the demo data. No imports: Playwright specs import this file directly.
 export const DEMO = {
-  users: { mill: 'demo-user-mill', denizli: 'demo-user-denizli', bursa: 'demo-user-bursa', agent: 'demo-user-agent' },
-  emails: { mill: 'mill@example.test', denizli: 'denizli@example.test', bursa: 'bursa@example.test', agent: 'agent@example.test' },
-  agentHandle: 'lauramartin-demo',
+  users: { mill: 'demo-user-mill', denizli: 'demo-user-denizli', bursa: 'demo-user-bursa' },
+  emails: { mill: 'mill@example.test', denizli: 'denizli@example.test', bursa: 'bursa@example.test' },
   companies: {
     indigo: '5c1d0a10-0000-4000-8000-000000000001',
     denizli: '5c1d0a10-0000-4000-8000-000000000002',

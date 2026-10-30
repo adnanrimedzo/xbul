@@ -2,7 +2,7 @@ import { eq } from 'drizzle-orm';
 import type { Db } from '@/shared/db/client';
 import { createProduct, createProductRepository } from '@/modules/catalog';
 import { createClaimRepository, declareClaim, verifyClaim, type ClaimKind } from '@/modules/claims';
-import { createProfile, createProfileRepository, user } from '@/modules/identity';
+import { user } from '@/modules/identity';
 import { createInquiry, createInquiryRepository } from '@/modules/inquiry';
 import { createArticle, createCompany, createSupplierRepositories, companies, withSpecs } from '@/modules/supplier';
 import { DEMO } from './demo-ids';
@@ -15,7 +15,6 @@ export async function seedDemo(db: Db): Promise<void> {
   const [existing] = await db.select({ id: companies.id }).from(companies).where(eq(companies.id, DEMO.companies.indigo)).limit(1);
   if (existing) return;
 
-  const profiles = createProfileRepository(db);
   const { companies: companyRepo, articles } = createSupplierRepositories(db);
   const productRepo = createProductRepository(db);
   const claimRepo = createClaimRepository(db);
@@ -24,12 +23,10 @@ export async function seedDemo(db: Db): Promise<void> {
     { key: 'mill', name: 'Indigo Mill' },
     { key: 'denizli', name: 'Denizli Indigo' },
     { key: 'bursa', name: 'Bursa Weave' },
-    { key: 'agent', name: 'Laura Martin' },
   ] as const;
   await db.insert(user).values(
     people.map((p) => ({ id: DEMO.users[p.key], name: p.name, email: DEMO.emails[p.key], emailVerified: true, createdAt: BASE, updatedAt: BASE })),
   );
-  await profiles.save(createProfile({ userId: DEMO.users.agent, role: 'agent', displayName: 'Laura Martin' }, () => 'demo', BASE));
 
   const mills = [
     { key: 'indigo', owner: 'mill', name: 'Indigo Mill', city: 'Istanbul' },
@@ -38,7 +35,6 @@ export async function seedDemo(db: Db): Promise<void> {
   ] as const;
   for (const m of mills) {
     const ownerUserId = DEMO.users[m.owner];
-    await profiles.save(createProfile({ userId: ownerUserId, role: 'mill', displayName: m.name }, () => 'demo', BASE));
     const company = createCompany({ name: m.name, city: m.city, country: 'TR', ownerUserId }, BASE);
     await companyRepo.save({ ...company, id: DEMO.companies[m.key] });
   }
@@ -88,7 +84,7 @@ export async function seedDemo(db: Db): Promise<void> {
         buyerEmail: 'seed@buyer.test',
         buyerCompany: 'Seed Buyer Co',
         quantityMeters: 500,
-        viaAgentHandle: DEMO.agentHandle,
+        viaAgentHandle: null,
       },
       at(10),
     ),

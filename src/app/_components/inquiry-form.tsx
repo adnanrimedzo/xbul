@@ -15,7 +15,6 @@ export function InquiryForm(props: {
   productId?: string;
   articleId?: string;
   kind: 'swatch' | 'quote';
-  via: string | null;
   label: string;
 }) {
   const [open, setOpen] = useState(false);
@@ -46,7 +45,6 @@ export function InquiryForm(props: {
               <input type="hidden" name="productId" value={props.productId ?? ''} />
               <input type="hidden" name="articleId" value={props.articleId ?? ''} />
               <input type="hidden" name="kind" value={props.kind} />
-              <input type="hidden" name="via" value={props.via ?? ''} />
               <label className={label}>
                 Your name
                 <input name="buyerName" required maxLength={100} autoComplete="name" className={input} />

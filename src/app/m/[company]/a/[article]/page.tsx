@@ -6,7 +6,6 @@ import { CopyLinkButton } from '@/app/_components/copy-link-button';
 import { InquiryForm } from '@/app/_components/inquiry-form';
 import { GarmentGrid } from '@/app/_components/ui/garment-grid';
 import { GarmentTile } from '@/app/_components/ui/garment-tile';
-import { resolveAgent } from '@/app/_lib/resolve-agent';
 import { getArticlePageView } from '@/modules/discovery';
 import type { ArticleSpecs } from '@/modules/supplier';
 import { getContainer } from '@/server/container';
@@ -35,22 +34,14 @@ export async function generateMetadata({ params }: PageProps<'/m/[company]/a/[ar
   const title = `Article ${article.code} by ${company.name}`;
   const description = [weight(article.specs), article.specs.composition, article.specs.finish].filter((s) => s !== null).join(' · ') || `Fabric by ${company.name}`;
   const image = garments.find((g) => g.imageUrl)?.imageUrl;
-  // The canonical url never carries ?via, so a shared link previews the same for everyone.
   return { title, description, openGraph: { title, description, url: `${config.baseUrl}/m/${company.slug}/a/${article.slug}`, images: image ? [image] : [] } };
 }
 
-export default async function ArticlePage({ params, searchParams }: PageProps<'/m/[company]/a/[article]'>) {
-  const [{ company: companySlug, article: articleSlug }, { via }] = await Promise.all([params, searchParams]);
-  const [{ company, article, garments }, viewer, agent, { config }] = await Promise.all([
-    loadView(companySlug, articleSlug),
-    getViewer(),
-    resolveAgent(typeof via === 'string' ? via : undefined),
-    getContainer(),
-  ]);
+export default async function ArticlePage({ params }: PageProps<'/m/[company]/a/[article]'>) {
+  const { company: companySlug, article: articleSlug } = await params;
+  const [{ company, article, garments }, viewer, { config }] = await Promise.all([loadView(companySlug, articleSlug), getViewer(), getContainer()]);
 
-  // An agent who copies this link credits themselves on every swatch request that comes through it.
-  const handle = viewer?.profile?.role === 'agent' ? viewer.profile.handle : null;
-  const shareUrl = `${config.baseUrl}/m/${company.slug}/a/${article.slug}${handle ? `?via=${handle}` : ''}`;
+  const shareUrl = `${config.baseUrl}/m/${company.slug}/a/${article.slug}`;
   const { specs } = article;
   const brands = [...new Set(garments.map((g) => g.brand))];
 
@@ -59,12 +50,6 @@ export default async function ArticlePage({ params, searchParams }: PageProps<'/
       <nav aria-label="Breadcrumb" className="p-3 text-center text-[11px]">
         Mills / <Link href={`/m/${company.slug}`}>{company.name}</Link> / <span className="text-accent">{article.code}</span>
       </nav>
-
-      {agent && (
-        <div className="mx-5 mb-2.5 bg-[#f4f4f4] px-2.5 py-[9px] text-[10px]">
-          Shared by agent <b className="text-accent">{agent.displayName}</b> — your request goes to the mill with this agent credited
-        </div>
-      )}
 
       {/* Mockup .arthead. The inquiry form's button and panel are flex items of this row, so an opened form wraps below it. */}
       <div className="flex flex-wrap items-end gap-x-2 px-5 pt-2.5 pb-[18px] [&_button]:min-h-10 [&_button]:w-auto">
@@ -78,8 +63,8 @@ export default async function ArticlePage({ params, searchParams }: PageProps<'/
             By <b className="text-accent">{company.name}</b> · {company.city}, {company.country}
           </div>
         </div>
-        <CopyLinkButton url={shareUrl} label="Copy link for agents" />
-        <InquiryForm companyId={company.id} companyName={company.name} articleId={article.id} kind="swatch" via={agent?.handle ?? null} label="Request swatch" />
+        <CopyLinkButton url={shareUrl} label="Copy link" />
+        <InquiryForm companyId={company.id} companyName={company.name} articleId={article.id} kind="swatch" label="Request swatch" />
       </div>
 
       <dl className="flex border-t border-ink max-[760px]:flex-wrap">

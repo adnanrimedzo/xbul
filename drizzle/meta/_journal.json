@@ -57,6 +57,13 @@
       "when": 1792981904045,
       "tag": "0007_inquiry-ip",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793356344944,
+      "tag": "0008_drop-profiles",
+      "breakpoints": true
     }
   ]
 }

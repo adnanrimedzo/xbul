@@ -24,7 +24,7 @@ describe('toActionError', () => {
       if (!source.includes('DomainError(')) continue;
       for (const [, code] of source.matchAll(/'([a-z_]+\.[a-z_]+)'/g)) codes.add(code!);
     }
-    expect(codes.size).toBeGreaterThan(30);
+    expect(codes.size).toBeGreaterThan(15);
     expect([...codes].filter((code) => errorMessage(code) === FALLBACK)).toEqual([]);
   });
 });

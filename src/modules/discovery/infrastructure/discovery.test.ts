@@ -70,7 +70,7 @@ it('lists declared (unverified) originals for admin', async () =>
 
 it('lists a mill’s inquiries with a readable target', async () => {
   const rows = await listCompanyInquiries(db, DEMO.companies.indigo);
-  expect(rows[0]).toMatchObject({ buyerCompany: 'Seed Buyer Co', viaAgentHandle: 'lauramartin-demo', target: { href: `/p/${DEMO.products.guess}`, label: 'GUESS — Cropped Denim Blazer' } });
+  expect(rows[0]).toMatchObject({ buyerCompany: 'Seed Buyer Co', viaAgentHandle: null, target: { href: `/p/${DEMO.products.guess}`, label: 'GUESS — Cropped Denim Blazer' } });
   expect(await listCompanyInquiries(db, DEMO.companies.bursa)).toEqual([]);
 });
 

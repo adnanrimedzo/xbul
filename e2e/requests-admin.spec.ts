@@ -2,13 +2,12 @@ import { expect, test } from '@playwright/test';
 import { DEMO } from '../src/server/demo-ids';
 import { signIn } from './helpers';
 
-test('mill sees credited requests and marks one answered', async ({ page }) => {
+test('mill sees its requests and marks one answered', async ({ page }) => {
   await signIn(page, 'mill@example.test');
   await page.goto('/requests');
   const badge = page.getByTestId('new-requests-count');
   const before = Number(await badge.textContent());
   const row = page.getByTestId('inquiry-row').filter({ hasText: 'Seed Buyer Co' });
-  await expect(row).toContainText('Via agent @lauramartin-demo');
   await expect(row).toContainText('GUESS — Cropped Denim Blazer');
   await row.getByRole('button', { name: /mark answered/i }).click();
   await expect(row).toContainText(/answered/i);
@@ -28,7 +27,7 @@ test('admin verifies a declared original', async ({ page }) => {
   await expect(page.getByTestId('original-claim')).toContainText('Verified');
 });
 test('non-admins are sent home', async ({ page }) => {
-  await signIn(page, 'agent@example.test');
+  await signIn(page, 'mill@example.test');
   await page.goto('/admin/claims');
   await expect(page).toHaveURL('http://localhost:3100/');
 });

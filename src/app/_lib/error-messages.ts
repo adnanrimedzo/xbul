@@ -29,10 +29,6 @@ const MESSAGES: Record<string, string> = {
   'product.not_found': 'That garment no longer exists.',
   'product.url_invalid': 'Not a valid link.',
   'product.url_not_public': "We can't fetch private addresses.",
-  'profile.company_required': 'Mills need a company name, city and country.',
-  'profile.exists': 'You have already finished setting up your account.',
-  'profile.handle_unavailable': "We couldn't create a handle for that name, so please try again.",
-  'profile.name_invalid': 'Your name must be 2–60 characters.',
 };
 
 export const errorMessage = (code: string): string =>

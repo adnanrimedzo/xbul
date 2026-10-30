@@ -3,8 +3,8 @@ import { requireViewer } from '@/server/viewer';
 import { OnboardingForm } from './onboarding-form';
 
 export default async function OnboardingPage() {
-  const { profile } = await requireViewer();
-  if (profile) redirect(profile.role === 'mill' ? '/add' : '/');
+  const { company } = await requireViewer();
+  if (company) redirect('/add');
   return (
     <div className="grid min-h-[420px] grid-cols-[1fr_1.4fr] max-[1100px]:grid-cols-1">
       <div className="border-r border-ink px-5 py-7 max-[1100px]:border-r-0 max-[1100px]:border-b">

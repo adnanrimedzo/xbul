@@ -5,7 +5,6 @@ import { headers } from 'next/headers';
 import { z } from 'zod';
 import { errorMessage } from '@/app/_lib/error-messages';
 import { toActionError, type ActionResult } from '@/app/_lib/action-result';
-import { resolveAgent } from '@/app/_lib/resolve-agent';
 import { submitInquiry } from '@/modules/inquiry';
 import { getContainer } from '@/server/container';
 
@@ -31,7 +30,6 @@ const formSchema = z.object({
   buyerCompany: z.string().trim().optional(),
   quantityMeters: z.preprocess(blankTo(undefined), z.coerce.number().int().optional()),
   message: z.string().trim().optional(),
-  via: z.string().trim().optional(),
 });
 
 export async function submitInquiryAction(_prev: ActionResult | null, form: FormData): Promise<ActionResult> {
@@ -43,7 +41,7 @@ export async function submitInquiryAction(_prev: ActionResult | null, form: Form
     const badQuantity = parsed.error.issues.some((i) => i.path[0] === 'quantityMeters');
     return { ok: false, error: badQuantity ? errorMessage('inquiry.quantity_invalid') : GENERIC };
   }
-  const { via, ...input } = parsed.data;
+  const input = parsed.data;
 
   const { inquiries, mailer, claims, articles, companies, users, config } = await getContainer();
   // The ids are public form fields: only accept a product and an article that really belong to this company.
@@ -56,14 +54,14 @@ export async function submitInquiryAction(_prev: ActionResult | null, form: Form
       {
         inquiries,
         mailer,
-        agentHandleExists: async (handle) => (await resolveAgent(handle)) !== null,
+        agentHandleExists: async () => false, // no agents any more; the inquiry module drops this in the next task
         companyOwnerEmail: async (companyId) => {
           const company = await companies.findById(companyId);
           return company ? users.getEmail(company.ownerUserId) : null;
         },
         baseUrl: config.baseUrl,
       },
-      { ...input, quantityMeters: input.quantityMeters ?? null, viaAgentHandle: via || null, clientIpHash: await clientIpHash(config.authSecret) },
+      { ...input, quantityMeters: input.quantityMeters ?? null, viaAgentHandle: null, clientIpHash: await clientIpHash(config.authSecret) },
     );
   } catch (e) {
     return toActionError(e);

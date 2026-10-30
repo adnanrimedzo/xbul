@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { beforeEach, expect, it, vi } from 'vitest';
 import { createClaimRepository } from '@/modules/claims';
-import { createProfileRepository, createUserDirectory } from '@/modules/identity';
+import { createUserDirectory } from '@/modules/identity';
 import { createInquiryRepository } from '@/modules/inquiry';
 import { createSupplierRepositories } from '@/modules/supplier';
 import { DEMO } from '@/server/demo-ids';
@@ -28,7 +28,6 @@ const valid = {
   buyerName: 'Ana Buyer',
   buyerEmail: 'ana@brand.test',
   quantityMeters: '1000',
-  via: DEMO.agentHandle,
 };
 
 async function setup() {
@@ -46,7 +45,6 @@ async function setup() {
     mailer,
     claims: createClaimRepository(db),
     ...createSupplierRepositories(db),
-    profiles: createProfileRepository(db),
     users: createUserDirectory(db),
     config: { baseUrl: 'http://localhost:3100', authSecret: SECRET },
   };
@@ -63,12 +61,18 @@ async function setup() {
   return { mailer, submit, saved, repoCalls };
 }
 
-it('saves, credits the agent and emails the mill owner', async () => {
+it('saves and emails the mill owner', async () => {
   const { mailer, submit, saved } = await setup();
   expect(await submit(valid)).toEqual({ ok: true, data: undefined });
   expect(await saved()).toBe(1);
   expect(mailer.sent[0]).toMatchObject({ to: DEMO.emails.mill });
-  expect(mailer.sent[0]!.text).toContain('Via agent: @lauramartin-demo');
+});
+
+it('ignores a leftover via field from an old page', async () => {
+  const { mailer, submit, repoCalls } = await setup();
+  expect(await submit({ ...valid, via: 'lauramartin-demo' })).toEqual({ ok: true, data: undefined });
+  expect(repoCalls.flat()).toContainEqual(expect.objectContaining({ buyerEmail: 'ana@brand.test', viaAgentHandle: null }));
+  expect(mailer.sent[0]!.text).not.toContain('Via agent');
 });
 
 it('answers a filled honeypot with success and saves nothing', async () => {

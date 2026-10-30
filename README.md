@@ -19,7 +19,6 @@ pnpm dev                     # http://localhost:3000
 Sign-in is by magic link. Without `RESEND_API_KEY` no mail is sent: each link is printed to the dev server's console and appended to `MAIL_LOG_FILE` (`.outbox/mail.log`).
 
 - `mill@example.test`: owner of Indigo Mill (add garments, requests inbox, edit specs)
-- `agent@example.test`: agent Laura Martin, whose copied links carry `?via=lauramartin-demo`
 - admin: any email listed in `ADMIN_EMAILS` (verifies original claims at `/admin/claims`)
 
 ## Tests

@@ -8,11 +8,9 @@ import { InquiryForm } from '@/app/_components/inquiry-form';
 import { Badge } from '@/app/_components/ui/badge';
 import { Chip } from '@/app/_components/ui/chip';
 import { GarmentImage } from '@/app/_components/ui/garment-image';
-import { resolveAgent } from '@/app/_lib/resolve-agent';
 import { getProductPageView } from '@/modules/discovery';
 import type { ArticleSpecs } from '@/modules/supplier';
 import { getContainer } from '@/server/container';
-import { getViewer } from '@/server/viewer';
 
 // Shared by generateMetadata and the page, so the view is read once per request.
 const loadView = cache(async (id: string) => {
@@ -34,22 +32,13 @@ export async function generateMetadata({ params }: PageProps<'/p/[id]'>): Promis
 
   const title = `${product.brand} — ${product.name}`;
   const description = parts.join(' · ') || 'Find the mill behind this garment.';
-  // The canonical url never carries ?via, so a shared link previews the same for everyone.
   return { title, description, openGraph: { title, description, url: `${config.baseUrl}/p/${product.id}`, images: product.imageUrl ? [product.imageUrl] : [] } };
 }
 
-export default async function ProductPage({ params, searchParams }: PageProps<'/p/[id]'>) {
-  const [{ id }, { via }] = await Promise.all([params, searchParams]);
-  const [{ product, originals, equivalents }, agent, viewer, { config }] = await Promise.all([
-    loadView(id),
-    resolveAgent(typeof via === 'string' ? via : undefined),
-    getViewer(),
-    getContainer(),
-  ]);
+export default async function ProductPage({ params }: PageProps<'/p/[id]'>) {
+  const [{ product, originals, equivalents }, { config }] = await Promise.all([loadView((await params).id), getContainer()]);
   const host = new URL(product.sourceUrl).hostname.replace(/^www\./, '');
-  // An agent who copies this link credits themselves on every request that comes through it.
-  const handle = viewer?.profile?.role === 'agent' ? viewer.profile.handle : null;
-  const shareUrl = `${config.baseUrl}/p/${product.id}${handle ? `?via=${handle}` : ''}`;
+  const shareUrl = `${config.baseUrl}/p/${product.id}`;
 
   return (
     // Mockup .item: photo left, panel right; stacked below 760px.
@@ -66,11 +55,6 @@ export default async function ProductPage({ params, searchParams }: PageProps<'/
         <Link href="/" className="mb-3.5 block text-[11px]">
           ← Back
         </Link>
-        {agent && (
-          <div className="mb-4 bg-[#f4f4f4] px-2.5 py-[9px] text-[10px]">
-            Shared by agent <b className="text-accent">{agent.displayName}</b> — your request goes to the mill with this agent credited
-          </div>
-        )}
         <div className="text-[11px] text-muted">{product.brand}</div>
         <h1 className="mt-0.5 mb-1.5 text-[20px] font-semibold">{product.name}</h1>
         <div className="mb-[18px] text-[11px] text-muted">
@@ -102,7 +86,6 @@ export default async function ProductPage({ params, searchParams }: PageProps<'/
               productId={product.id}
               articleId={c.article?.id}
               kind="swatch"
-              via={agent?.handle ?? null}
               label="Request swatch"
             />
           </section>
@@ -126,7 +109,6 @@ export default async function ProductPage({ params, searchParams }: PageProps<'/
                   productId={product.id}
                   articleId={c.article?.id}
                   kind="quote"
-                  via={agent?.handle ?? null}
                   label="Request quote"
                 />
               </div>

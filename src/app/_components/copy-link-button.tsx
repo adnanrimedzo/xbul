@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { Button } from './ui/button';
 
-// The url is built on the server (it knows the public base url and the viewer's agent handle).
+// The url is built on the server, which knows the public base url.
 export function CopyLinkButton({ url, label }: { url: string; label: string }) {
   const [state, setState] = useState<'idle' | 'copied' | 'failed'>('idle');
 
