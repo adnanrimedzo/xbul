@@ -6,20 +6,20 @@ import { GarmentImage } from '@/app/_components/ui/garment-image';
 import { addManualProductAction, previewGarmentsAction, publishGarmentsAction, type PreviewRow } from './actions';
 
 type Kind = 'original' | 'equivalent';
-// A fetched row plus what the mill has typed for it so far (`byHand`: it was added with a brand and name, not fetched).
+// A fetched row plus what the supplier has typed for it so far (`byHand`: it was added with a brand and name, not fetched).
 type Row = PreviewRow & { articleCode: string; kind: Kind; byHand?: boolean };
 type Ready = Extract<Row, { state: 'ready' }>;
 type NeedsDetails = Extract<Row, { state: 'needs_details' }>;
 type Invalid = Extract<Row, { state: 'invalid' }>;
 
 const KINDS: [Kind, string][] = [
-  ['original', 'Our fabric'],
+  ['original', 'We made this'],
   ['equivalent', 'Equivalent'],
 ];
 const input = 'w-full border border-ink p-2 text-[12px] font-normal normal-case focus:outline-2 focus:outline-accent';
 const alertBox = 'border border-accent px-3 py-2 text-[12px] normal-case';
 const thumb = 'h-[90px] w-[72px] max-[760px]:h-[76px] max-[760px]:w-[60px]';
-const plural = (n: number) => `${n} ${n === 1 ? 'garment' : 'garments'}`;
+const plural = (n: number) => `${n} ${n === 1 ? 'product' : 'products'}`;
 
 // Mockup .row: thumbnail, name and status, article code, role.
 function RowShell({ children }: { children: ReactNode }) {
@@ -60,11 +60,11 @@ function ReadyRow({ row, onChange }: { row: Ready; onChange: (patch: Partial<Pic
         )}
       </Status>
       <label className="max-[760px]:col-span-full">
-        <span className="sr-only">Article code</span>
-        <input value={row.articleCode} onChange={(e) => onChange({ articleCode: e.target.value })} maxLength={40} placeholder="Article code" className={input} />
+        <span className="sr-only">Product code</span>
+        <input value={row.articleCode} onChange={(e) => onChange({ articleCode: e.target.value })} maxLength={40} placeholder="Product code" className={input} />
       </label>
       <fieldset className="flex border border-ink max-[760px]:col-span-full">
-        <legend className="sr-only">Fabric for {label}</legend>
+        <legend className="sr-only">Your role for {label}</legend>
         {KINDS.map(([kind, text]) => (
           // Mockup .seg: the radio covers its label invisibly, so the whole segment is the click target.
           <label
@@ -170,7 +170,7 @@ export function AddGarmentsForm() {
   function publish() {
     setPublishError(null);
     startPublish(async () => {
-      // On success the action redirects to the mill page, so only a failure comes back here.
+      // On success the action redirects to the company page, so only a failure comes back here.
       const result = await publishGarmentsAction(ready.map(({ productId, articleCode, kind }) => ({ productId, articleCode, kind })));
       if (!result.ok) setPublishError(result.error);
     });
@@ -181,10 +181,10 @@ export function AddGarmentsForm() {
       <div className="border-r border-ink px-5 py-7 max-[1100px]:border-r-0 max-[1100px]:border-b">
         <h1 className="mb-3.5 text-[44px] leading-[0.9] font-bold tracking-[-0.02em]">
           Add <br />
-          garments
+          products
         </h1>
         <p className="mb-[18px] text-[12px] leading-normal text-[#333] normal-case">
-          Paste the brand links you&apos;d normally screenshot for your agents. One per line. We fetch the photo, name and composition for you.
+          Paste the brand links for products you&apos;ve made or can make. One per line. We fetch the photo, name and composition for you.
         </p>
         <form onSubmit={fetchLinks}>
           <label htmlFor="brand-links" className="sr-only">
@@ -214,7 +214,7 @@ export function AddGarmentsForm() {
       <section aria-label="Preview" aria-busy={fetching}>
         <div className="flex justify-between gap-3 border-b border-ink px-5 py-3 text-[11px] font-semibold">
           <span aria-live="polite">{plural(ready.length)} found</span>
-          <span>Article code · your role</span>
+          <span>Product code · your role</span>
         </div>
         {rows.length > 0 ? (
           <ul>
@@ -229,10 +229,10 @@ export function AddGarmentsForm() {
             )}
           </ul>
         ) : (
-          <p className="border-b border-ink px-5 py-6 text-[12px] text-muted normal-case">Fetched garments appear here.</p>
+          <p className="border-b border-ink px-5 py-6 text-[12px] text-muted normal-case">Fetched products appear here.</p>
         )}
         <div className="flex items-center justify-between gap-5 px-5 py-[18px] max-[760px]:flex-col max-[760px]:items-start [&>button]:px-[26px] [&>button]:py-[13px]">
-          <span className="text-[11px] text-muted normal-case">Our fabric shows as declared until verified.</span>
+          <span className="text-[11px] text-muted normal-case">&quot;We made this&quot; shows as declared until verified.</span>
           <Button variant="cta" type="button" onClick={publish} disabled={ready.length === 0 || publishing}>
             Publish {plural(ready.length)}
           </Button>

@@ -21,6 +21,6 @@ export async function verifyClaimAction(claimId: string): Promise<ActionResult> 
     return toActionError(e);
   }
   revalidatePath('/admin/claims');
-  revalidatePath(`/p/${productId}`); // the garment page's badge turns to Verified
+  revalidatePath(`/p/${productId}`); // the product page's badge turns to Verified
   return { ok: true, data: undefined };
 }

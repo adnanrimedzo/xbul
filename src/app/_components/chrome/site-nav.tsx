@@ -10,11 +10,11 @@ export function SiteNav({ viewer }: { viewer: Viewer | null }) {
     <nav aria-label="Main" className="flex flex-wrap justify-between gap-x-7 gap-y-2 border-y border-ink px-5 py-2.5 text-[12px] font-medium">
       <div className={group}>
         <Link href="/">Search</Link>
-        {/* Phase 1 has no mills directory, so Mills is the viewer's own mill page and only mills see it. */}
-        {company && <Link href={`/m/${company.slug}`}>Mills</Link>}
+        {/* Phase 1 has no supplier directory, so My company is the viewer's own company page and only suppliers see it. */}
+        {company && <Link href={`/m/${company.slug}`}>My company</Link>}
       </div>
       <div className={group}>
-        {company && <Link href="/add">Add garment</Link>}
+        {company && <Link href="/add">Add products</Link>}
         {viewer?.isAdmin && <Link href="/admin/claims">Admin</Link>}
         {viewer ? (
           <form action={signOutAction}>

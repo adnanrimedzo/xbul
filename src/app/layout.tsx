@@ -15,7 +15,7 @@ const spaceGrotesk = Space_Grotesk({
 
 export const metadata: Metadata = {
   title: 'xmanufacture',
-  description: 'Find the mill behind any garment.',
+  description: 'Find the supplier behind any product.',
 };
 
 export default async function RootLayout({ children }: LayoutProps<'/'>) {

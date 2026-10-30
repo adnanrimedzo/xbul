@@ -22,7 +22,7 @@ const formSchema = z.object({
 });
 
 export async function editArticleSpecsAction(_prev: ActionResult | null, form: FormData): Promise<ActionResult> {
-  const { userId } = await requireViewer(); // never from the form; the use case checks the viewer owns the article's mill
+  const { userId } = await requireViewer(); // never from the form; the use case checks the viewer owns the code's company
   const parsed = formSchema.safeParse(Object.fromEntries(form));
   if (!parsed.success) return { ok: false, error: GENERIC };
   const { articleId, ...specs } = parsed.data;

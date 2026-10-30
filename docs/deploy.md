@@ -30,7 +30,7 @@ pnpm wrangler hyperdrive create xmanufacture-db --connection-string="<neon url>"
 
 Paste the printed `id` over `<HYPERDRIVE_ID>` in `wrangler.jsonc`.
 
-Caching is disabled because Hyperdrive's query cache is not cleared when the app writes. The app reads right after it writes: the rate limiter, sessions, claims and the requests inbox. Cached reads there would be stale.
+Caching is disabled because Hyperdrive's query cache is not cleared when the app writes. The app reads right after it writes: the rate limiter, sessions and claims. Cached reads there would be stale.
 
 ## 4. Set the secrets
 
@@ -117,10 +117,9 @@ When you're done, remove the container with `docker rm -f xm-pg`.
 - Verification has no proof upload: an admin approves claims by hand.
 - There are no team members or invites. There is one account per company.
 - The site is in English only.
-- Garment makers are not yet a company kind.
 - You can't browse by brand or category.
-- Brand sites that block fetching have no scraping fallback, so the mill enters those products by hand.
+- Brand sites that block fetching have no scraping fallback, so the supplier enters those products by hand.
 - There is no PWA share target.
-- There are no mill subscriptions, paid visibility, visual search or per-article analytics.
+- There are no supplier subscriptions, paid visibility, visual search or per-article analytics.
 - There is no incremental cache, because every page renders on demand.
 - There is no deploy pipeline: deploys run from a developer machine with the steps above.

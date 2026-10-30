@@ -11,7 +11,7 @@ import { requireMill } from '@/server/viewer';
 const GENERIC = 'Something went wrong. Please try again.';
 
 export async function withdrawClaimAction(claimId: string): Promise<ActionResult> {
-  const { company } = await requireMill(); // never from the caller; the use case checks the claim is this mill's
+  const { company } = await requireMill(); // never from the caller; the use case checks the claim is this supplier's
   if (!z.uuid().safeParse(claimId).success) return { ok: false, error: GENERIC };
 
   const { claims } = await getContainer();
@@ -20,7 +20,7 @@ export async function withdrawClaimAction(claimId: string): Promise<ActionResult
   } catch (e) {
     return toActionError(e);
   }
-  revalidatePath('/', 'layout'); // the mill page, the garment page, the article page and the home grid
+  revalidatePath('/', 'layout'); // the company page, the product page, the code page and the home grid
   return { ok: true, data: undefined };
 }
 
@@ -38,6 +38,6 @@ export async function updateContactAction(_prev: ActionResult | null, form: Form
   } catch (e) {
     return toActionError(e);
   }
-  revalidatePath('/', 'layout'); // the mill page, the garment pages and the article pages all show it
+  revalidatePath('/', 'layout'); // the company page, the product pages and the code pages all show it
   return { ok: true, data: undefined };
 }

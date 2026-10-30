@@ -28,8 +28,8 @@ export async function generateMetadata({ params }: PageProps<'/m/[company]/a/[ar
   const { company: companySlug, article: articleSlug } = await params;
   const { company, article, garments } = await loadView(companySlug, articleSlug);
   const { config } = await getContainer();
-  const title = `Article ${article.code} by ${company.name}`;
-  const description = [article.specs.weight, article.specs.composition, article.specs.finish].filter((s) => s !== null).join(' · ') || `Fabric by ${company.name}`;
+  const title = `Code ${article.code} by ${company.name}`;
+  const description = [article.specs.weight, article.specs.composition, article.specs.finish].filter((s) => s !== null).join(' · ') || `Supplier: ${company.name}`;
   const image = garments.find((g) => g.imageUrl)?.imageUrl;
   return { title, description, openGraph: { title, description, url: `${config.baseUrl}/m/${company.slug}/a/${article.slug}`, images: image ? [image] : [] } };
 }
@@ -45,14 +45,14 @@ export default async function ArticlePage({ params }: PageProps<'/m/[company]/a/
   return (
     <div>
       <nav aria-label="Breadcrumb" className="p-3 text-center text-[11px]">
-        Mills / <Link href={`/m/${company.slug}`}>{company.name}</Link> / <span className="text-accent">{article.code}</span>
+        Suppliers / <Link href={`/m/${company.slug}`}>{company.name}</Link> / <span className="text-accent">{article.code}</span>
       </nav>
 
       {/* Mockup .arthead. */}
       <div className="flex flex-wrap items-end gap-x-2 px-5 pt-2.5 pb-[18px] [&_button]:min-h-10 [&_button]:w-auto">
         <div className="flex-1 max-[760px]:mb-3.5 max-[760px]:basis-full">
           <h1 className="text-[64px] leading-[0.9] font-bold tracking-[-0.02em] max-[760px]:text-[44px]">
-            Article{' '}
+            Code{' '}
             <br />
             {article.code}
           </h1>
@@ -88,7 +88,7 @@ export default async function ArticlePage({ params }: PageProps<'/m/[company]/a/
 
       <div className="flex flex-wrap justify-between gap-x-4 border-t border-ink px-5 py-3 text-[12px] font-semibold">
         <span>
-          Linked to {garments.length} {garments.length === 1 ? 'garment' : 'garments'}
+          Linked to {garments.length} {garments.length === 1 ? 'product' : 'products'}
         </span>
         <span>{brands.join(' · ')}</span>
       </div>

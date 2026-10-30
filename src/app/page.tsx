@@ -20,7 +20,7 @@ export default async function Home() {
         <h1 className="relative text-right text-[clamp(40px,11vw,96px)] leading-[0.85] font-bold tracking-[-0.03em] text-paper">
           Who made{' '}
           <br />
-          this fabric?
+          this?
         </h1>
         <FindGarmentForm />
       </DenimPlaceholder>
@@ -33,7 +33,7 @@ export default async function Home() {
 
       <div className="border-b border-ink px-5 py-[26px] text-center text-[12px]">
         <p>Welcome to xmanufacture.</p>
-        <h2 className="mt-1 text-[15px] font-bold">Recently tagged garments</h2>
+        <h2 className="mt-1 text-[15px] font-bold">Recently tagged products</h2>
       </div>
 
       {tiles.length > 0 ? (
@@ -43,7 +43,7 @@ export default async function Home() {
           ))}
         </GarmentGrid>
       ) : (
-        <p className="border-t border-ink px-5 py-6 text-[12px] text-muted normal-case">No garments tagged yet.</p>
+        <p className="border-t border-ink px-5 py-6 text-[12px] text-muted normal-case">No products tagged yet.</p>
       )}
     </div>
   );

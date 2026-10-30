@@ -49,7 +49,7 @@ function distinctLinks(lines: string[]): string[] {
 }
 
 export async function previewGarmentsAction(urlsText: string): Promise<ActionResult<PreviewRow[]>> {
-  await requireMill(); // the server fetches whatever it is given, so only a signed-in mill may ask
+  await requireMill(); // the server fetches whatever it is given, so only a signed-in supplier may ask
   if (typeof urlsText !== 'string' || urlsText.length > MAX_PASTE) return toActionError(new DomainError('claims.batch_size_invalid'));
   const links = distinctLinks(
     urlsText

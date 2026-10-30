@@ -12,6 +12,7 @@ test('a new mill signs in, registers its company and lands on Add', async ({ pag
   await page.getByRole('button', { name: /continue/i }).click();
   await expect(page).toHaveURL(/\/add$/);
   await page.goto('/m/aksu-denim');
+  await expect(page.getByText('No products linked yet.')).toBeVisible();
   await expect(page.getByRole('link', { name: 'sales@aksu-denim.test' })).toHaveAttribute('href', 'mailto:sales@aksu-denim.test');
 });
 

@@ -77,13 +77,13 @@ it('counts the 50-link limit after dedupe', async () => {
 
   fetched.length = 0;
   const tooMany = Array.from({ length: 51 }, (_, i) => `https://brand.test/jacket-${i}`);
-  expect(await preview(...tooMany)).toEqual({ ok: false, error: 'Add between 1 and 50 garments at a time.' });
+  expect(await preview(...tooMany)).toEqual({ ok: false, error: 'Add between 1 and 50 products at a time.' });
   expect(fetched).toEqual([]);
 });
 
 it('refuses a paste too large to be 50 links, or not text at all, without fetching', async () => {
   const { fetched } = await setup();
-  const batchSize = { ok: false, error: 'Add between 1 and 50 garments at a time.' };
+  const batchSize = { ok: false, error: 'Add between 1 and 50 products at a time.' };
   expect(await previewGarmentsAction(`https://brand.test/denim\n${' '.repeat(120_000)}`)).toEqual(batchSize);
   expect(await previewGarmentsAction(['https://brand.test/denim'] as unknown as string)).toEqual(batchSize);
   expect(await previewGarmentsAction(`https://brand.test/${'a'.repeat(119_000)}`)).toMatchObject({ ok: true, data: [{ state: 'invalid', error: 'Not a valid link.' }] });

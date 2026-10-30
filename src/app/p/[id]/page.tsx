@@ -22,7 +22,7 @@ const loadView = cache(async (id: string) => {
 const moq = (s: ArticleSpecs) => (s.moq === null ? null : `MOQ ${s.moq}`);
 const leadTime = (s: ArticleSpecs) => (s.leadTimeWeeks === null ? null : `${s.leadTimeWeeks} ${s.leadTimeWeeks === 1 ? 'week' : 'weeks'}`);
 
-const madeBy = (label: string, c: ClaimView | undefined) => c && `${label} by ${c.company.name}${c.article ? ` (article ${c.article.code})` : ''}`;
+const madeBy = (label: string, c: ClaimView | undefined) => c && `${label} by ${c.company.name}${c.article ? ` (code ${c.article.code})` : ''}`;
 
 export async function generateMetadata({ params }: PageProps<'/p/[id]'>): Promise<Metadata> {
   const { product, fabric, garment } = await loadView((await params).id);
@@ -35,7 +35,7 @@ export async function generateMetadata({ params }: PageProps<'/p/[id]'>): Promis
   ].filter(Boolean);
 
   const title = `${product.brand} — ${product.name}`;
-  const description = parts.join(' · ') || 'Find the mill behind this garment.';
+  const description = parts.join(' · ') || 'Find the supplier behind this product.';
   return { title, description, openGraph: { title, description, url: `${config.baseUrl}/p/${product.id}`, images: product.imageUrl ? [product.imageUrl] : [] } };
 }
 
@@ -56,7 +56,7 @@ function SupplierSection({ title, testId, group: { originals, equivalents } }: {
           <div className="mb-2.5 text-[16px] font-semibold">{c.company.name}</div>
           {c.article && (
             <div className="mb-3 flex flex-wrap gap-1.5">
-              {[`Article ${c.article.code}`, c.article.specs.weight, c.article.specs.composition, moq(c.article.specs), leadTime(c.article.specs)]
+              {[`Code ${c.article.code}`, c.article.specs.weight, c.article.specs.composition, moq(c.article.specs), leadTime(c.article.specs)]
                 .filter((chip) => chip !== null)
                 .map((chip) => (
                   <Chip key={chip}>{chip}</Chip>
@@ -121,7 +121,7 @@ export default async function ProductPage({ params }: PageProps<'/p/[id]'>) {
         <SupplierSection title="Who made the garment" testId="garment-suppliers" group={garment} />
 
         <Link href="/add" className="flex justify-between border-t border-ink py-3 text-[12px] font-medium">
-          Are you the mill? Claim this garment <span className="text-[16px] leading-none text-accent">+</span>
+          Are you a supplier? Claim this product <span className="text-[16px] leading-none text-accent">+</span>
         </Link>
         {/* Mockup .acc "Share this page", with the article page's copy button. */}
         <div className="flex items-center justify-between gap-3 border-t border-ink py-3 text-[12px] font-medium">

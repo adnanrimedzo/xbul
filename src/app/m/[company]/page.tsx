@@ -55,12 +55,12 @@ export default async function MillPage({ params }: PageProps<'/m/[company]'>) {
       </div>
 
       {articles.length > 0 && (
-        <section aria-label="Articles" className="flex flex-wrap items-center gap-2 border-t border-ink px-5 py-3 text-[12px]">
-          <h2 className="mr-2 font-semibold">Articles</h2>
+        <section aria-label="Product codes" className="flex flex-wrap items-center gap-2 border-t border-ink px-5 py-3 text-[12px]">
+          <h2 className="mr-2 font-semibold">Product codes</h2>
           {articles.map((a) => (
             <Link key={a.slug} href={`/m/${company.slug}/a/${a.slug}`}>
               <Chip>
-                {a.code} · {a.garmentCount} {a.garmentCount === 1 ? 'garment' : 'garments'}
+                {a.code} · {a.garmentCount} {a.garmentCount === 1 ? 'product' : 'products'}
               </Chip>
             </Link>
           ))}
@@ -68,7 +68,7 @@ export default async function MillPage({ params }: PageProps<'/m/[company]'>) {
       )}
 
       <div className="flex justify-between border-t border-ink px-5 py-3 text-[12px] font-semibold">
-        <h2>Garments</h2>
+        <h2>Products</h2>
         <span>{garments.length}</span>
       </div>
       {garments.length > 0 ? (
@@ -76,7 +76,7 @@ export default async function MillPage({ params }: PageProps<'/m/[company]'>) {
           {garments.map((g) => (
             <div key={g.productId} data-testid="mill-garment">
               <GarmentTile tile={g} href={`/p/${g.productId}`} tag={g.kind === 'original' ? 'Original' : 'Equivalent'} tagTone={g.kind === 'original' ? 'accent' : 'muted'} />
-              {/* Below the tile link, not inside it: the owner can take a garment back off its page. */}
+              {/* Below the tile link, not inside it: the owner can take a product back off its page. */}
               {isOwner && (
                 <div className="px-3 pb-2.5">
                   <RowActionButton action={withdrawClaimAction.bind(null, g.claimId)} label="Remove" confirmLabel="Confirm remove" />
@@ -86,7 +86,7 @@ export default async function MillPage({ params }: PageProps<'/m/[company]'>) {
           ))}
         </GarmentGrid>
       ) : (
-        <p className="border-t border-ink px-5 py-6 text-[12px] text-muted normal-case">No garments linked yet.</p>
+        <p className="border-t border-ink px-5 py-6 text-[12px] text-muted normal-case">No products linked yet.</p>
       )}
     </div>
   );

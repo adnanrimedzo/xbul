@@ -1,8 +1,8 @@
 const PHRASES = [
-  'Find the mill behind any garment',
-  'Paste a link, see who made the fabric',
-  'Request swatches straight from the mill',
-  'Free for buyers',
+  'Find the supplier behind any product',
+  'Paste a link, see who made it',
+  'Contact suppliers directly',
+  'Free to search',
 ];
 
 // Two identical halves, each wider than a wide screen, so translateX(-50%) loops without a seam.

@@ -12,13 +12,13 @@ export function FindGarmentForm() {
     <div className="relative mt-[22px] w-[min(560px,100%)]">
       <form action={formAction} className="flex border-2 border-paper bg-paper [&>button]:px-[22px] [&>button]:py-0 [&>button]:text-[13px]">
         <label className="flex-1">
-          <span className="sr-only">Garment link</span>
+          <span className="sr-only">Product link</span>
           <input
             name="url"
             type="text"
             inputMode="url"
             required
-            placeholder="Paste a garment link — guess.com, zara.com, liujo.com…"
+            placeholder="Paste a product link from any brand's site"
             className="w-full border-0 p-3.5 text-[13px] normal-case focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-accent"
           />
         </label>
@@ -30,9 +30,9 @@ export function FindGarmentForm() {
       <div role="status" className="text-right text-[12px] text-paper">
         {state?.notFound && (
           <p className="mt-3">
-            No mill has tagged this garment yet.{' '}
+            No supplier has tagged this product yet.{' '}
             <Link href="/add" className="font-semibold underline">
-              Are you the mill? Add it →
+              Are you the supplier? Add it →
             </Link>
           </p>
         )}
