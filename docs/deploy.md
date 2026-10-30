@@ -5,10 +5,17 @@ xmanufacture runs on Cloudflare Workers through [OpenNext](https://opennext.js.o
 You need:
 - a Cloudflare account with the production domain's DNS on Cloudflare
 - a Cloudflare Workers Paid plan: the free plan's CPU time (10 ms per request) and subrequest count (50 per request) are too low for rendering pages and for fetching the link previews on `/add`
+- R2 enabled on that account. Do this once in the Cloudflare dashboard, under **R2 Object Storage**. Step 4 fails until you have.
 - a Neon account
 - a Resend account
+- Node.js 22.1 or newer and pnpm 10
 
-Every command runs from the repository root. Sign in to Cloudflare once with `pnpm wrangler login`.
+Every command runs from the repository root. Install the dependencies once, then sign in to Cloudflare:
+
+```bash
+pnpm install
+pnpm wrangler login
+```
 
 ## 1. Create the database
 
@@ -97,7 +104,12 @@ On the custom domain:
 - `/` loads.
 - Requesting a sign-in link delivers an email through Resend, and the link signs you in.
 - On `/add`, pasting a real guess.eu product link either fetches the product or offers manual entry.
-- On a declared original's **Get verified** page, uploading a PDF works and the file's link downloads it. The same link signed out answers 404.
+- Use a test supplier for the rest, because approving a claim makes its **Verified** badge public. On `/add`, publish the product as **We made this**. On the company page, its **Get verified** link opens the upload page.
+- On the **Get verified** page, uploading a PDF works and the file's link downloads it. The same link signed out answers 404.
+- Click **Submit for review**. Then sign in as an admin (an address in `ADMIN_EMAILS`) and open `/admin/claims`. The claim is listed, and the file's link downloads.
+- Click **Approve**, then **Confirm approve**. The product page now shows **Verified**, and the file's link answers 404, because approving deletes the documents.
+- Remove the test product from the supplier's page when you're done.
+- On `/`, search for a product link. Then open `/admin/stats` as an admin: **Searches** has gone up by one.
 
 ## Checking the Workers build locally (optional)
 
@@ -126,13 +138,15 @@ If port 5432 is taken:
 
 When you're done, remove the container with `docker rm -f xm-pg`.
 
-## What Phase 1 does not do yet
+## What the site does not do yet
 
 - There are no team members or invites. There is one account per company.
 - The site is in English only.
 - You can't browse by brand or category.
 - Brand sites that block fetching have no scraping fallback, so the supplier enters those products by hand.
 - There is no PWA share target.
-- There are no supplier subscriptions, paid visibility, visual search or per-article analytics.
+- There are no buyer accounts and no ratings. Buyers search and contact suppliers without signing in.
+- There are no supplier subscriptions, paid visibility or visual search.
+- There are no analytics for suppliers. The only figures are the platform-wide counts an admin sees on `/admin/stats`.
 - There is no incremental cache, because every page renders on demand.
 - There is no deploy pipeline: deploys run from a developer machine with the steps above.

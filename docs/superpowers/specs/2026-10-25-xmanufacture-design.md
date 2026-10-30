@@ -126,7 +126,7 @@ It is a B2B **sales and discovery** platform. It is **not** a traceability or Di
 
 ## 11. The brother's answers (received 2026-10-30)
 
-These override earlier sections where they conflict. The code doesn't reflect the "Changes" list yet.
+These override earlier sections where they conflict. Most of the "Changes" list is now in the code. The buyer levels, ratings and revenue are not built yet.
 
 **Confirmed, no change needed**
 - **Neutral listing stays.** Some suppliers may object to competitors under their products, but most won't.
@@ -142,7 +142,7 @@ These override earlier sections where they conflict. The code doesn't reflect th
 - **Revenue.** Buyers pay a monthly subscription for supplier detail. Suppliers pay to rank higher among equivalents, and pay for the verified badge. This replaces the Phase 3 revenue idea in section 10.
 - **Platform support is by email,** for technical questions to the platform team. The brother speaks as the platform's operator, not as a user of it.
 
-**Success after the first month:** 20–30 suppliers have added 200–300 products, and 10–20 customers have searched. The app doesn't record searches yet, so this can't be measured today.
+**Success after the first month:** 20–30 suppliers have added 200–300 products, and 10–20 customers have searched. The app now counts searches on `/admin/stats`. It counts one address once a day, so the figure overstates customers.
 
 **First suppliers to invite:** garment makers Taypa and Fashionpoint; mills Indigo Tunel and EGR.
 
