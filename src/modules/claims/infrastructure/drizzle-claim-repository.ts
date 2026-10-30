@@ -1,6 +1,6 @@
 import { and, eq, type SQL } from 'drizzle-orm';
 import type { Db } from '@/shared/db/client';
-import type { Claim, ClaimKind, ClaimScope, ClaimStatus } from '../domain/claim';
+import type { Claim, ClaimKind, ClaimScope, ClaimStatus, ReviewStatus } from '../domain/claim';
 import type { ClaimRepository } from '../domain/repositories';
 import { claims } from './schema';
 
@@ -14,6 +14,10 @@ const toClaim = (r: typeof claims.$inferSelect): Claim =>
     scope: r.scope as ClaimScope,
     status: r.status as ClaimStatus,
     note: r.note,
+    reviewStatus: r.reviewStatus as ReviewStatus,
+    reviewNote: r.reviewNote,
+    reviewedBy: r.reviewedBy,
+    reviewedAt: r.reviewedAt,
     createdAt: r.createdAt,
     updatedAt: r.updatedAt,
   });

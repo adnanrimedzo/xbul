@@ -4,6 +4,7 @@ import { createCompany, createSupplierRepositories, upsertArticle, type CompanyK
 import { createTestDb } from '@/shared/db/testing';
 import { verifyClaim } from '../domain/claim';
 import { createClaimRepository } from '../infrastructure/drizzle-claim-repository';
+import { createEvidenceRepository } from '../infrastructure/drizzle-evidence-repository';
 import { publishGarments } from './publish-garments';
 import { verifyOriginalClaim } from './verify-original-claim';
 import { withdrawClaim } from './withdraw-claim';
@@ -31,6 +32,8 @@ async function setup() {
   };
   const deps = {
     claims: createClaimRepository(db),
+    evidence: createEvidenceRepository(db),
+    store: { put: async () => {}, get: async () => null, delete: async () => {} }, // claims here carry no files; evidence.test.ts covers them
     getProduct: (id: string) => getProduct({ products }, id),
     upsertArticle: (i: { companyId: string; code: string }) => upsertArticle({ articles }, i),
   };

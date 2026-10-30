@@ -1,5 +1,8 @@
-import { beforeEach, expect, it, vi } from 'vitest';
-import { createClaimRepository } from '@/modules/claims';
+import { mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { addEvidence, createClaimRepository, createEvidenceRepository, createLocalEvidenceStore } from '@/modules/claims';
 import { createSupplierRepositories } from '@/modules/supplier';
 import { DEMO } from '@/server/demo-ids';
 import { seedDemo } from '@/server/seed-demo';
@@ -18,25 +21,42 @@ vi.mock('@/server/viewer', () => ({
 }));
 vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 
+// The action stores evidence under EVIDENCE_DIR; each test gets a folder of its own, removed afterwards.
+let evidenceDir: string;
 beforeEach(() => {
   viewer.mill = DEMO.companies.indigo;
   viewer.user = DEMO.users.mill;
   viewer.refuse = null;
+  evidenceDir = mkdtempSync(join(tmpdir(), 'xm-actions-evidence-'));
+  vi.stubEnv('EVIDENCE_DIR', evidenceDir);
+});
+afterEach(() => {
+  vi.unstubAllEnvs();
+  rmSync(evidenceDir, { recursive: true, force: true });
 });
 
 async function setup() {
   const db = await createTestDb();
   await seedDemo(db);
   const claims = createClaimRepository(db);
-  container.current = { claims };
+  container.current = { claims, db };
   const claim = (await claims.findByProductAndCompany(DEMO.products.liujo, DEMO.companies.indigo))!;
-  return { claimId: claim.id, exists: async () => (await claims.findById(claim.id)) !== null };
+  return { db, claims, claimId: claim.id, exists: async () => (await claims.findById(claim.id)) !== null };
 }
 
 it('removes the mill’s own claim', async () => {
   const { claimId, exists } = await setup();
   expect(await withdrawClaimAction(claimId)).toEqual({ ok: true, data: undefined });
   expect(await exists()).toBe(false);
+});
+
+it('deletes the claim’s files with it', async () => {
+  const { db, claims, claimId } = await setup();
+  const store = createLocalEvidenceStore(evidenceDir);
+  const file = await addEvidence({ claims, evidence: createEvidenceRepository(db), store }, { companyId: DEMO.companies.indigo, claimId, fileName: 'invoice.pdf', bytes: new TextEncoder().encode('%PDF-1.7 hello') });
+  expect(await store.get(file.storageKey)).not.toBeNull();
+  expect(await withdrawClaimAction(claimId)).toEqual({ ok: true, data: undefined });
+  expect(await store.get(file.storageKey)).toBeNull();
 });
 
 it('refuses another mill’s claim and keeps it', async () => {
