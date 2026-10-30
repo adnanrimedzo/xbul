@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { DEMO } from '../src/server/demo-ids';
 import { signIn } from './helpers';
 
 test('a supplier pastes links, fixes a blocked one by hand, and publishes', async ({ page }) => {
@@ -29,6 +30,23 @@ test('a supplier pastes links, fixes a blocked one by hand, and publishes', asyn
   await page.getByRole('button', { name: /publish 2 products/i }).click();
   await expect(page).toHaveURL(/\/m\/indigo-mill$/);
   await expect(page.getByText('Black Denim Overshirt')).toBeVisible();
+});
+
+test('pasting a product that is already on the page keeps its code, role and Verified badge', async ({ page }) => {
+  await signIn(page, 'mill@example.test');
+  await page.goto('/add');
+  await page.getByLabel(/brand links/i).fill('https://guess.eu/en/cropped-denim-blazer-W5RN12');
+  await page.getByRole('button', { name: /fetch/i }).click();
+  const row = page.getByTestId('preview-row');
+  await expect(row).toContainText('Already on your page');
+  await expect(row.getByLabel(/product code/i)).toHaveValue('60219/1');
+  await expect(row.getByRole('radio', { name: /we made this/i })).toBeChecked();
+  await page.getByRole('button', { name: /publish 1 product/i }).click();
+  await expect(page).toHaveURL(/\/m\/indigo-mill$/);
+  await page.goto(`/p/${DEMO.products.guess}`);
+  const original = page.getByTestId('fabric-suppliers').getByTestId('original-claim');
+  await expect(original).toContainText('Verified');
+  await expect(original).toContainText('Code 60219/1');
 });
 
 test('a page with only a title is offered for manual entry, pre-filled', async ({ page }) => {

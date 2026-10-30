@@ -3,12 +3,12 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { createProductRepository, type ProductPageFetcher } from '@/modules/catalog';
-import { addEvidence, createClaimRepository, createEvidenceRepository, createLocalEvidenceStore } from '@/modules/claims';
+import { addEvidence, createClaimRepository, createEvidenceRepository, createLocalEvidenceStore, submitClaimForReview } from '@/modules/claims';
 import { createSupplierRepositories } from '@/modules/supplier';
 import { DEMO } from '@/server/demo-ids';
 import { seedDemo } from '@/server/seed-demo';
 import { createTestDb } from '@/shared/db/testing';
-import { addManualProductAction, previewGarmentsAction, publishGarmentsAction } from './actions';
+import { addManualProductAction, previewGarmentsAction, publishGarmentsAction, type PreviewRow } from './actions';
 
 const container = vi.hoisted(() => ({ current: null as unknown }));
 // `refuse` makes requireMill throw, as it does when it redirects a visitor who is not a signed-in mill.
@@ -22,6 +22,10 @@ vi.mock('@/server/viewer', () => ({
 }));
 
 const GENERIC = 'Something went wrong. Please try again.';
+// The demo products, as previewed by link.
+const GUESS = 'https://guess.eu/en/cropped-denim-blazer-W5RN12';
+const LIUJO = 'https://liujo.com/it/printed-denim-jacket-UF4012';
+const ARMANI = 'https://armani.com/en/trucker-jacket-6R1B79';
 const jacket = `<script type="application/ld+json">${JSON.stringify({ '@type': 'Product', name: 'Washed Denim Jacket', brand: { name: 'GUESS' }, material: '100% Cotton' })}</script>`;
 
 // Publishing can delete evidence; each test gets a folder of its own for the store, removed afterwards.
@@ -63,6 +67,8 @@ async function setup(overrides: { findByCanonicalUrl?: (url: string) => Promise<
   return { evidence, evidenceStore, products, claims, articles, fetched, peak: () => peak };
 }
 
+// What the form submits for a row the supplier left alone: the code and role the preview filled in, or a blank code and "We made this".
+const untouched = (row: Extract<PreviewRow, { state: 'ready' }>) => ({ productId: row.productId, articleCode: row.existing?.articleCode ?? '', kind: row.existing?.kind ?? 'original' });
 const preview = (...lines: string[]) => previewGarmentsAction(lines.join('\n'));
 const rowsOf = async (...lines: string[]) => {
   const result = await preview(...lines);
@@ -148,6 +154,52 @@ it('saves a link the mill described by hand, and says which field is too long', 
 
   expect(await addManualProductAction({ url: 'https://brand.test/x', brand: 'B'.repeat(61), name: 'Jacket' })).toEqual({ ok: false, error: 'Brand must be 1–60 characters.' });
   expect(await addManualProductAction({ url: 'http://localhost/x', brand: 'ZARA', name: 'Jacket' })).toEqual({ ok: false, error: "We can't fetch private addresses." });
+});
+
+it('fills in the code and role of a product already on the supplier’s page, and leaves a new one blank', async () => {
+  await setup();
+  const rows = await rowsOf(GUESS, LIUJO, 'https://brand.test/denim', ARMANI);
+  expect(rows).toMatchObject([
+    { state: 'ready', productId: DEMO.products.guess, existing: { articleCode: '60219/1', kind: 'original' } },
+    { state: 'ready', productId: DEMO.products.liujo, existing: { articleCode: '60409/1', kind: 'original' } },
+    { state: 'ready', name: 'Washed Denim Jacket' },
+    { state: 'ready', productId: DEMO.products.armani }, // another supplier's claim is not this one's
+  ]);
+  expect(rows[2]).not.toHaveProperty('existing');
+  expect(rows[3]).not.toHaveProperty('existing');
+
+  // A link added by hand that turns out to be on the page already is filled in the same way.
+  expect(await addManualProductAction({ url: LIUJO, brand: 'LIU-JO', name: 'Printed Denim Jacket' })).toMatchObject({ ok: true, data: { productId: DEMO.products.liujo, existing: { articleCode: '60409/1' } } });
+
+  viewer.company = { id: DEMO.companies.denizli, slug: DEMO.companySlugs.denizli, kind: 'fabric_mill' };
+  expect(await rowsOf(ARMANI)).toMatchObject([{ state: 'ready', existing: { articleCode: '', kind: 'equivalent' } }]); // a claim with no code
+});
+
+it('keeps Verified, a review in progress, its documents and the code specs when the supplier republishes what the preview filled in', async () => {
+  const { claims, evidence, evidenceStore: store, articles } = await setup();
+  const deps = { claims, evidence, store };
+  const liujo = (await claims.findByProductAndCompany(DEMO.products.liujo, DEMO.companies.indigo))!;
+  const file = await addEvidence(deps, { companyId: DEMO.companies.indigo, claimId: liujo.id, fileName: 'invoice.pdf', bytes: new TextEncoder().encode('%PDF-1.7 hello') });
+  await submitClaimForReview(deps, { companyId: DEMO.companies.indigo, claimId: liujo.id });
+
+  const ready = (await rowsOf(GUESS, LIUJO)).flatMap((r) => (r.state === 'ready' ? [r] : []));
+  await expect(
+    publishGarmentsAction(ready.map(untouched)),
+  ).rejects.toMatchObject({ digest: expect.stringContaining('/m/') });
+
+  expect(await claims.findByProductAndCompany(DEMO.products.guess, DEMO.companies.indigo)).toMatchObject({ kind: 'original', status: 'verified', articleId: DEMO.articles.indigo60219 });
+  expect(await claims.findByProductAndCompany(DEMO.products.liujo, DEMO.companies.indigo)).toMatchObject({ kind: 'original', status: 'declared', reviewStatus: 'pending', articleId: DEMO.articles.indigo60409 });
+  expect(await evidence.listByClaim(liujo.id)).toHaveLength(1);
+  expect(await store.get(file.storageKey)).not.toBeNull();
+  expect((await articles.findByCode(DEMO.companies.indigo, '60219/1'))?.specs).toMatchObject({ weight: '12.5 oz', composition: '98% CO 2% EA', leadTimeWeeks: 3 });
+});
+
+it('keeps an equivalent claim an equivalent when the supplier republishes what the preview filled in', async () => {
+  const { claims } = await setup();
+  viewer.company = { id: DEMO.companies.denizli, slug: DEMO.companySlugs.denizli, kind: 'fabric_mill' };
+  const [row] = (await rowsOf(ARMANI)).flatMap((r) => (r.state === 'ready' ? [r] : []));
+  await expect(publishGarmentsAction([untouched(row!)])).rejects.toMatchObject({ digest: expect.stringContaining('/m/') });
+  expect(await claims.findByProductAndCompany(DEMO.products.armani, DEMO.companies.denizli)).toMatchObject({ kind: 'equivalent', articleId: null });
 });
 
 it('publishes the ready rows under the mill from the session, then goes to its page', async () => {

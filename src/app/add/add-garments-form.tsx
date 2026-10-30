@@ -20,6 +20,11 @@ const input = 'w-full border border-ink p-2 text-[12px] font-normal normal-case 
 const alertBox = 'border border-accent px-3 py-2 text-[12px] normal-case';
 const thumb = 'h-[90px] w-[72px] max-[760px]:h-[76px] max-[760px]:w-[60px]';
 const plural = (n: number) => `${n} ${n === 1 ? 'product' : 'products'}`;
+// What a row starts with: what the supplier typed for it before, else the claim it already has (so publishing again restates that claim), else blank.
+const startingValues = (row: PreviewRow, before?: { articleCode: string; kind: Kind }): { articleCode: string; kind: Kind } => {
+  const existing = row.state === 'ready' ? row.existing : undefined;
+  return { articleCode: before?.articleCode ?? existing?.articleCode ?? '', kind: before?.kind ?? existing?.kind ?? 'original' };
+};
 
 // Mockup .row: thumbnail, name and status, article code, role.
 function RowShell({ children }: { children: ReactNode }) {
@@ -52,6 +57,7 @@ function ReadyRow({ row, onChange }: { row: Ready; onChange: (patch: Partial<Pic
       <GarmentImage src={row.imageUrl} alt={label} className={thumb} />
       <Status name={label} tone="ok">
         {row.byHand ? '✓ Added by hand' : `✓ Fetched${row.composition ? ` · ${row.composition}` : ''}`}
+        {row.existing && <span className="mt-1 block font-semibold text-ink">Already on your page</span>}
         {row.imageUrl && (
           // The thumbnail is too small for the credit pill, so the photo's credit goes on the status line.
           <a href={row.url} target="_blank" rel="noopener noreferrer" className="mt-1 block text-muted underline">
@@ -160,8 +166,8 @@ export function AddGarmentsForm() {
       // Fetching again after adding a link keeps what was already typed for the links that are still there.
       setRows((old) =>
         result.data.map((r) => {
-          const before = old.find((o) => o.url === r.url);
-          return { ...r, articleCode: before?.articleCode ?? '', kind: before?.kind ?? 'original', byHand: before?.byHand };
+          const before = old.find((o) => o.url === r.url && o.state === 'ready'); // only a ready row has anything typed
+          return { ...r, ...startingValues(r, before), byHand: before?.byHand };
         }),
       );
     });
@@ -222,7 +228,7 @@ export function AddGarmentsForm() {
               row.state === 'ready' ? (
                 <ReadyRow key={row.url} row={row} onChange={(patch) => edit(row.url, (r) => ({ ...r, ...patch }))} />
               ) : row.state === 'needs_details' ? (
-                <NeedsDetailsRow key={row.url} row={row} onSaved={(saved) => edit(row.url, (r) => ({ ...saved, articleCode: r.articleCode, kind: r.kind, byHand: true }))} />
+                <NeedsDetailsRow key={row.url} row={row} onSaved={(saved) => edit(row.url, () => ({ ...saved, ...startingValues(saved), byHand: true }))} />
               ) : (
                 <InvalidRow key={row.url} row={row} />
               ),

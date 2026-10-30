@@ -11,8 +11,18 @@ import { getContainer } from '@/server/container';
 import { requireMill } from '@/server/viewer';
 import { DomainError } from '@/shared/domain/errors';
 
+// `existing` is what the supplier already claimed for this product: the preview fills it in, so publishing again restates the same claim.
 export type PreviewRow =
-  | { url: string; state: 'ready'; productId: string; brand: string; name: string; imageUrl: string | null; composition: string | null }
+  | {
+      url: string;
+      state: 'ready';
+      productId: string;
+      brand: string;
+      name: string;
+      imageUrl: string | null;
+      composition: string | null;
+      existing?: { articleCode: string; kind: 'original' | 'equivalent' };
+    }
   | { url: string; state: 'needs_details'; reason: 'fetch_failed' | 'not_a_product_page'; guess?: { brand: string; name: string } }
   | { url: string; state: 'invalid'; error: string };
 
@@ -22,15 +32,21 @@ const IMPORT_CONCURRENCY = 5;
 const MAX_URL = 2048;
 const MAX_PASTE = 120_000; // 50 links of 2048 characters is ~100,000; anything longer is not a list of links
 
-const readyRow = (url: string, p: Product): PreviewRow => ({
-  url,
-  state: 'ready',
-  productId: p.id,
-  brand: p.brand,
-  name: p.name,
-  imageUrl: p.imageUrl,
-  composition: p.composition,
-});
+async function readyRow(url: string, p: Product, companyId: string): Promise<PreviewRow> {
+  const { claims, articles } = await getContainer();
+  const claim = await claims.findByProductAndCompany(p.id, companyId);
+  const article = claim?.articleId ? await articles.findById(claim.articleId) : null; // the stored code is the normalised one, so publishing it finds the same article
+  return {
+    url,
+    state: 'ready',
+    productId: p.id,
+    brand: p.brand,
+    name: p.name,
+    imageUrl: p.imageUrl,
+    composition: p.composition,
+    ...(claim && { existing: { articleCode: article?.code ?? '', kind: claim.kind } }),
+  };
+}
 
 // One row per distinct canonical URL, so two spellings of one link never import in parallel (that would race on the
 // canonical_url unique constraint). A line that isn't a URL has no canonical form and stays a row of its own.
@@ -49,7 +65,7 @@ function distinctLinks(lines: string[]): string[] {
 }
 
 export async function previewGarmentsAction(urlsText: string): Promise<ActionResult<PreviewRow[]>> {
-  await requireMill(); // the server fetches whatever it is given, so only a signed-in supplier may ask
+  const { company } = await requireMill(); // the server fetches whatever it is given, so only a signed-in supplier may ask
   if (typeof urlsText !== 'string' || urlsText.length > MAX_PASTE) return toActionError(new DomainError('claims.batch_size_invalid'));
   const links = distinctLinks(
     urlsText
@@ -65,7 +81,7 @@ export async function previewGarmentsAction(urlsText: string): Promise<ActionRes
     try {
       if (url.length > MAX_URL) throw new DomainError('product.url_invalid');
       const result = await importProduct({ products, fetcher, allowPrivateHosts: config.allowPrivateHosts }, url);
-      return result.status === 'ok' ? readyRow(url, result.product) : { url, state: 'needs_details', reason: result.reason, guess: result.guess };
+      return result.status === 'ok' ? await readyRow(url, result.product, company.id) : { url, state: 'needs_details', reason: result.reason, guess: result.guess };
     } catch (e) {
       if (e instanceof DomainError) return { url, state: 'invalid', error: errorMessage(e.code) };
       console.error('previewGarmentsAction: row failed', url, e);
@@ -89,7 +105,7 @@ const manualSchema = z.object({
 const FIELD_CODE: Record<string, string> = { url: 'product.url_invalid', brand: 'product.brand_invalid', name: 'product.name_invalid' };
 
 export async function addManualProductAction(input: { url: string; brand: string; name: string }): Promise<ActionResult<PreviewRow>> {
-  await requireMill();
+  const { company } = await requireMill();
   const parsed = manualSchema.safeParse(input);
   if (!parsed.success) {
     const field = parsed.error.issues[0]?.path[0];
@@ -99,7 +115,7 @@ export async function addManualProductAction(input: { url: string; brand: string
   const { products, config } = await getContainer();
   try {
     const product = await addProductManually({ products, allowPrivateHosts: config.allowPrivateHosts }, parsed.data);
-    return { ok: true, data: readyRow(parsed.data.url, product) };
+    return { ok: true, data: await readyRow(parsed.data.url, product, company.id) };
   } catch (e) {
     return toActionError(e);
   }
