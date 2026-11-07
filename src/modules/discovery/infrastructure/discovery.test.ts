@@ -3,7 +3,7 @@ import type { Db } from '@/shared/db/client';
 import { createTestDb } from '@/shared/db/testing';
 import { createProduct, createProductRepository, createSearchLog } from '@/modules/catalog';
 import { createClaimRepository, createEvidence, createEvidenceRepository, declareClaim, rejectReview, submitForReview } from '@/modules/claims';
-import { createCompany, createSupplierRepositories } from '@/modules/supplier';
+import { createCompany, createSupplierRepositories, requestCompanyChanges, submitCompany } from '@/modules/supplier';
 import { DEMO } from '@/server/demo-ids';
 import { seedDemo } from '@/server/seed-demo';
 import {
@@ -12,9 +12,11 @@ import {
   getPlatformStats,
   canSeeCompany,
   getProductPageView,
+  getRegistrationReview,
   hasPublicClaims,
   listPendingReviews,
   listRecentlyTagged,
+  listRegistrations,
 } from '@/modules/discovery';
 
 let db: Db;
@@ -102,6 +104,48 @@ it('lists the claims waiting for review, longest waiting first, with their files
   expect(await summary()).toEqual([['Denizli Indigo', 'fabric', 'LIU-JO', ['rival.pdf']]]);
 });
 
+it('lists the submitted registrations, longest waiting first, with their check counts', async () => {
+  const rows = await listRegistrations(db, 'submitted');
+  expect(rows.map((r) => r.name)).toEqual(['Ege Örme', 'Marmara Denim']);
+  expect(rows[0]).toEqual({
+    companyId: DEMO.companies.ege, slug: 'ege-orme', name: 'Ege Örme', kind: 'fabric_mill', country: 'TR', status: 'submitted',
+    submittedAt: null, checks: { pass: 0, fail: 0, unknown: 0 },
+  });
+  expect(await listRegistrations(db, 'approved')).toHaveLength(4);
+  expect(await listRegistrations(db, 'rejected')).toEqual([]);
+});
+
+it('gathers what an admin needs to review a registration', async () => {
+  const review = await getRegistrationReview(db, DEMO.companies.ege);
+  expect(review?.company).toMatchObject({ id: DEMO.companies.ege, name: 'Ege Örme', status: 'submitted', ownerUserId: DEMO.users.pending, ownerEmail: 'pending@example.test' });
+  expect(review?.registration).toMatchObject({ companyId: DEMO.companies.ege, taxId: '4840847211', naceCodes: ['13.91'] });
+  expect(review).toMatchObject({ documents: [], checks: [], events: [], missing: ['doc:tax_certificate', 'doc:registry_extract', 'doc:manufacturing_proof'] });
+  expect(await getRegistrationReview(db, crypto.randomUUID())).toBeNull();
+});
+
+it('orders the history newest first, with who did it, and counts each check outcome', async () => {
+  const own = await createTestDb();
+  await seedDemo(own);
+  const repos = createSupplierRepositories(own);
+  const ege = (await repos.companies.findById(DEMO.companies.ege))!;
+  const submitted = submitCompany({ ...ege, status: 'draft' }, [], new Date('2026-02-01T09:00:00Z')).event;
+  await repos.reviewEvents.add(submitted);
+  await repos.reviewEvents.add(requestCompanyChanges(ege, DEMO.users.mill, 'Upload the levha', new Date('2026-02-02T09:00:00Z')).event);
+  const at = new Date('2026-02-01T10:00:00Z');
+  await repos.checks.replaceAll(ege.id, [
+    { source: 'tax_id_format', outcome: 'pass', summary: 'ok', checkedAt: at },
+    { source: 'nace_manufacturing', outcome: 'pass', summary: 'ok', checkedAt: at },
+    { source: 'email_domain', outcome: 'unknown', summary: '?', checkedAt: at },
+  ]);
+  const review = await getRegistrationReview(own, ege.id);
+  expect(review?.events.map((e) => [e.action, e.actorEmail, e.note])).toEqual([
+    ['changes_requested', 'mill@example.test', 'Upload the levha'],
+    ['submitted', 'pending@example.test', null],
+  ]);
+  expect(review?.checks.map((c) => c.source)).toEqual(['tax_id_format', 'nace_manufacturing', 'email_domain']);
+  expect((await listRegistrations(own, 'submitted')).find((r) => r.name === 'Ege Örme')).toMatchObject({ submittedAt: submitted.createdAt, checks: { pass: 2, fail: 0, unknown: 1 } });
+});
+
 it('seedDemo is idempotent', async () => {
   await seedDemo(db);
   expect((await getCompanyPageView(db, 'indigo-mill'))?.garments).toHaveLength(2);
@@ -115,7 +159,7 @@ it('counts suppliers, tagged products, searches and distinct searchers', async (
   await log.record({ matched: false, visitorHash: 'a' });
   await log.record({ matched: true, visitorHash: 'b' });
   await log.record({ matched: false, visitorHash: null });
-  expect(await getPlatformStats(own)).toEqual({ suppliers: 4, pendingSuppliers: 0, taggedProducts: 3, searches: 4, matchedSearches: 2, distinctSearchers: 2 });
+  expect(await getPlatformStats(own)).toEqual({ suppliers: 4, pendingSuppliers: 2, taggedProducts: 3, searches: 4, matchedSearches: 2, distinctSearchers: 2 });
 });
 
 it('keeps companies that are not approved off every public view', async () => {
@@ -138,7 +182,7 @@ it('keeps companies that are not approved off every public view', async () => {
   expect(await hasPublicClaims(db2, only.id)).toBe(false);
   expect(await hasPublicClaims(db2, DEMO.products.guess)).toBe(true);
   expect((await listRecentlyTagged(db2, 50)).map((t) => t.brand)).not.toContain('GIZLI');
-  expect(await getPlatformStats(db2)).toMatchObject({ suppliers: 4, taggedProducts: 3, pendingSuppliers: 0 });
+  expect(await getPlatformStats(db2)).toMatchObject({ suppliers: 4, taggedProducts: 3, pendingSuppliers: 2 }); // the two seeded submissions
   expect((await getCompanyPageView(db2, 'gizli-mill'))?.company.status).toBe('draft');
 });
 

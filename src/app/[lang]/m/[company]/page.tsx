@@ -18,6 +18,7 @@ import { getViewer } from '@/server/viewer';
 import { withdrawClaimAction } from './actions';
 import { EditContactForm } from './edit-contact-form';
 import { COMPANY } from './messages';
+import { REGISTRATION } from './registration/messages';
 
 type T = (typeof COMPANY)['en'];
 
@@ -59,7 +60,11 @@ export async function generateMetadata({ params }: PageProps<'/[lang]/m/[company
 }
 
 export default async function MillPage({ params }: PageProps<'/[lang]/m/[company]'>) {
-  const [{ company, articles, garments }, viewer, { config }, { t, href }] = await Promise.all([loadView((await params).company), getViewer(), getContainer(), pageMessages(COMPANY)]);
+  const [{ company, articles, garments }, viewer, { config, registrations }, { t, href }, { t: reg }] = await Promise.all([
+    loadView((await params).company), getViewer(), getContainer(), pageMessages(COMPANY), pageMessages(REGISTRATION),
+  ]);
+  // Certificates are public once an admin has approved the company (and checked them).
+  const certifications = company.status === 'approved' ? ((await registrations.find(company.id))?.certifications ?? []) : [];
   const isOwner = viewer?.userId === company.ownerUserId;
   const ownStatus = isOwner ? viewer?.company?.status : undefined; // the owner's company is the viewer's
   const pendingStatus = ownStatus && ownStatus !== 'approved' ? ownStatus : null;
@@ -102,6 +107,19 @@ export default async function MillPage({ params }: PageProps<'/[lang]/m/[company
         {isOwner && (
           <div className="mt-5">
             <EditContactForm contact={company.contact} />
+          </div>
+        )}
+        {certifications.length > 0 && (
+          <div className="mt-5">
+            <h2 className="mb-1 font-semibold">{t.certifications}</h2>
+            <ul>
+              {certifications.map((c) => (
+                <li key={`${c.scheme}-${c.number}`}>
+                  {reg.schemes[c.scheme]} {c.number}
+                  {c.validUntil && <span className="text-muted">, {t.validUntil(c.validUntil)}</span>}
+                </li>
+              ))}
+            </ul>
           </div>
         )}
       </div>

@@ -20,7 +20,7 @@ export function resolveMode(
 
 export function modeHome(mode: Mode, companySlug: string | null): string {
   if (mode === 'search') return '/';
-  if (mode === 'admin') return '/admin/claims';
+  if (mode === 'admin') return '/admin/manufacturers';
   return companySlug ? `/m/${companySlug}` : '/onboarding';
 }
 

@@ -29,6 +29,7 @@ export async function SiteNav({ viewer }: { viewer: Viewer | null }) {
           ))}
         {viewer?.mode === 'admin' && (
           <>
+            <Link href={href('/admin/manufacturers')} className={item}>{t.manufacturers}</Link>
             <Link href={href('/admin/claims')} className={item}>{t.claims}</Link>
             <Link href={href('/admin/stats')} className={item}>{t.stats}</Link>
           </>

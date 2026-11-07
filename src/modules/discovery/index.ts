@@ -6,3 +6,5 @@ export { listRecentlyTagged } from './infrastructure/recently-tagged';
 export { listPendingReviews } from './infrastructure/pending-reviews';
 export { canSeeCompany, hasPublicClaims } from './infrastructure/visibility';
 export { getPlatformStats } from './infrastructure/platform-stats';
+export type { RegistrationReview, RegistrationRow } from './infrastructure/registration-review';
+export { getRegistrationReview, listRegistrations } from './infrastructure/registration-review';

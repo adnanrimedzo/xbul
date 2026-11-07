@@ -11,6 +11,8 @@ export const COMPANY = defineMessages({
     metaDescription: (name: string, kind: CompanyKind, place: string) =>
       `${name} is a ${KIND_EN[kind].toLowerCase()} in ${place}. See the clothing products it made or can make an equivalent of, its product codes and its contact details.`,
     contact: 'Contact directly',
+    certifications: 'Certifications',
+    validUntil: (date: string) => `valid until ${date}`,
     codes: 'Product codes',
     productCount: (n: number) => `${n} ${n === 1 ? 'product' : 'products'}`,
     products: 'Products',
@@ -34,6 +36,8 @@ export const COMPANY = defineMessages({
     metaDescription: (name: string, kind: CompanyKind, place: string) =>
       `${name}, ${place} merkezli bir ${KIND_TR[kind].toLocaleLowerCase('tr')}. Ürettiği ya da muadilini üretebileceği hazır giyim ürünlerini, ürün kodlarını ve iletişim bilgilerini görün.`,
     contact: 'Doğrudan iletişim',
+    certifications: 'Sertifikalar',
+    validUntil: (date: string) => `geçerlilik: ${date}`,
     codes: 'Ürün kodları',
     productCount: (n: number) => `${n} ürün`,
     products: 'Ürünler',

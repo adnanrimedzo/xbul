@@ -2,18 +2,22 @@
 
 import { useActionState, useId, type InputHTMLAttributes } from 'react';
 import { Button } from '@/app/_components/ui/button';
+import type { ActionResult } from '@/app/_lib/action-result';
 import { useMessages } from '@/i18n/client';
 import type { CertificationScheme } from '@/modules/supplier';
-import { saveRegistrationAction, type RegistrationValues } from './actions';
 import { REGISTRATION } from './messages';
+import type { RegistrationValues } from './registration-values';
 
 const BANDS = ['1-9', '10-49', '50-249', '250+'];
 const CERT_ROWS = [0, 1, 2];
 const legend = 'mb-3 section-title';
 
-// `locked` disables every field at once through the fieldset: the details can't change under review or after a decision.
-export function RegistrationForm({ saved, tr, taxLabel, locked }: { saved: RegistrationValues; tr: boolean; taxLabel: keyof (typeof REGISTRATION)['en']['taxId']; locked: boolean }) {
-  const [state, formAction, pending] = useActionState(saveRegistrationAction, null);
+type SaveAction = (prev: (ActionResult & { values?: RegistrationValues }) | null, form: FormData) => Promise<ActionResult & { values?: RegistrationValues }>;
+
+// The owner's form, and the admin's edit form with its own action. `locked` disables every field at once through the
+// fieldset: the owner can't change the details under review or after a decision.
+export function RegistrationForm({ action, saved, tr, taxLabel, locked }: { action: SaveAction; saved: RegistrationValues; tr: boolean; taxLabel: keyof (typeof REGISTRATION)['en']['taxId']; locked: boolean }) {
+  const [state, formAction, pending] = useActionState(action, null);
   const { t } = useMessages(REGISTRATION);
   const naceHintId = useId();
   const v = state?.values ?? saved; // after a failed save React resets the form to these defaults

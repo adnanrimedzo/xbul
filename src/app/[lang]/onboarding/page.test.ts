@@ -21,7 +21,7 @@ it('sends a supplier that has an approved company to Add, and one still register
 });
 
 it('sends an admin with no company to the review queue, so filling the form in cannot create a public supplier', async () => {
-  expect(await visit({ isAdmin: true, company: null })).toContain('/admin/claims');
+  expect(await visit({ isAdmin: true, company: null })).toContain('/admin/manufacturers');
 });
 
 it('still sends an admin that has a company to Add', async () => {

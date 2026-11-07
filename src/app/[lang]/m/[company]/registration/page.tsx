@@ -2,27 +2,17 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { RowActionButton } from '@/app/_components/row-action-button';
 import { pageLang, pageMessages } from '@/i18n/server';
-import { missingForSubmit, requiredDocuments, taxIdLabel, type Registration } from '@/modules/supplier';
+import { missingForSubmit, taxIdLabel } from '@/modules/supplier';
 import { getContainer } from '@/server/container';
 import { requireMill } from '@/server/viewer';
-import { removeCompanyDocumentAction, submitRegistrationAction, type RegistrationValues } from './actions';
+import { removeCompanyDocumentAction, saveRegistrationAction, submitRegistrationAction } from './actions';
 import { DocumentUploader } from './document-uploader';
 import { REGISTRATION } from './messages';
 import { RegistrationForm } from './registration-form';
+import { missingSentence, registrationFormValues } from './registration-values';
 
 export async function generateMetadata() {
   return { title: REGISTRATION[await pageLang()].title };
-}
-
-// The saved registration as the form's flat fields, the names saveRegistrationAction reads.
-function formValues(r: Registration | null): RegistrationValues {
-  if (!r) return {};
-  const values: RegistrationValues = { naceCodes: r.naceCodes.join(', '), employees: r.employees ?? '' };
-  for (const key of ['legalName', 'taxId', 'taxOffice', 'registryNumber', 'mersisNumber', 'industryRegistryNumber', 'lei', 'registeredAddress', 'facilityAddress', 'monthlyCapacity', 'openSupplyHubId'] as const) {
-    values[key] = r[key] ?? '';
-  }
-  r.certifications.forEach((c, i) => Object.assign(values, { [`cert${i}Scheme`]: c.scheme, [`cert${i}Number`]: c.number, [`cert${i}ValidUntil`]: c.validUntil ?? '' }));
-  return values;
 }
 
 // The owner's own registration only: any other slug is as missing as one that doesn't exist.
@@ -40,11 +30,6 @@ export default async function RegistrationPage({ params }: PageProps<'/[lang]/m/
   const editable = company.status === 'draft' || company.status === 'changes_requested';
   const note = events.findLast((e) => e.action === company.status)?.note ?? ''; // the admin's note behind changes_requested or rejected
   const tr = company.country === 'TR';
-  const groups = requiredDocuments(company.country);
-  const sentence = (key: string) => {
-    const group = groups.find((g) => `doc:${g.key}` === key);
-    return group ? t.uploadOneOf(group.anyOf.map((k) => t.kinds[k])) : t.missing[key as keyof typeof t.missing];
-  };
 
   return (
     <div className="page flex flex-col gap-8">
@@ -63,7 +48,7 @@ export default async function RegistrationPage({ params }: PageProps<'/[lang]/m/
         {t.banner(company.status, note)}
       </p>
 
-      <RegistrationForm saved={formValues(registration)} tr={tr} taxLabel={taxIdLabel(company.country)} locked={!editable} />
+      <RegistrationForm action={saveRegistrationAction} saved={registrationFormValues(registration)} tr={tr} taxLabel={taxIdLabel(company.country)} locked={!editable} />
 
       <section aria-labelledby="documents-title" className="flex flex-col gap-4">
         <h2 id="documents-title" className="section-title">
@@ -97,7 +82,7 @@ export default async function RegistrationPage({ params }: PageProps<'/[lang]/m/
           {missing.length > 0 ? (
             <ul className="list-disc pl-5">
               {missing.map((key) => (
-                <li key={key}>{sentence(key)}</li>
+                <li key={key}>{missingSentence(t, company.country, key)}</li>
               ))}
             </ul>
           ) : (

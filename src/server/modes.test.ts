@@ -19,7 +19,7 @@ it('each mode has a home', () => {
   expect(modeHome('search', null)).toBe('/');
   expect(modeHome('manufacturer', 'indigo-mill')).toBe('/m/indigo-mill');
   expect(modeHome('manufacturer', null)).toBe('/onboarding');
-  expect(modeHome('admin', null)).toBe('/admin/claims');
+  expect(modeHome('admin', null)).toBe('/admin/manufacturers');
 });
 
 it.each([
@@ -28,7 +28,7 @@ it.each([
   [{ company: { slug: 'indigo-mill', status: 'changes_requested' }, mode: 'manufacturer', modeChosen: true, isAdmin: false }, '/m/indigo-mill/registration'],
   [{ company: { slug: 'indigo-mill', status: 'draft' }, mode: 'search', modeChosen: true, isAdmin: false }, '/'],
   [{ company: null, mode: 'search', modeChosen: true, isAdmin: false }, '/'],
-  [{ company: null, mode: 'admin', modeChosen: false, isAdmin: true }, '/admin/claims'], // an admin is here to review, unless they pick manufacturer
+  [{ company: null, mode: 'admin', modeChosen: false, isAdmin: true }, '/admin/manufacturers'], // an admin is here to review, unless they pick manufacturer
   [{ company: null, mode: 'manufacturer', modeChosen: true, isAdmin: true }, null], // an admin registering a company
   [{ company: null, mode: 'search', modeChosen: false, isAdmin: false }, null], // a new user sees the choice and the form
 ] as const)('onboardingRedirect(%j) is %s', (v, expected) => expect(onboardingRedirect(v)).toBe(expected));

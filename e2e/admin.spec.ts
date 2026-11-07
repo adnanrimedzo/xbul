@@ -3,9 +3,9 @@ import { signIn } from './helpers';
 
 test('an admin with no company lands on the review queue, not the company form', async ({ page }) => {
   await signIn(page, 'admin@example.test');
-  await expect(page).toHaveURL(/\/admin\/claims$/);
+  await expect(page).toHaveURL(/\/admin\/manufacturers$/);
   await page.goto('/onboarding');
-  await expect(page).toHaveURL(/\/admin\/claims$/);
+  await expect(page).toHaveURL(/\/admin\/manufacturers$/);
   await expect(page.getByLabel(/company name/i)).toHaveCount(0);
 });
 test('non-admins are sent home', async ({ page }) => {

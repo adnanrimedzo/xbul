@@ -6,30 +6,12 @@ import { z } from 'zod';
 import { actionLang } from '@/i18n/action';
 import { errorMessage } from '@/app/_lib/error-messages';
 import { toActionError, type ActionResult } from '@/app/_lib/action-result';
-import { addCompanyDocument, removeCompanyDocument, runRegistrationChecks, saveRegistration, submitRegistration, type Company, type RegistrationInput } from '@/modules/supplier';
+import { addCompanyDocument, removeCompanyDocument, runRegistrationChecks, saveRegistration, submitRegistration, type Company } from '@/modules/supplier';
 import { getContainer } from '@/server/container';
 import { requireMill } from '@/server/viewer';
 import { DomainError } from '@/shared/domain/errors';
 import { MAX_UPLOAD_BYTES } from '@/shared/domain/uploaded-file';
-
-// Every field the form sends, flat. The page fills the form from these, and a failed save echoes them back.
-export type RegistrationValues = Record<string, string>;
-
-const TEXT_FIELDS = [
-  'legalName', 'taxId', 'taxOffice', 'registryNumber', 'mersisNumber', 'industryRegistryNumber', 'lei',
-  'registeredAddress', 'facilityAddress', 'monthlyCapacity', 'openSupplyHubId', 'employees',
-] as const;
-const CERT_ROWS = [0, 1, 2] as const;
-const FIELDS = [...TEXT_FIELDS, 'naceCodes', ...CERT_ROWS.flatMap((i) => [`cert${i}Scheme`, `cert${i}Number`, `cert${i}ValidUntil`])];
-
-function toInput(v: RegistrationValues): RegistrationInput {
-  return {
-    ...Object.fromEntries(TEXT_FIELDS.map((name) => [name, v[name]])),
-    naceCodes: v.naceCodes!.split(/[,;\s]+/).filter(Boolean),
-    certifications: CERT_ROWS.map((i) => ({ scheme: v[`cert${i}Scheme`]!, number: v[`cert${i}Number`]!, validUntil: v[`cert${i}ValidUntil`] }))
-      .filter((c) => c.scheme || c.number || c.validUntil), // a blank row is no certificate
-  };
-}
+import { readRegistrationForm, toRegistrationInput, type RegistrationValues } from './registration-values';
 
 // The company is always the viewer's own: every use case finds it by owner, never from the form.
 export async function saveRegistrationAction(
@@ -37,13 +19,10 @@ export async function saveRegistrationAction(
   form: FormData,
 ): Promise<ActionResult & { values?: RegistrationValues }> {
   const { userId } = await requireMill();
-  const values = Object.fromEntries(FIELDS.map((name) => {
-    const value = form.get(name);
-    return [name, typeof value === 'string' ? value.trim() : ''];
-  }));
+  const values = readRegistrationForm(form);
   const { companies, registrations } = await getContainer();
   try {
-    await saveRegistration({ companies, registrations }, { userId, input: toInput(values) });
+    await saveRegistration({ companies, registrations }, { userId, input: toRegistrationInput(values) });
   } catch (e) {
     return { ...toActionError(e, await actionLang()), values }; // React resets the form after an action; keep what was typed
   }

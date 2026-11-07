@@ -20,7 +20,8 @@ Sign-in is by magic link. Without `RESEND_API_KEY` no mail is sent: each link is
 
 - `mill@example.test`: owner of Indigo Mill, a fabric mill (add products, edit specs and contact details)
 - `maker@example.test`: owner of Anka Garments, a garment maker
-- admin: any email listed in `ADMIN_EMAILS` (verifies original claims at `/admin/claims`)
+- `pending@example.test` and `pending2@example.test`: owners of Ege Örme and Marmara Denim, two registrations waiting for review
+- admin: any email listed in `ADMIN_EMAILS` (reviews registrations at `/admin/manufacturers` and original claims at `/admin/claims`)
 
 ## Tests
 
@@ -45,6 +46,14 @@ ESLint enforces the rules:
 - other code reaches a module only through its `index.ts` (Drizzle `*schema` files excepted)
 
 Errors are `DomainError` codes, which `src/app/_lib/error-messages.ts` turns into copy.
+
+### Roles and registration
+
+See the [registration spec](docs/superpowers/specs/2026-11-07-manufacturer-registration-design.md).
+
+- **Modes.** A signed-in user picks a mode: `search` (home `/`), `manufacturer` (their company page, or `/onboarding` to register one) or, for emails in `ADMIN_EMAILS`, `admin` (home `/admin/manufacturers`). The mode only chooses links and the home page; `requireAdmin` and `requireMill` do the authorizing.
+- **Registration.** A new company starts as `draft` and isn't public: its pages, claims, tiles, search matches, sitemap entries and stats are hidden from everyone but its owner and admins. The owner fills in the legal details and uploads documents at `/m/{slug}/registration`, then submits. Submitting runs the automatic checks (tax number checksum, MERSİS, NACE, email domain, EU VIES, GLEIF) in the background and emails every admin.
+- **Review.** At `/admin/manufacturers/{id}` an admin sees the details, checks, manual registry links, documents and history, and approves, asks for changes, rejects or edits. Nobody reviews their own company. Approving makes the company public. Documents are deleted once a company is approved or rejected; the log keeps which ones were reviewed.
 
 ## Deploy
 

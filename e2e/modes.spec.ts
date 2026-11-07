@@ -17,13 +17,16 @@ test('a forged admin cookie grants nothing', async ({ page, context, baseURL }) 
   await context.addCookies([{ name: 'xb_mode', value: 'admin', url: baseURL! }]);
   await page.goto('/');
   await expect(page.getByRole('link', { name: 'Claims' })).toHaveCount(0);
+  await expect(page.getByRole('link', { name: 'Manufacturers' })).toHaveCount(0);
   await page.goto('/admin/claims');
+  await expect(page).toHaveURL(/\/$/);
+  await page.goto('/admin/manufacturers');
   await expect(page).toHaveURL(/\/$/);
 });
 
 test('an admin can also register a company', async ({ page }) => {
   await signIn(page, 'admin-maker@example.test');
-  await expect(page).toHaveURL(/\/admin\/claims$/);
+  await expect(page).toHaveURL(/\/admin\/manufacturers$/);
   await page.getByRole('group', { name: /mode/i }).getByRole('button', { name: 'Manufacturer' }).click();
   await expect(page).toHaveURL(/\/onboarding$/);
   await expect(page.getByLabel(/company name/i)).toBeVisible();
