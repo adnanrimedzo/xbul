@@ -19,11 +19,12 @@ export function createConsoleMailer(logFile?: string): Mailer {
   };
 }
 
-export function createResendMailer(apiKey: string, from: string): Mailer {
+// `from` is on the sending subdomain, which receives no mail, so replies go to `replyTo`.
+export function createResendMailer(apiKey: string, from: string, replyTo: string): Mailer {
   const resend = new Resend(apiKey);
   return {
     async send({ to, subject, text }) {
-      const { error } = await resend.emails.send({ from, to, subject, text });
+      const { error } = await resend.emails.send({ from, replyTo, to, subject, text });
       if (error) throw new Error(`resend: ${error.message}`);
     },
   };

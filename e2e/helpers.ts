@@ -32,10 +32,12 @@ export async function signIn(page: Page, email: string): Promise<void> {
   await page.getByLabel(/email/i).fill(email);
   await page.getByLabel(/email/i).press('Enter');
 
-  const deadline = Date.now() + 5000;
+  // The suite's first sign-in compiles the sign-in page and auth route in `next dev`, which takes well over 5 s on a
+  // 2-core CI runner; later ones are instant. 20 s still fails inside the 30 s test timeout with this clearer message.
+  const deadline = Date.now() + 20_000;
   let mails = await mailsTo(email);
   while (mails.length <= before) {
-    if (Date.now() > deadline) throw new Error(`no sign-in mail to ${email} within 5 s`);
+    if (Date.now() > deadline) throw new Error(`no sign-in mail to ${email} within 20 s`);
     await new Promise((r) => setTimeout(r, 100));
     mails = await mailsTo(email);
   }
