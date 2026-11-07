@@ -114,9 +114,11 @@ Production refuses to start without `RESEND_API_KEY`. Without it, magic links (w
 
 ## 6. Set up email
 
-1. In Resend, add `xbul.io` and create the DNS records it lists.
+Mail is sent from the subdomain `mail.xbul.io`, so a sending problem can't hurt the reputation of `xbul.io` itself. Replies go to `hello@xbul.io` through a Reply-To header.
+
+1. In Resend, add `mail.xbul.io` in the Ireland (`eu-west-1`) region, and create the DNS records it lists in Cloudflare as **DNS only**: the DKIM TXT record and the two CNAMEs. Skip Resend's MX record, which is only for receiving mail. Keep one `_dmarc.xbul.io` TXT record (`v=DMARC1; p=none;`); it covers the subdomain too.
 2. Wait until Resend shows the domain as verified. Sign-in doesn't work until then.
-3. In Cloudflare, open **Email → Email Routing** for `xbul.io` and forward `hello@xbul.io` to your own inbox. Sign-in mail is sent from that address, and `/privacy` and `/terms` give it as the contact, so replies must reach you. Check that the records from step 1 and these don't conflict.
+3. In Cloudflare, open **Email → Email Routing** for `xbul.io` and forward `hello@xbul.io` to your own inbox. Sign-in mail gives it as the Reply-To, and `/privacy` and `/terms` give it as the contact, so replies must reach you. Email Routing's records sit on `xbul.io` and Resend's on `mail.xbul.io`, so they don't conflict.
 
 `MAIL_FROM` is already set in `wrangler.jsonc`.
 

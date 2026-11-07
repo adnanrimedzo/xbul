@@ -95,9 +95,9 @@ Done when: Workers plans page shows **Paid** as current plan, and opening R2 sho
 
 **Files:** none.
 
-- [ ] **Step 1 (OWNER):** Resend → Domains → add `xbul.io` (region EU). Create API keys `xbul-staging` and `xbul-production` (sending access, this domain only) — used in Task 3 Step 6.
-- [ ] **Step 2:** Add Resend's records in Cloudflare DNS exactly as Resend lists them (DKIM TXT `resend._domainkey`, SPF TXT and MX on the `send` subdomain). All **DNS only** (grey cloud).
-- [ ] **Step 3:** Cloudflare → xbul.io → Email → **Email Routing** → enable (it adds apex MX + SPF TXT for `xbul.io`) → verify the destination address `adnanrimedzo@gmail.com` (OWNER clicks the verification mail) → route `hello@xbul.io` to it. Resend's records live on `send.xbul.io`, Email Routing's on the apex, so they don't conflict; confirm there is exactly one SPF TXT on the apex.
+- [ ] **Step 1 (OWNER):** Resend → Domains → add `mail.xbul.io` (region EU; sending subdomain, replies via Reply-To `hello@xbul.io`). Create API keys `xbul-staging` and `xbul-production` (sending access, this domain only) — used in Task 3 Step 6.
+- [ ] **Step 2:** Add Resend's records in Cloudflare DNS exactly as Resend lists them (DKIM TXT `resend._domainkey.mail`, CNAMEs `rsend.mail` and `send.mail`; skip the receiving MX). All **DNS only** (grey cloud).
+- [ ] **Step 3:** Cloudflare → xbul.io → Email → **Email Routing** → enable (it adds apex MX + SPF TXT for `xbul.io`) → verify the destination address `adnanrimedzo@gmail.com` (OWNER clicks the verification mail) → route `hello@xbul.io` to it. Resend's records live under `mail.xbul.io`, Email Routing's on the apex, so they don't conflict; confirm there is exactly one SPF TXT on the apex.
 - [ ] **Step 4: Verify.** Resend shows the domain **Verified**; Email Routing shows **Configured**. Send a mail from another account to `hello@xbul.io` → it arrives in Gmail.
 
 ### Task 5: Extend the live smoke check to cover static files, images and headers
@@ -129,7 +129,7 @@ The current checks cover home, sign-in, `/api/health` (DB), private-file 404 and
 
 | Area | Check | Pass when |
 |---|---|---|
-| Auth | Request a sign-in link for the admin address | Mail from `xbul staging <hello@xbul.io>` arrives; link opens on `https://staging.xbul.io` and signs in |
+| Auth | Request a sign-in link for the admin address | Mail from `xbul staging <hello@mail.xbul.io>` arrives, Reply-To `hello@xbul.io`; link opens on `https://staging.xbul.io` and signs in |
 | Auth | Reuse the same link | Refused (single-use) |
 | Auth | Sign out, open `/admin/claims` | Redirected away from `/admin` |
 | Auth | Request 6+ links quickly | App's sign-in rate limiter refuses |
@@ -154,7 +154,7 @@ The current checks cover home, sign-in, `/api/health` (DB), private-file 404 and
 - [ ] **Step 2:** Add custom domain `xbul.io` to worker `xbul`. Add a proxied `AAAA www → 100::` record and a redirect rule: hostname equals `www.xbul.io` → `https://xbul.io${path}` (dynamic, 301, preserve query).
 - [ ] **Step 3:** `node scripts/smoke.mjs https://xbul.io` → all `ok` (robots now allows crawling).
 - [ ] **Step 4:** Run: `curl -sI https://www.xbul.io/sign-in` → `301` with `location: https://xbul.io/sign-in`; `curl -sI http://xbul.io/` → `301` to `https://`.
-- [ ] **Step 5:** Repeat the Task 6 Step 4 table on `https://xbul.io` with a test supplier (mail now from `xbul <hello@xbul.io>`).
+- [ ] **Step 5:** Repeat the Task 6 Step 4 table on `https://xbul.io` with a test supplier (mail now from `xbul <hello@mail.xbul.io>`).
 - [ ] **Step 6:** WAF → Rate limiting rule from `docs/deploy.md` step 12 (path `/`, >50 req / 10 s per IP, block 10 s).
 - [ ] **Step 7:** Add `https://xbul.io/api/health` to an external uptime monitor (e.g. UptimeRobot free) that emails the owner — OWNER creates that account.
 
