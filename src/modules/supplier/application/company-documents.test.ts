@@ -90,3 +90,17 @@ it('purges rows and files, and still removes the rows when a file cannot be dele
   await expect(purgeCompanyDocuments(deps, owner.id)).resolves.toHaveLength(1);
   expect(await deps.documents.listByCompany(owner.id)).toEqual([]);
 });
+
+it('keeps the files, and reports nothing purged, when the rows cannot be deleted', async () => {
+  const { deps, stored, owner, add } = await setup();
+  await add();
+  vi.spyOn(console, 'error').mockImplementation(() => {});
+  vi.spyOn(deps.documents, 'deleteByCompany').mockRejectedValue(new Error('db down'));
+  await expect(purgeCompanyDocuments(deps, owner.id)).resolves.toEqual([]);
+  expect(stored.size).toBe(1);
+});
+
+it('refuses a user who has no company', async () => {
+  const { deps } = await setup();
+  await expect(addCompanyDocument(deps, { userId: 'nobody', kind: 'other', fileName: 'a.pdf', bytes: PDF })).rejects.toMatchObject({ code: 'auth.forbidden' });
+});

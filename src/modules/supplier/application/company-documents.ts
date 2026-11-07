@@ -6,7 +6,7 @@ import type { DocumentDeps, DocumentStore } from './ports';
 
 async function ownCompany(deps: DocumentDeps, userId: string): Promise<Company> {
   const company = await deps.companies.findByOwner(userId);
-  if (!company) throw new DomainError('company.not_found');
+  if (!company) throw new DomainError('auth.forbidden');
   return company;
 }
 
@@ -66,13 +66,15 @@ export async function readCompanyDocument(
 }
 
 // Rows first, then files; each failure is logged and never thrown, because the decision that led here is already saved.
+// If the rows can't be deleted the files stay too, so no row points at bytes that are gone; nothing counts as purged.
 export async function purgeCompanyDocuments(deps: DocumentDeps, companyId: string): Promise<CompanyDocument[]> {
-  let files: CompanyDocument[] = [];
+  let files: CompanyDocument[];
   try {
     files = await deps.documents.listByCompany(companyId);
     await deps.documents.deleteByCompany(companyId);
   } catch (e) {
     console.error(`[company-documents] could not delete the records of company ${companyId}`, e);
+    return [];
   }
   await deleteStoredFiles(deps.store, files);
   return files;
