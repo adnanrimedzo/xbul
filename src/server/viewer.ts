@@ -1,10 +1,19 @@
-import { headers } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { cache } from 'react';
 import type { Company } from '@/modules/supplier';
 import { getContainer } from './container';
+import { availableModes, MODE_COOKIE, type Mode, resolveMode } from './modes';
 
-export type Viewer = { userId: string; email: string; isAdmin: boolean; company: Company | null };
+export type Viewer = {
+  userId: string;
+  email: string;
+  isAdmin: boolean;
+  company: Company | null;
+  modes: Mode[];
+  mode: Mode;
+  modeChosen: boolean;
+};
 
 // Cached per request: the layout and the page both ask.
 export const getViewer = cache(async (): Promise<Viewer | null> => {
@@ -14,7 +23,9 @@ export const getViewer = cache(async (): Promise<Viewer | null> => {
   if (!session) return null;
   const { id: userId, email } = session.user;
   const company = await companies.findByOwner(userId);
-  return { userId, email, isAdmin: config.adminEmails.includes(email.toLowerCase()), company };
+  const isAdmin = config.adminEmails.includes(email.toLowerCase());
+  const { mode, chosen } = resolveMode({ isAdmin, hasCompany: !!company }, (await cookies()).get(MODE_COOKIE)?.value);
+  return { userId, email, isAdmin, company, modes: availableModes({ isAdmin }), mode, modeChosen: chosen };
 });
 
 export async function requireViewer(): Promise<Viewer> {
