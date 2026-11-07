@@ -38,7 +38,7 @@ export async function seedDemo(db: Db): Promise<void> {
     const ownerUserId = DEMO.users[m.owner];
     const contact = { email: `sales@${DEMO.companySlugs[m.key]}.example`, website: m.website };
     const company = createCompany({ name: m.name, city: m.city, country: 'TR', ownerUserId, contact, kind: m.kind }, BASE);
-    await companyRepo.save({ ...company, id: DEMO.companies[m.key] });
+    await companyRepo.save({ ...company, id: DEMO.companies[m.key], status: 'approved' });
   }
 
   const a60219 = withSpecs(createArticle({ companyId: DEMO.companies.indigo, code: '60219/1' }, BASE), {

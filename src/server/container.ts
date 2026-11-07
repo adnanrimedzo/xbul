@@ -20,7 +20,7 @@ import {
   type EvidenceStore,
 } from '@/modules/claims';
 import { createAuth, type Auth } from '@/modules/identity';
-import { createSupplierRepositories, type ArticleRepository, type CompanyRepository } from '@/modules/supplier';
+import { createSupplierRepositories, type ArticleRepository, type CompanyRepository, type RegistrationRepository, type ReviewEventRepository } from '@/modules/supplier';
 import { createDb, createPostgresDb, type Db } from '@/shared/db/client';
 import { createConsoleMailer, createResendMailer, type Mailer } from '@/shared/mail/mailer';
 import { readConfig, resolveDatabaseUrl, type AppConfig } from './config';
@@ -32,6 +32,8 @@ export type Container = {
   auth: Auth;
   companies: CompanyRepository;
   articles: ArticleRepository;
+  registrations: RegistrationRepository;
+  reviewEvents: ReviewEventRepository;
   products: ProductRepository;
   fetcher: ProductPageFetcher;
   searches: SearchLog;
@@ -94,7 +96,7 @@ export const getContainer = cache(async (): Promise<Container> => {
     auth = createAuth({ db, mailer, baseUrl: config.baseUrl, secret: config.authSecret, rateLimit: cf ? true : undefined });
     authByDb.set(db, auth);
   }
-  const { companies, articles } = createSupplierRepositories(db);
+  const { companies, articles, registrations, reviewEvents } = createSupplierRepositories(db);
   return {
     config,
     db,
@@ -102,6 +104,8 @@ export const getContainer = cache(async (): Promise<Container> => {
     auth,
     companies,
     articles,
+    registrations,
+    reviewEvents,
     products: createProductRepository(db),
     fetcher: createHttpProductPageFetcher({ allowPrivateHosts: config.allowPrivateHosts }),
     searches: createSearchLog(db),

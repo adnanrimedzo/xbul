@@ -1,6 +1,9 @@
 import { DomainError } from '@/shared/domain/errors';
 import { newId } from '@/shared/domain/ids';
 import { slugify } from '@/shared/domain/slug';
+import type { CompanyStatus } from './registration';
+
+export type { CompanyStatus };
 
 export type CompanyContact = Readonly<{ email: string | null; phone: string | null; website: string | null }>;
 export type ContactInput = { email?: string | null; phone?: string | null; website?: string | null };
@@ -21,6 +24,7 @@ export type Company = Readonly<{
   country: string;
   ownerUserId: string;
   contact: CompanyContact;
+  status: CompanyStatus;
   createdAt: Date;
 }>;
 
@@ -59,5 +63,5 @@ export function createCompany(
   if (!/^[A-Z]{2}$/.test(country)) throw new DomainError('company.country_invalid');
   if (!Object.hasOwn(SCOPE_OF, input.kind)) throw new DomainError('company.kind_invalid');
   const contact = normalizeContact(input.contact);
-  return Object.freeze({ id: newId(), slug, name, kind: input.kind, city, country, ownerUserId: input.ownerUserId, contact, createdAt: now });
+  return Object.freeze({ id: newId(), slug, name, kind: input.kind, city, country, ownerUserId: input.ownerUserId, contact, status: 'draft', createdAt: now });
 }

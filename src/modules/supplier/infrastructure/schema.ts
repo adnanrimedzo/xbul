@@ -1,4 +1,5 @@
-import { char, integer, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import { sql } from 'drizzle-orm';
+import { char, index, integer, jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 
 export const companies = pgTable('companies', {
   id: uuid('id').primaryKey(),
@@ -11,6 +12,7 @@ export const companies = pgTable('companies', {
   contactEmail: text('contact_email'),
   contactPhone: text('contact_phone'),
   website: text('website'),
+  status: text('status').notNull().default('draft'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
@@ -32,4 +34,37 @@ export const articles = pgTable(
     uniqueIndex('articles_company_code_uq').on(t.companyId, t.code),
     uniqueIndex('articles_company_slug_uq').on(t.companyId, t.slug),
   ],
+);
+
+export const companyRegistrations = pgTable('company_registrations', {
+  companyId: uuid('company_id').primaryKey().references(() => companies.id, { onDelete: 'cascade' }),
+  legalName: text('legal_name'),
+  taxId: text('tax_id'),
+  taxOffice: text('tax_office'),
+  registryNumber: text('registry_number'),
+  mersisNumber: text('mersis_number'),
+  industryRegistryNumber: text('industry_registry_number'),
+  lei: text('lei'),
+  registeredAddress: text('registered_address'),
+  facilityAddress: text('facility_address'),
+  monthlyCapacity: text('monthly_capacity'),
+  openSupplyHubId: text('open_supply_hub_id'),
+  employees: text('employees'),
+  naceCodes: text('nace_codes').array().notNull().default(sql`'{}'::text[]`),
+  certifications: jsonb('certifications').$type<{ scheme: string; number: string; validUntil: string | null }[]>().notNull().default([]),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const companyReviewEvents = pgTable(
+  'company_review_events',
+  {
+    id: uuid('id').primaryKey(),
+    companyId: uuid('company_id').notNull().references(() => companies.id, { onDelete: 'cascade' }),
+    actorUserId: text('actor_user_id').notNull(),
+    action: text('action').notNull(),
+    note: text('note'),
+    changes: jsonb('changes').$type<Record<string, [unknown, unknown]>>(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('company_review_events_company_idx').on(t.companyId, t.createdAt)],
 );
