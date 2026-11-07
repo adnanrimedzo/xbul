@@ -98,7 +98,7 @@ export function SignInForm({ providers, providerFailed }: { providers: Provider[
       </form>
       {providers.length > 0 && (
         <>
-          <p className="flex items-center gap-3 text-sm text-ink/60 before:h-px before:flex-1 before:bg-ink/15 after:h-px after:flex-1 after:bg-ink/15">
+          <p className="flex items-center gap-3 text-sm text-muted before:h-px before:flex-1 before:bg-line after:h-px after:flex-1 after:bg-line">
             or continue with
           </p>
           <div className="flex flex-wrap gap-3">
