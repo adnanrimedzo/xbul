@@ -2,9 +2,12 @@
 
 import Image from 'next/image';
 import { useState } from 'react';
+import { useMessages } from '@/i18n/client';
+import { UI } from './messages';
 
 // Size it with className (e.g. aspect-[4/5]); the photo or the placeholder fills that box.
 export function GarmentImage({ src, alt, credit, className = '' }: { src: string | null; alt: string; credit?: { host: string; href?: string }; className?: string }) {
+  const { t } = useMessages(UI);
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
   const showPhoto = src !== null && failedSrc !== src;
   return (
@@ -31,10 +34,10 @@ export function GarmentImage({ src, alt, credit, className = '' }: { src: string
       {/* Without an href it is plain text: a link here would nest an <a> inside a tile's link. */}
       {credit && showPhoto && (credit.href ? (
         <a href={credit.href} target="_blank" rel="noopener noreferrer" className="absolute bottom-3 left-3 rounded-control bg-black/60 px-2.5 py-1 font-mono text-sm text-white backdrop-blur-sm">
-          Photo: {credit.host} ↗
+          {t.photo}: {credit.host} ↗
         </a>
       ) : (
-        <span className="absolute bottom-2 left-2 max-w-[calc(100%-1rem)] truncate rounded-control bg-black/60 px-2 py-0.5 font-mono text-xs text-white backdrop-blur-sm">Photo: {credit.host}</span>
+        <span className="absolute bottom-2 left-2 max-w-[calc(100%-1rem)] truncate rounded-control bg-black/60 px-2 py-0.5 font-mono text-xs text-white backdrop-blur-sm">{t.photo}: {credit.host}</span>
       ))}
     </div>
   );

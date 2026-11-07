@@ -10,7 +10,9 @@ test('production allows the public site and blocks private paths', async () => {
   expect(text).toContain('Allow: /');
   for (const path of ['/admin/', '/add', '/api/', '/verify/', '/onboarding', '/sign-in']) {
     expect(text).toContain(`Disallow: ${path}`);
+    expect(text).toContain(`Disallow: /tr${path}`);
   }
+  expect(text).toContain('Sitemap: https://xbul.io/sitemap.xml');
 });
 
 test('anywhere else blocks everything', async () => {

@@ -50,3 +50,12 @@ The look follows the Aoutive reference (https://aoutive.framer.website/): the pa
 
 ## Copy
 Direct, evidence first, respectful of makers. Never imply a guarantee or a broker. Avoid: trusted, certified, guaranteed, top-quality, request a quote, we'll connect you. No exclamation marks.
+
+## Languages
+- English at the bare paths, Turkish under `/tr` (`src/app/[lang]`). Visitors from Türkiye (Cloudflare `cf-ipcountry`) start in Turkish unless they chose a language; crawlers never get the country redirect. The EN/TR switcher in the header and footer saves the choice in the `lang` cookie for a year. Rules live in `next.config.ts`.
+- Strings sit next to their page in `defineMessages({ en, tr })` (`src/i18n/locales.ts`); TypeScript makes the Turkish copy match the English shape. Server Components use `pageMessages()`, Client Components `useMessages()`, server actions `actionLang()`.
+- Turkish copy: formal "siz", sentence case, no exclamation marks, no guarantee or broker words (güvenilir, garantili, sertifikalı, teklif isteyin). Glossary: supplier = üretici, fabric mill = kumaş fabrikası, garment maker = hazır giyim üreticisi, claim = beyan, Verified = Doğrulandı, evidence reviewed = kanıt incelendi, We made this = Bunu biz ürettik, Can make an equivalent = Muadilini üretebiliriz, lead time = termin süresi.
+
+## Brands and SEO
+- Brand pages (`/brands/[slug]`) use brand names as text only, never logos, and carry the "not affiliated" line. Facts about a brand's suppliers appear only with a public source (`src/app/[lang]/brands/brands.ts`).
+- Every page sets `alternates` (canonical + hreflang) through `src/app/_lib/seo.ts`. JSON-LD: Organization, WebSite and FAQPage on home; Product with `manufacturer` on product pages; Organization on company pages; BreadcrumbList, FAQPage and HowTo on brand pages. `/sitemap.xml`, `/robots.txt` and `/llms.txt` are routes, built per environment.
