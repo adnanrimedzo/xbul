@@ -187,6 +187,12 @@ export function requestCompanyChanges(c: Company, adminUserId: string, note: str
   return transition(c, 'changes_requested', adminUserId, 'changes_requested', noteOf(note), now);
 }
 
+// An admin's edit leaves the status alone; only the log records it.
+export function editedEvent(c: Company, adminUserId: string, changes: Record<string, [unknown, unknown]>, now: Date = new Date()): ReviewEvent {
+  if (c.ownerUserId === adminUserId) throw new DomainError('review.own_company');
+  return Object.freeze({ id: newId(), companyId: c.id, actorUserId: adminUserId, action: 'edited', note: null, changes, createdAt: now });
+}
+
 // JSON with object keys sorted, so jsonb's key order (by length) doesn't read as a change.
 const canonical = (v: unknown): string =>
   JSON.stringify(v, (_, x) => (x && typeof x === 'object' && !Array.isArray(x) ? Object.fromEntries(Object.entries(x).sort(([a], [b]) => (a < b ? -1 : 1))) : x));

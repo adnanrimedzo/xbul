@@ -4,7 +4,7 @@ export type {
   CertificationScheme, DocumentKind, EmployeeBand, Registration, RegistrationInput, ReviewAction, ReviewEvent,
 } from './domain/registration';
 export {
-  approveCompany, assertOwnerCanEdit, diffRegistration, missingForSubmit, normalizeRegistration, rejectCompany,
+  approveCompany, assertOwnerCanEdit, diffRegistration, editedEvent, missingForSubmit, normalizeRegistration, rejectCompany,
   requestCompanyChanges, requiredDocuments, submitCompany,
 } from './domain/registration';
 export { taxIdLabel } from './domain/legal-identifiers';
@@ -16,6 +16,8 @@ export type { ArticleRepository, CheckRepository, CompanyDocumentRepository, Com
 export type { DocumentDeps, DocumentStore, RegistryChecker } from './application/ports';
 export { addCompanyDocument, purgeCompanyDocuments, readCompanyDocument, removeCompanyDocument } from './application/company-documents';
 export { registerCompany } from './application/register-company';
+export type { ReviewDeps } from './application/review-registration';
+export { approveRegistration, editRegistrationAsAdmin, rejectRegistration, requestRegistrationChanges } from './application/review-registration';
 export { saveRegistration, submitRegistration } from './application/registration';
 export { updateCompanyContact } from './application/update-company-contact';
 export { upsertArticle } from './application/upsert-article';
