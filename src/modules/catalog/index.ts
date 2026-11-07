@@ -4,6 +4,7 @@ export { canonicalizeProductUrl } from './domain/product-url';
 export type { ProductRepository } from './domain/repositories';
 export type { ImportResult, ProductPageFetcher } from './application/ports';
 export { importProduct } from './application/import-product';
+export { setProductTypeIfEmpty } from './application/set-product-type';
 export { addProductManually } from './application/add-product-manually';
 export { findProductByUrl, getProduct } from './application/find-product';
 export { createProductRepository } from './infrastructure/drizzle-product-repository';

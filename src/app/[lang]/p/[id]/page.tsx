@@ -16,7 +16,7 @@ import { pageMessages } from '@/i18n/server';
 import { getProductPageView, type ClaimGroup, type ClaimView, type ProductPageView } from '@/modules/discovery';
 import type { ArticleSpecs } from '@/modules/supplier';
 import { getContainer } from '@/server/container';
-import { describeFabric } from '@/shared/domain/taxonomy';
+import { describeFabric, formatHs, PRODUCT_TYPES } from '@/shared/domain/taxonomy';
 import { PRODUCT } from './messages';
 
 type T = (typeof PRODUCT)['en'];
@@ -173,6 +173,11 @@ export default async function ProductPage({ params }: PageProps<'/[lang]/p/[id]'
           <div className="mb-2">
             <p className="font-mono text-sm text-muted">{product.brand}</p>
             <h1 className="page-title mt-1">{product.name}</h1>
+            {product.type && (
+              <p className="mt-1 text-muted">
+                {PRODUCT_TYPES[product.type].name[lang]} · {formatHs(PRODUCT_TYPES[product.type].hs)}
+              </p>
+            )}
             <p className="mt-2">
               {product.composition && <span className="text-muted">{product.composition} · </span>}
               <a href={product.sourceUrl} target="_blank" rel="noopener noreferrer" className="link font-mono text-sm">

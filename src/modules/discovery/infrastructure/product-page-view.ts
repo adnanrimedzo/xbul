@@ -1,5 +1,6 @@
 import { and, eq } from 'drizzle-orm';
 import type { Db } from '@/shared/db/client';
+import type { ProductTypeId } from '@/shared/domain/taxonomy';
 import { products } from '@/modules/catalog';
 import { claims, rankClaims, type ClaimKind, type ClaimScope, type ClaimStatus } from '@/modules/claims';
 import { articles, companies, type CompanyKind } from '@/modules/supplier';
@@ -7,7 +8,7 @@ import type { ClaimGroup, ClaimView, ProductPageView } from './types';
 
 export async function getProductPageView(db: Db, productId: string): Promise<ProductPageView | null> {
   const [p] = await db
-    .select({ id: products.id, brand: products.brand, name: products.name, imageUrl: products.imageUrl, composition: products.composition, sourceUrl: products.sourceUrl })
+    .select({ id: products.id, brand: products.brand, name: products.name, imageUrl: products.imageUrl, composition: products.composition, sourceUrl: products.sourceUrl, type: products.type })
     .from(products)
     .where(eq(products.id, productId))
     .limit(1);
@@ -49,5 +50,5 @@ export async function getProductPageView(db: Db, productId: string): Promise<Pro
     const ranked = rankClaims(rows.filter((r) => r.claim.scope === scope).map(toView));
     return { originals: ranked.filter((c) => c.kind === 'original'), equivalents: ranked.filter((c) => c.kind === 'equivalent') };
   };
-  return { product: p, fabric: group('fabric'), garment: group('garment') };
+  return { product: { ...p, type: p.type as ProductTypeId | null }, fabric: group('fabric'), garment: group('garment') };
 }

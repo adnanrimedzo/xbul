@@ -1,5 +1,5 @@
 import type { ClaimKind, ClaimScope, ClaimStatus, ReviewStatus } from '@/modules/claims';
-import type { FabricSpec } from '@/shared/domain/taxonomy';
+import type { FabricSpec, ProductTypeId } from '@/shared/domain/taxonomy';
 import type { ArticleSpecs, CompanyContact, CompanyKind, CompanyStatus } from '@/modules/supplier';
 
 export type CompanyRef = { id: string; slug: string; name: string; kind: CompanyKind; city: string; country: string; contact: CompanyContact };
@@ -19,7 +19,7 @@ export type ClaimGroup = { originals: ClaimView[]; equivalents: ClaimView[] };
 
 // Who made the fabric and who made the garment are separate lists, each with its own verified original.
 export type ProductPageView = {
-  product: { id: string; brand: string; name: string; imageUrl: string | null; composition: string | null; sourceUrl: string };
+  product: { id: string; brand: string; name: string; imageUrl: string | null; composition: string | null; sourceUrl: string; type: ProductTypeId | null };
   fabric: ClaimGroup;
   garment: ClaimGroup;
 };

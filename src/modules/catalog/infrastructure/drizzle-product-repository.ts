@@ -1,5 +1,6 @@
-import { eq, type SQL } from 'drizzle-orm';
+import { and, eq, isNull, type SQL } from 'drizzle-orm';
 import type { Db } from '@/shared/db/client';
+import type { ProductTypeId } from '@/shared/domain/taxonomy';
 import type { Product } from '../domain/product';
 import type { ProductRepository } from '../domain/repositories';
 import { products } from './schema';
@@ -13,6 +14,7 @@ const toProduct = (r: typeof products.$inferSelect): Product =>
     name: r.name,
     imageUrl: r.imageUrl,
     composition: r.composition,
+    type: r.type as ProductTypeId | null,
     createdAt: r.createdAt,
   });
 
@@ -28,5 +30,8 @@ export function createProductRepository(db: Db): ProductRepository {
     },
     findById: (id) => productBy(eq(products.id, id)),
     findByCanonicalUrl: (url) => productBy(eq(products.canonicalUrl, url)),
+    async setTypeIfNull(id, type) {
+      await db.update(products).set({ type }).where(and(eq(products.id, id), isNull(products.type)));
+    },
   };
 }

@@ -141,6 +141,13 @@
       "when": 1794086998751,
       "tag": "0019_article-fabric",
       "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1794087309107,
+      "tag": "0020_product-type",
+      "breakpoints": true
     }
   ]
 }

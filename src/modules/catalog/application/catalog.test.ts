@@ -4,6 +4,7 @@ import { createProductRepository } from '../infrastructure/drizzle-product-repos
 import { addProductManually } from './add-product-manually';
 import { findProductByUrl, getProduct } from './find-product';
 import { importProduct } from './import-product';
+import { setProductTypeIfEmpty } from './set-product-type';
 
 const html = `<script type="application/ld+json">{"@type":"Product","name":"Cropped Denim Blazer","brand":"GUESS","image":"https://img.guess.eu/b.jpg"}</script>`;
 const fetcherReturning = (body: string | Error) => {
@@ -72,4 +73,15 @@ it('returns the existing product when adding manually twice, and guards private 
 
 it('getProduct returns null for an id that is not a uuid', async () => {
   expect(await getProduct({ products: createProductRepository(await createTestDb()) }, 'not-a-uuid')).toBeNull();
+});
+
+it('sets the product type once: the first claimer wins, and bad input is refused', async () => {
+  const products = createProductRepository(await createTestDb());
+  const p = await addProductManually({ products, allowPrivateHosts: false }, { url: 'https://zara.com/tr/jeans-p1', brand: 'ZARA', name: 'Slim Jeans' });
+  expect(p.type).toBeNull();
+  await setProductTypeIfEmpty({ products }, { productId: p.id, type: 'jeans' });
+  await setProductTypeIfEmpty({ products }, { productId: p.id, type: 'jacket' });
+  expect((await products.findById(p.id))?.type).toBe('jeans');
+  await expect(setProductTypeIfEmpty({ products }, { productId: p.id, type: 'wizard' })).rejects.toMatchObject({ code: 'product.type_invalid' });
+  await expect(setProductTypeIfEmpty({ products }, { productId: crypto.randomUUID(), type: 'jeans' })).rejects.toMatchObject({ code: 'product.not_found' });
 });

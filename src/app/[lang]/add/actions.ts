@@ -7,12 +7,13 @@ import { z } from 'zod';
 import { actionLang } from '@/i18n/action';
 import { toActionError, type ActionResult } from '@/app/_lib/action-result';
 import { errorMessage } from '@/app/_lib/error-messages';
-import { addProductManually, canonicalizeProductUrl, getProduct, importProduct, type Product } from '@/modules/catalog';
+import { addProductManually, canonicalizeProductUrl, getProduct, importProduct, setProductTypeIfEmpty, type Product } from '@/modules/catalog';
 import { publishGarments } from '@/modules/claims';
 import { claimScopeOf, upsertArticle } from '@/modules/supplier';
 import { getContainer } from '@/server/container';
 import { requireMill } from '@/server/viewer';
 import { DomainError } from '@/shared/domain/errors';
+import { guessProductType, type ProductTypeId } from '@/shared/domain/taxonomy';
 
 // `existing` is what the supplier already claimed for this product: the preview fills it in, so publishing again restates the same claim.
 export type PreviewRow =
@@ -24,6 +25,8 @@ export type PreviewRow =
       name: string;
       imageUrl: string | null;
       composition: string | null;
+      type: ProductTypeId | null; // the stored type, else a guess from the name
+      typeLocked: boolean; // a stored type was set by the first supplier to claim the product
       existing?: { articleCode: string; kind: 'original' | 'equivalent' };
     }
   | { url: string; state: 'needs_details'; reason: 'fetch_failed' | 'not_a_product_page'; guess?: { brand: string; name: string } }
@@ -46,6 +49,8 @@ async function readyRow(url: string, p: Product, companyId: string): Promise<Pre
     name: p.name,
     imageUrl: p.imageUrl,
     composition: p.composition,
+    type: p.type ?? guessProductType(p.name),
+    typeLocked: p.type !== null,
     ...(claim && { existing: { articleCode: article?.code ?? '', kind: claim.kind } }),
   };
 }
@@ -129,13 +134,14 @@ const itemsSchema = z
       productId: z.uuid(),
       articleCode: z.string().trim().max(40),
       kind: z.enum(['original', 'equivalent']),
+      type: z.string().max(40), // '' means not sure
     }),
   )
   .min(1)
   .max(MAX_LINKS);
 
 export async function publishGarmentsAction(
-  items: { productId: string; articleCode: string; kind: 'original' | 'equivalent' }[],
+  items: { productId: string; articleCode: string; kind: 'original' | 'equivalent'; type: string }[],
 ): Promise<ActionResult<{ count: number }>> {
   const { company } = await requireMill(); // never from the client
   const parsed = itemsSchema.safeParse(items);
@@ -151,8 +157,9 @@ export async function publishGarmentsAction(
         getProduct: (id) => getProduct({ products }, id),
         upsertArticle: (input) => upsertArticle({ articles }, input),
       },
-      { companyId: company.id, scope: claimScopeOf(company.kind), items: parsed.data.map((item) => ({ ...item, articleCode: item.articleCode || null })) },
+      { companyId: company.id, scope: claimScopeOf(company.kind), items: parsed.data.map(({ productId, articleCode, kind }) => ({ productId, articleCode: articleCode || null, kind })) },
     );
+    for (const { productId, type } of parsed.data) if (type) await setProductTypeIfEmpty({ products }, { productId, type });
   } catch (e) {
     return toActionError(e, await actionLang());
   }
