@@ -11,6 +11,16 @@ const checks = [
   ['database', '/api/health', async (res) => res.status === 200 && (await res.json()).status === 'ok'],
   ['private files stay hidden', '/api/evidence/00000000-0000-4000-8000-000000000000', async (res) => res.status === 404 && (await res.text()) === ''],
   ['admin pages turn visitors away', '/admin/stats', (res) => res.status === 307 && !(res.headers.get('location') ?? '').includes('/admin')],
+  ['logo (static file)', '/logos/xbul-logo-white.svg', (res) => res.status === 200 && (res.headers.get('content-type') ?? '').includes('image/svg+xml')],
+  ['pages refuse framing', '/', (res) => res.headers.get('x-frame-options') === 'DENY'],
+  // Only production lets search engines in; staging and local must block everything.
+  ['robots rules', '/robots.txt', async (res) => res.status === 200 && (await res.text()).includes('Disallow: /\n') === (new URL(origin).origin !== 'https://xbul.io')],
+  ['scripts cached for good', '/', async (res) => {
+    const script = (await res.text()).match(/\/_next\/static\/[^"']+\.js/)?.[0];
+    if (!script) return false;
+    const asset = await fetch(new URL(script, origin), { signal: AbortSignal.timeout(15_000) });
+    return asset.status === 200 && (asset.headers.get('cache-control') ?? '').includes('immutable');
+  }],
 ];
 
 let failed = 0;
