@@ -17,6 +17,8 @@ export const ONBOARDING = defineMessages({
     phone: 'Phone',
     website: 'Website',
     continue: 'Continue',
+    onlySearching: 'Only searching?',
+    searchManufacturers: 'Search manufacturers',
   },
   tr: {
     welcome: 'Hoş geldiniz',
@@ -34,5 +36,7 @@ export const ONBOARDING = defineMessages({
     phone: 'Telefon',
     website: 'Web sitesi',
     continue: 'Devam',
+    onlySearching: 'Sadece arama mı yapacaksınız?',
+    searchManufacturers: 'Üretici arayın',
   },
 });

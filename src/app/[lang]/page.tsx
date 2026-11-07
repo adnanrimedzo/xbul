@@ -29,6 +29,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function Home() {
   const [{ db, config }, viewer, { t, lang, href }] = await Promise.all([getContainer(), getViewer(), pageMessages(HOME)]);
+  const addsProducts = viewer?.mode === 'manufacturer' && !!viewer.company; // the Add products link belongs to manufacturer mode
   const tiles = await listRecentlyTagged(db, 9);
   // Counts joined by " · ", each only when there is one: "1 made it · 2 can make it", "2 can make it", or "Tagged" if neither.
   const tileTag = ({ originals, equivalents }: Tile) =>
@@ -170,8 +171,8 @@ export default async function Home() {
             <h2 className="page-title mt-3">{t.makersTitle}</h2>
             <p className="mt-4 text-lg text-muted">{t.makersBody}</p>
           </div>
-          <LinkButton variant="cta" href={href(viewer?.company ? '/add' : '/sign-in')}>
-            {viewer?.company ? t.addProducts : t.createPage}
+          <LinkButton variant="cta" href={href(addsProducts ? '/add' : '/sign-in')}>
+            {addsProducts ? t.addProducts : t.createPage}
           </LinkButton>
         </div>
         <div className="flex flex-col justify-between gap-10 border-t border-line bg-surface px-5 py-12 sm:px-8 sm:py-16 lg:border-t-0 lg:border-l">
