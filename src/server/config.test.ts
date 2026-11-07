@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { readConfig, resolveDatabaseUrl } from './config';
 
 const secret = 's'.repeat(32);
@@ -23,9 +23,14 @@ describe('readConfig', () => {
       .toEqual({ google: { clientId: 'g-id', clientSecret: 'g-secret' }, microsoft: null });
     expect(readConfig({ ...base, MICROSOFT_CLIENT_ID: 'm-id', MICROSOFT_CLIENT_SECRET: 'm-secret' }).oauth)
       .toEqual({ google: null, microsoft: { clientId: 'm-id', clientSecret: 'm-secret' } });
-    // Half a pair is a typo, not a choice: fail loudly instead of quietly hiding the button.
-    expect(() => readConfig({ ...base, GOOGLE_CLIENT_ID: 'g-id' })).toThrow(/GOOGLE_CLIENT_SECRET/);
-    expect(() => readConfig({ ...base, MICROSOFT_CLIENT_SECRET: 'm-secret' })).toThrow(/MICROSOFT_CLIENT_ID/);
+    // Half a pair is a typo or a key change in progress: turn that provider off and say why, but keep the site up.
+    // Setting or removing the two secrets one after the other must never take every page down in between.
+    const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+    expect(readConfig({ ...base, GOOGLE_CLIENT_ID: 'g-id' }).oauth.google).toBeNull();
+    expect(error).toHaveBeenLastCalledWith(expect.stringMatching(/GOOGLE_CLIENT_SECRET is missing.*Google sign-in is off/));
+    expect(readConfig({ ...base, MICROSOFT_CLIENT_SECRET: 'm-secret' }).oauth.microsoft).toBeNull();
+    expect(error).toHaveBeenLastCalledWith(expect.stringMatching(/MICROSOFT_CLIENT_ID is missing.*Microsoft sign-in is off/));
+    error.mockRestore();
   });
 
   it('requires a base url', () => {

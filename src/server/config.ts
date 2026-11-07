@@ -30,12 +30,16 @@ export function readConfig(env: Record<string, string | undefined> = process.env
     throw new Error('RESEND_API_KEY is required in production (set ALLOW_CONSOLE_MAILER=1 to log mail instead)');
   }
 
-  const oauthKeys = (prefix: string): OAuthKeys | null => {
+  // Half a pair turns the provider off rather than failing the request: the two secrets are set or removed one after
+  // the other, and every page would break in between. The error lands in Workers Logs so a typo doesn't go unseen.
+  const oauthKeys = (prefix: string, label: string): OAuthKeys | null => {
     const clientId = value(`${prefix}_CLIENT_ID`);
     const clientSecret = value(`${prefix}_CLIENT_SECRET`);
-    if (!clientId && !clientSecret) return null;
-    if (!clientId || !clientSecret) throw new Error(`${prefix}_CLIENT_ID and ${prefix}_CLIENT_SECRET must be set together`);
-    return { clientId, clientSecret };
+    if (clientId && clientSecret) return { clientId, clientSecret };
+    if (clientId || clientSecret) {
+      console.error(`[config] ${prefix}_${clientId ? 'CLIENT_SECRET' : 'CLIENT_ID'} is missing, so ${label} sign-in is off`);
+    }
+    return null;
   };
 
   return {
@@ -48,7 +52,7 @@ export function readConfig(env: Record<string, string | undefined> = process.env
     mailLogFile: value('MAIL_LOG_FILE'),
     allowPrivateHosts: env.FETCH_ALLOW_PRIVATE_HOSTS === '1',
     evidenceDir: value('EVIDENCE_DIR') ?? './.data/evidence',
-    oauth: { google: oauthKeys('GOOGLE'), microsoft: oauthKeys('MICROSOFT') },
+    oauth: { google: oauthKeys('GOOGLE', 'Google'), microsoft: oauthKeys('MICROSOFT', 'Microsoft') },
   };
 }
 
