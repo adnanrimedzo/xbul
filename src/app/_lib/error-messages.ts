@@ -37,6 +37,9 @@ const MESSAGES = defineMessages<Record<string, string>>({
     'product.not_found': 'That product no longer exists.',
     'product.url_invalid': 'Not a valid link.',
     'product.url_not_public': "We can't fetch private addresses.",
+    'registration.lei_invalid': 'Enter a valid 20-character LEI.',
+    'registration.nace_invalid': 'Activity codes look like 13.20 or 13.20.01.',
+    'registration.tax_id_invalid': 'Enter a valid tax number for your country.',
   },
   tr: {
     generic: 'Bir sorun oluştu. Lütfen tekrar deneyin.',
@@ -73,6 +76,9 @@ const MESSAGES = defineMessages<Record<string, string>>({
     'product.not_found': 'Bu ürün artık yok.',
     'product.url_invalid': 'Geçerli bir link değil.',
     'product.url_not_public': 'Özel (iç ağ) adresleri getiremiyoruz.',
+    'registration.lei_invalid': 'Geçerli, 20 karakterlik bir LEI girin.',
+    'registration.nace_invalid': 'Faaliyet kodları 13.20 veya 13.20.01 biçiminde olmalı.',
+    'registration.tax_id_invalid': 'Ülkeniz için geçerli bir vergi numarası girin.',
   },
 });
 
