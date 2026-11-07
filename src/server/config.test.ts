@@ -12,9 +12,20 @@ describe('readConfig', () => {
 
   it('treats blank values as unset and reads the optional switches', () => {
     expect(readConfig({ DATABASE_URL: '  ', BETTER_AUTH_SECRET: secret, PUBLIC_BASE_URL: 'http://x', ADMIN_EMAILS: ',, ,', RESEND_API_KEY: '', MAIL_FROM: '' }))
-      .toEqual({ databaseUrl: null, baseUrl: 'http://x', authSecret: secret, adminEmails: [], resendApiKey: null, mailFrom: 'xbul <hello@mail.xbul.io>', mailLogFile: null, allowPrivateHosts: false, evidenceDir: './.data/evidence' });
+      .toEqual({ databaseUrl: null, baseUrl: 'http://x', authSecret: secret, adminEmails: [], resendApiKey: null, mailFrom: 'xbul <hello@mail.xbul.io>', mailLogFile: null, allowPrivateHosts: false, evidenceDir: './.data/evidence', oauth: { google: null, microsoft: null } });
     expect(readConfig({ BETTER_AUTH_SECRET: secret, PUBLIC_BASE_URL: 'http://x', RESEND_API_KEY: 're_1', MAIL_LOG_FILE: '.outbox/mail.log', FETCH_ALLOW_PRIVATE_HOSTS: '1', EVIDENCE_DIR: '/var/evidence' }))
       .toMatchObject({ resendApiKey: 're_1', mailLogFile: '.outbox/mail.log', allowPrivateHosts: true, evidenceDir: '/var/evidence' });
+  });
+
+  it('turns on a sign-in provider only when both of its keys are set', () => {
+    const base = { BETTER_AUTH_SECRET: secret, PUBLIC_BASE_URL: 'http://x' };
+    expect(readConfig({ ...base, GOOGLE_CLIENT_ID: 'g-id', GOOGLE_CLIENT_SECRET: 'g-secret', MICROSOFT_CLIENT_ID: ' ', MICROSOFT_CLIENT_SECRET: '' }).oauth)
+      .toEqual({ google: { clientId: 'g-id', clientSecret: 'g-secret' }, microsoft: null });
+    expect(readConfig({ ...base, MICROSOFT_CLIENT_ID: 'm-id', MICROSOFT_CLIENT_SECRET: 'm-secret' }).oauth)
+      .toEqual({ google: null, microsoft: { clientId: 'm-id', clientSecret: 'm-secret' } });
+    // Half a pair is a typo, not a choice: fail loudly instead of quietly hiding the button.
+    expect(() => readConfig({ ...base, GOOGLE_CLIENT_ID: 'g-id' })).toThrow(/GOOGLE_CLIENT_SECRET/);
+    expect(() => readConfig({ ...base, MICROSOFT_CLIENT_SECRET: 'm-secret' })).toThrow(/MICROSOFT_CLIENT_ID/);
   });
 
   it('requires a base url', () => {

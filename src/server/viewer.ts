@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { cache } from 'react';
 import type { Company } from '@/modules/supplier';
 import { getContainer } from './container';
+import { isAdmin } from './is-admin';
 
 export type Viewer = { userId: string; email: string; isAdmin: boolean; company: Company | null };
 
@@ -14,7 +15,7 @@ export const getViewer = cache(async (): Promise<Viewer | null> => {
   if (!session) return null;
   const { id: userId, email } = session.user;
   const company = await companies.findByOwner(userId);
-  return { userId, email, isAdmin: config.adminEmails.includes(email.toLowerCase()), company };
+  return { userId, email, isAdmin: isAdmin(session.user, config.adminEmails), company };
 });
 
 export async function requireViewer(): Promise<Viewer> {

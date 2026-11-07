@@ -8,7 +8,11 @@ export type AppConfig = {
   mailLogFile: string | null;
   allowPrivateHosts: boolean;
   evidenceDir: string; // where the local evidence store keeps files; Workers use the EVIDENCE bucket instead
+  oauth: OAuthConfig; // a provider's sign-in button shows only when its keys are set
 };
+
+export type OAuthKeys = { clientId: string; clientSecret: string };
+export type OAuthConfig = { google: OAuthKeys | null; microsoft: OAuthKeys | null };
 
 export function readConfig(env: Record<string, string | undefined> = process.env): AppConfig {
   const value = (name: string) => env[name]?.trim() || null;
@@ -26,6 +30,14 @@ export function readConfig(env: Record<string, string | undefined> = process.env
     throw new Error('RESEND_API_KEY is required in production (set ALLOW_CONSOLE_MAILER=1 to log mail instead)');
   }
 
+  const oauthKeys = (prefix: string): OAuthKeys | null => {
+    const clientId = value(`${prefix}_CLIENT_ID`);
+    const clientSecret = value(`${prefix}_CLIENT_SECRET`);
+    if (!clientId && !clientSecret) return null;
+    if (!clientId || !clientSecret) throw new Error(`${prefix}_CLIENT_ID and ${prefix}_CLIENT_SECRET must be set together`);
+    return { clientId, clientSecret };
+  };
+
   return {
     databaseUrl: value('DATABASE_URL'),
     baseUrl,
@@ -36,6 +48,7 @@ export function readConfig(env: Record<string, string | undefined> = process.env
     mailLogFile: value('MAIL_LOG_FILE'),
     allowPrivateHosts: env.FETCH_ALLOW_PRIVATE_HOSTS === '1',
     evidenceDir: value('EVIDENCE_DIR') ?? './.data/evidence',
+    oauth: { google: oauthKeys('GOOGLE'), microsoft: oauthKeys('MICROSOFT') },
   };
 }
 
