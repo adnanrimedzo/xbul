@@ -15,7 +15,7 @@ There are two environments that share nothing. **Do every step for staging first
 | Deploy command | `pnpm run deploy:staging` | `pnpm run deploy` |
 
 You need:
-- a Cloudflare account with `xbul.io`'s DNS on Cloudflare
+- a Cloudflare account with `xbul.io`'s DNS on Cloudflare (step 0)
 - a Cloudflare Workers Paid plan: the free plan's CPU time (10 ms per request) and subrequest count (50 per request) are too low for rendering pages and for fetching the link previews on `/add`
 - R2 enabled on that account. Do this once in the Cloudflare dashboard, under **R2 Object Storage**. Step 4 fails until you have.
 - a Neon account
@@ -29,6 +29,20 @@ Every command runs from the repository root. Install the dependencies once, then
 pnpm install
 pnpm wrangler login
 ```
+
+## 0. Move the domain to Cloudflare
+
+`xbul.io` is registered at one.com and stays there. Only its DNS moves to Cloudflare. Do this once, before step 9 needs it.
+
+1. In Cloudflare, open **Domains → Onboard a domain**, enter `xbul.io` and choose the Free plan. Note the two `….ns.cloudflare.com` nameservers it gives you.
+2. Delete the A and MX records Cloudflare copied from one.com. Nothing is hosted at one.com, so nothing breaks.
+3. At one.com, open **Domain → DNS settings → Nameservers → DNSSEC** and turn DNSSEC off. Then wait until `dig +short DS xbul.io @a0.nic.io` prints nothing, and two hours more. If you switch nameservers while the old DS record is still published, xbul.io stops resolving.
+4. At one.com, under **Nameservers**, choose **Change to custom nameservers**, enter the two Cloudflare nameservers and save.
+5. Wait until `dig +short NS xbul.io @a0.nic.io` prints the Cloudflare nameservers and Cloudflare shows the domain as **Active**.
+6. In Cloudflare, open **DNS → Settings → Enable DNSSEC**, then add the DS record it shows at one.com under **Nameservers → DS Records**.
+7. Set **SSL/TLS** to **Full (strict)**, and turn on **Always Use HTTPS** with minimum TLS 1.2.
+
+To undo it, set one.com back to its own nameservers. Never leave a DS record at one.com that doesn't match the nameservers in use.
 
 ## 1. Create the databases
 
