@@ -1,15 +1,18 @@
 import { beforeAll, expect, it } from 'vitest';
 import type { Db } from '@/shared/db/client';
 import { createTestDb } from '@/shared/db/testing';
-import { createSearchLog } from '@/modules/catalog';
+import { createProduct, createProductRepository, createSearchLog } from '@/modules/catalog';
 import { createClaimRepository, createEvidence, createEvidenceRepository, declareClaim, rejectReview, submitForReview } from '@/modules/claims';
+import { createCompany, createSupplierRepositories } from '@/modules/supplier';
 import { DEMO } from '@/server/demo-ids';
 import { seedDemo } from '@/server/seed-demo';
 import {
   getArticlePageView,
   getCompanyPageView,
   getPlatformStats,
+  canSeeCompany,
   getProductPageView,
+  hasPublicClaims,
   listPendingReviews,
   listRecentlyTagged,
 } from '@/modules/discovery';
@@ -112,5 +115,37 @@ it('counts suppliers, tagged products, searches and distinct searchers', async (
   await log.record({ matched: false, visitorHash: 'a' });
   await log.record({ matched: true, visitorHash: 'b' });
   await log.record({ matched: false, visitorHash: null });
-  expect(await getPlatformStats(own)).toEqual({ suppliers: 4, taggedProducts: 3, searches: 4, matchedSearches: 2, distinctSearchers: 2 });
+  expect(await getPlatformStats(own)).toEqual({ suppliers: 4, pendingSuppliers: 0, taggedProducts: 3, searches: 4, matchedSearches: 2, distinctSearchers: 2 });
 });
+
+it('keeps companies that are not approved off every public view', async () => {
+  const db2 = await createTestDb();
+  await seedDemo(db2);
+  const tile = async () => (await listRecentlyTagged(db2)).find((t) => t.productId === DEMO.products.liujo);
+  const before = (await tile())?.equivalents;
+  const gizli = { ...createCompany({ name: 'Gizli Mill', city: 'Bursa', country: 'TR', ownerUserId: 'u-gizli', contact: { email: 'g@gizli.example' }, kind: 'fabric_mill' }), id: crypto.randomUUID() };
+  await createSupplierRepositories(db2).companies.save(gizli);
+  const only = { ...createProduct({ canonicalUrl: 'https://gizli.example/p', sourceUrl: 'https://gizli.example/p', brand: 'GIZLI', name: 'Secret', imageUrl: null, composition: null }), id: crypto.randomUUID() };
+  await createProductRepository(db2).save(only);
+  const repo = createClaimRepository(db2);
+  for (const [productId, kind] of [[DEMO.products.guess, 'original'], [DEMO.products.liujo, 'equivalent'], [only.id, 'equivalent']] as const) {
+    await repo.save(declareClaim({ productId, companyId: gizli.id, articleId: null, kind, scope: 'fabric' }));
+  }
+  const v = await getProductPageView(db2, DEMO.products.guess);
+  expect([...v!.fabric.originals, ...v!.fabric.equivalents].map((c) => c.company.name)).not.toContain('Gizli Mill');
+  expect((await tile())?.equivalents).toBe(before);
+  expect(await getProductPageView(db2, only.id)).toBeNull();
+  expect(await hasPublicClaims(db2, only.id)).toBe(false);
+  expect(await hasPublicClaims(db2, DEMO.products.guess)).toBe(true);
+  expect((await listRecentlyTagged(db2, 50)).map((t) => t.brand)).not.toContain('GIZLI');
+  expect(await getPlatformStats(db2)).toMatchObject({ suppliers: 4, taggedProducts: 3, pendingSuppliers: 0 });
+  expect((await getCompanyPageView(db2, 'gizli-mill'))?.company.status).toBe('draft');
+});
+
+it.each([
+  ['approved', null, true],
+  ['draft', null, false],
+  ['draft', { userId: 'u-gizli', isAdmin: false }, true],
+  ['submitted', { userId: 'someone', isAdmin: false }, false],
+  ['rejected', { userId: 'someone', isAdmin: true }, true],
+] as const)('canSeeCompany(%s, %j) is %s', (status, viewer, expected) => expect(canSeeCompany({ status, ownerUserId: 'u-gizli' }, viewer)).toBe(expected));

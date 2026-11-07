@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { lastMailTo, signIn } from './helpers';
 
-test('a Turkish mill registers, uploads its documents and submits', async ({ page }) => {
+test('a Turkish mill registers, uploads its documents and submits', async ({ page, browser }) => {
   await signIn(page, 'aksu@example.test');
   await page.getByRole('radio', { name: /we make fabric/i }).check();
   await page.getByLabel(/company name/i).fill('Aksu Denim');
@@ -39,4 +39,9 @@ test('a Turkish mill registers, uploads its documents and submits', async ({ pag
   await expect(page.getByText('Under review.')).toBeVisible();
   await expect(page.getByLabel(/legal name/i)).toBeDisabled();
   await expect.poll(async () => (await lastMailTo('admin@example.test').catch(() => null))?.subject).toBe('New manufacturer to review: Aksu Denim');
+
+  // Until it is approved the company is not public: a visitor with no session gets a 404.
+  const visitor = await browser.newContext();
+  expect((await (await visitor.newPage()).goto('/m/aksu-denim'))?.status()).toBe(404);
+  await visitor.close();
 });

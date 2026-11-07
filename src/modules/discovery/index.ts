@@ -4,4 +4,5 @@ export { getArticlePageView } from './infrastructure/article-page-view';
 export { getCompanyPageView } from './infrastructure/company-page-view';
 export { listRecentlyTagged } from './infrastructure/recently-tagged';
 export { listPendingReviews } from './infrastructure/pending-reviews';
+export { canSeeCompany, hasPublicClaims } from './infrastructure/visibility';
 export { getPlatformStats } from './infrastructure/platform-stats';

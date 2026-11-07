@@ -9,7 +9,7 @@ import { ClaimTag } from '@/app/_components/ui/claim-tag';
 import { GarmentGrid } from '@/app/_components/ui/garment-grid';
 import { GarmentTile } from '@/app/_components/ui/garment-tile';
 import { VerifiedExplanation, VerifiedInline } from '@/app/_components/ui/verified';
-import { getCompanyPageView, type CompanyPageView } from '@/modules/discovery';
+import { canSeeCompany, getCompanyPageView, type CompanyPageView } from '@/modules/discovery';
 import { alternates, jsonLd } from '@/app/_lib/seo';
 import { OG_LOCALE } from '@/i18n/locales';
 import { pageMessages } from '@/i18n/server';
@@ -39,7 +39,9 @@ function VerifyStep({ garment, t, href }: { garment: CompanyPageView['garments']
 const loadView = cache(async (slug: string) => {
   if (!SLUG.test(slug)) notFound();
   const { db } = await getContainer();
-  return (await getCompanyPageView(db, slug)) ?? notFound();
+  const view = (await getCompanyPageView(db, slug)) ?? notFound();
+  if (!canSeeCompany(view.company, await getViewer())) notFound(); // not approved: only the owner and admins can open it
+  return view;
 });
 
 export async function generateMetadata({ params }: PageProps<'/[lang]/m/[company]'>): Promise<Metadata> {

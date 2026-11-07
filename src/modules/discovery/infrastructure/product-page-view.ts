@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import type { Db } from '@/shared/db/client';
 import { products } from '@/modules/catalog';
 import { claims, rankClaims, type ClaimKind, type ClaimScope, type ClaimStatus } from '@/modules/claims';
@@ -18,7 +18,8 @@ export async function getProductPageView(db: Db, productId: string): Promise<Pro
     .from(claims)
     .innerJoin(companies, eq(claims.companyId, companies.id))
     .leftJoin(articles, eq(claims.articleId, articles.id))
-    .where(eq(claims.productId, productId));
+    .where(and(eq(claims.productId, productId), eq(companies.status, 'approved')));
+  if (rows.length === 0) return null; // nothing public yet, even for the owner of the only claim
 
   const toView = ({ claim, company, article }: (typeof rows)[number]): ClaimView => ({
     claimId: claim.id,

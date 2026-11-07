@@ -1,5 +1,5 @@
 import type { ClaimKind, ClaimScope, ClaimStatus, ReviewStatus } from '@/modules/claims';
-import type { ArticleSpecs, CompanyContact, CompanyKind } from '@/modules/supplier';
+import type { ArticleSpecs, CompanyContact, CompanyKind, CompanyStatus } from '@/modules/supplier';
 
 export type CompanyRef = { id: string; slug: string; name: string; kind: CompanyKind; city: string; country: string; contact: CompanyContact };
 
@@ -35,13 +35,13 @@ export type GarmentTile = {
 };
 
 export type ArticlePageView = {
-  company: CompanyRef & { ownerUserId: string };
+  company: CompanyRef & { ownerUserId: string; status: CompanyStatus };
   article: { id: string; slug: string; code: string; specs: ArticleSpecs };
   garments: GarmentTile[];
 };
 
 export type CompanyPageView = {
-  company: CompanyRef & { ownerUserId: string };
+  company: CompanyRef & { ownerUserId: string; status: CompanyStatus };
   articles: { slug: string; code: string; garmentCount: number }[];
   // The claimId is this mill's claim on the garment, with where its claim and its review stand.
   garments: (GarmentTile & { claimId: string; claimStatus: ClaimStatus; reviewStatus: ReviewStatus })[];
@@ -57,4 +57,5 @@ export type PendingReview = {
 };
 
 // How the platform stands against the launch targets of 20-30 suppliers, 200-300 products and 10-20 searching customers.
-export type PlatformStats = { suppliers: number; taggedProducts: number; searches: number; matchedSearches: number; distinctSearchers: number };
+// `suppliers` counts approved companies; `pendingSuppliers` those waiting for review.
+export type PlatformStats = { suppliers: number; pendingSuppliers: number; taggedProducts: number; searches: number; matchedSearches: number; distinctSearchers: number };

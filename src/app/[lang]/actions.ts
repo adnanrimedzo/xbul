@@ -6,6 +6,7 @@ import { actionLang } from '@/i18n/action';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { findProductByUrl, type SearchLog } from '@/modules/catalog';
+import { hasPublicClaims } from '@/modules/discovery';
 import { getContainer } from '@/server/container';
 import { visitorHash } from '@/app/_lib/visitor-hash';
 
@@ -27,10 +28,10 @@ export async function findGarmentAction(_prev: { notFound: boolean } | null, for
   const raw = form.get('url');
   const url = typeof raw === 'string' ? raw.trim() : '';
   if (!url || url.length > MAX_URL) return { notFound: true };
-  const { products, claims, searches, config } = await getContainer();
+  const { db, products, searches, config } = await getContainer();
   const product = await findProductByUrl({ products }, url);
-  // A product only previewed on /add has a product row but no supplier behind it yet, so it counts as not tagged.
-  const found = product && (await claims.existsForProduct(product.id)) ? product : null;
+  // A product only previewed on /add has a product row but no approved supplier behind it yet, so it counts as not tagged.
+  const found = product && (await hasPublicClaims(db, product.id)) ? product : null;
   await countSearch(searches, found !== null, config.authSecret);
   if (!found) return { notFound: true };
   redirect(localePath(await actionLang(), `/p/${found.id}`)); // outside any try/catch: redirect works by throwing

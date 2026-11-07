@@ -10,7 +10,7 @@ import { GarmentTile } from '@/app/_components/ui/garment-tile';
 import { alternates } from '@/app/_lib/seo';
 import { OG_LOCALE } from '@/i18n/locales';
 import { pageMessages } from '@/i18n/server';
-import { getArticlePageView } from '@/modules/discovery';
+import { canSeeCompany, getArticlePageView } from '@/modules/discovery';
 import type { ArticleSpecs } from '@/modules/supplier';
 import { getContainer } from '@/server/container';
 import { getViewer } from '@/server/viewer';
@@ -24,7 +24,9 @@ const DASH = '—';
 const loadView = cache(async (company: string, article: string) => {
   if (!SLUG.test(company) || !SLUG.test(article)) notFound();
   const { db } = await getContainer();
-  return (await getArticlePageView(db, company, article)) ?? notFound();
+  const view = (await getArticlePageView(db, company, article)) ?? notFound();
+  if (!canSeeCompany(view.company, await getViewer())) notFound(); // not approved: only the owner and admins can open it
+  return view;
 });
 
 const lead = (weeks: (n: number) => string, s: ArticleSpecs) => (s.leadTimeWeeks === null ? DASH : weeks(s.leadTimeWeeks));
