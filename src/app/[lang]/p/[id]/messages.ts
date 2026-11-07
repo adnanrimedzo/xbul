@@ -1,0 +1,38 @@
+import { defineMessages } from '@/i18n/locales';
+
+export const PRODUCT = defineMessages({
+  en: {
+    metaTitle: (brand: string, name: string) => `Who made the ${brand} ${name}? Fabric mill and garment maker`,
+    metaFallback: (brand: string, name: string) => `Find the fabric mill and garment maker behind the ${brand} ${name}.`,
+    fabricBy: 'Fabric',
+    garmentBy: 'Garment',
+    madeBy: (label: string, company: string, code: string | null) => `${label} by ${company}${code ? ` (code ${code})` : ''}`,
+    equivalents: (n: number) => `${n} ${n === 1 ? 'supplier' : 'suppliers'} can make an equivalent`,
+    code: (code: string) => `Code ${code}`,
+    weeks: (n: number) => `${n} ${n === 1 ? 'week' : 'weeks'}`,
+    back: 'Back to search',
+    viewOn: (host: string) => `View on ${host} ↗`,
+    whoFabric: 'Who made the fabric',
+    whoGarment: 'Who made the garment',
+    claim: 'Are you a supplier? Claim this product',
+    copyLink: 'Copy link',
+    home: 'Home',
+  },
+  tr: {
+    metaTitle: (brand: string, name: string) => `${brand} ${name} kim üretti? Kumaş fabrikası ve hazır giyim üreticisi`,
+    metaFallback: (brand: string, name: string) => `${brand} ${name} ürününün arkasındaki kumaş fabrikasını ve hazır giyim üreticisini bulun.`,
+    fabricBy: 'Kumaş',
+    garmentBy: 'Hazır giyim',
+    madeBy: (label: string, company: string, code: string | null) => `${label}: ${company}${code ? ` (kod ${code})` : ''}`,
+    equivalents: (n: number) => `${n} üretici muadilini üretebilir`,
+    code: (code: string) => `Kod ${code}`,
+    weeks: (n: number) => `${n} hafta`,
+    back: 'Aramaya dön',
+    viewOn: (host: string) => `${host} sitesinde görün ↗`,
+    whoFabric: 'Kumaşı kim üretti',
+    whoGarment: 'Hazır giyimi kim üretti',
+    claim: 'Üretici misiniz? Bu ürün için beyanda bulunun',
+    copyLink: 'Linki kopyala',
+    home: 'Ana sayfa',
+  },
+});

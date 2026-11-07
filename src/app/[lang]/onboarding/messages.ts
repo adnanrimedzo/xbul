@@ -1,0 +1,38 @@
+import { defineMessages } from '@/i18n/locales';
+
+export const ONBOARDING = defineMessages({
+  en: {
+    welcome: 'Welcome',
+    intro: 'Tell us who you are so we can set up your account.',
+    whatMake: 'What does your company make?',
+    makeFabric: 'We make fabric',
+    makeGarments: 'We make garments',
+    companyName: 'Company name',
+    city: 'City',
+    country: 'Country',
+    countryPlaceholder: 'Two-letter code',
+    reachYou: 'How buyers reach you (at least one)',
+    shownPublicly: 'These are shown publicly on your page.',
+    contactEmail: 'Contact email',
+    phone: 'Phone',
+    website: 'Website',
+    continue: 'Continue',
+  },
+  tr: {
+    welcome: 'Hoş geldiniz',
+    intro: 'Hesabınızı oluşturabilmemiz için bize kim olduğunuzu söyleyin.',
+    whatMake: 'Şirketiniz ne üretiyor?',
+    makeFabric: 'Kumaş üretiyoruz',
+    makeGarments: 'Hazır giyim üretiyoruz',
+    companyName: 'Şirket adı',
+    city: 'Şehir',
+    country: 'Ülke',
+    countryPlaceholder: 'İki harfli kod',
+    reachYou: 'Alıcılar size nasıl ulaşır (en az biri)',
+    shownPublicly: 'Bunlar sayfanızda herkese açık olarak gösterilir.',
+    contactEmail: 'İletişim e-postası',
+    phone: 'Telefon',
+    website: 'Web sitesi',
+    continue: 'Devam',
+  },
+});

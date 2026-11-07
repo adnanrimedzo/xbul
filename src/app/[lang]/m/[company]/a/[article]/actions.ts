@@ -1,0 +1,39 @@
+'use server';
+
+import { revalidatePath } from 'next/cache';
+import { z } from 'zod';
+import { actionLang } from '@/i18n/action';
+import { errorMessage } from '@/app/_lib/error-messages';
+import { toActionError, type ActionResult } from '@/app/_lib/action-result';
+import { editArticleSpecs } from '@/modules/supplier';
+import { getContainer } from '@/server/container';
+import { requireViewer } from '@/server/viewer';
+
+// The form posts every field, so a blank lead time clears it, as a blank text field does. Lengths and the whole-number
+// range are the domain's (they have messages).
+const number = z.preprocess((v) => (v === '' ? null : v), z.coerce.number().nullable().optional());
+
+const formSchema = z.object({
+  articleId: z.uuid(),
+  weight: z.string().trim().optional(),
+  composition: z.string().trim().optional(),
+  finish: z.string().trim().optional(),
+  moq: z.string().trim().optional(),
+  leadTimeWeeks: number,
+});
+
+export async function editArticleSpecsAction(_prev: ActionResult | null, form: FormData): Promise<ActionResult> {
+  const { userId } = await requireViewer(); // never from the form; the use case checks the viewer owns the code's company
+  const parsed = formSchema.safeParse(Object.fromEntries(form));
+  if (!parsed.success) return { ok: false, error: errorMessage('article.lead_time_check', await actionLang()) };
+  const { articleId, ...specs } = parsed.data;
+
+  const { articles, companies } = await getContainer();
+  try {
+    await editArticleSpecs({ articles, companies }, { userId, articleId, specs });
+  } catch (e) {
+    return toActionError(e, await actionLang());
+  }
+  revalidatePath('/m/[company]/a/[article]', 'page');
+  return { ok: true, data: undefined };
+}
