@@ -3,8 +3,11 @@ import type { Db } from '@/shared/db/client';
 import type { Article } from '../domain/article';
 import type { Company, CompanyKind, CompanyStatus } from '../domain/company';
 import type { Registration, ReviewAction, ReviewEvent } from '../domain/registration';
-import type { ArticleRepository, CompanyRepository, RegistrationRepository, ReviewEventRepository } from '../domain/repositories';
-import { articles, companies, companyRegistrations, companyReviewEvents } from './schema';
+import type { CompanyDocument } from '../domain/company-document';
+import type { ArticleRepository, CompanyDocumentRepository, CompanyRepository, RegistrationRepository, ReviewEventRepository } from '../domain/repositories';
+import { articles, companies, companyDocuments, companyRegistrations, companyReviewEvents } from './schema';
+
+const toDocument = (r: typeof companyDocuments.$inferSelect): CompanyDocument => Object.freeze(r as CompanyDocument);
 
 const toCompany = (r: typeof companies.$inferSelect): Company =>
   Object.freeze({
@@ -35,6 +38,7 @@ export function createSupplierRepositories(db: Db): {
   articles: ArticleRepository;
   registrations: RegistrationRepository;
   reviewEvents: ReviewEventRepository;
+  documents: CompanyDocumentRepository;
 } {
   const companyBy = async (where: SQL) => {
     const [row] = await db.select().from(companies).where(where).limit(1);
@@ -102,6 +106,25 @@ export function createSupplierRepositories(db: Db): {
       async listByCompany(companyId) {
         const rows = await db.select().from(companyReviewEvents).where(eq(companyReviewEvents.companyId, companyId)).orderBy(asc(companyReviewEvents.createdAt));
         return rows.map((r): ReviewEvent => Object.freeze({ ...r, action: r.action as ReviewAction }));
+      },
+    },
+    documents: {
+      async save(d) {
+        await db.insert(companyDocuments).values(d).onConflictDoUpdate({ target: companyDocuments.id, set: d });
+      },
+      async findById(id) {
+        const [r] = await db.select().from(companyDocuments).where(eq(companyDocuments.id, id)).limit(1);
+        return r ? toDocument(r) : null;
+      },
+      async listByCompany(companyId) {
+        const rows = await db.select().from(companyDocuments).where(eq(companyDocuments.companyId, companyId)).orderBy(asc(companyDocuments.createdAt));
+        return rows.map(toDocument);
+      },
+      async delete(id) {
+        await db.delete(companyDocuments).where(eq(companyDocuments.id, id));
+      },
+      async deleteByCompany(companyId) {
+        await db.delete(companyDocuments).where(eq(companyDocuments.companyId, companyId));
       },
     },
   };

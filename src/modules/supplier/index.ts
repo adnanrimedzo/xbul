@@ -9,10 +9,14 @@ export {
 } from './domain/registration';
 export type { Article, ArticleSpecs } from './domain/article';
 export { createArticle, normalizeArticleCode, withSpecs } from './domain/article';
-export type { ArticleRepository, CompanyRepository, RegistrationRepository, ReviewEventRepository } from './domain/repositories';
+export type { CompanyDocument } from './domain/company-document';
+export { createCompanyDocument, MAX_COMPANY_DOCUMENTS } from './domain/company-document';
+export type { ArticleRepository, CompanyDocumentRepository, CompanyRepository, RegistrationRepository, ReviewEventRepository } from './domain/repositories';
+export type { DocumentDeps, DocumentStore } from './application/ports';
+export { addCompanyDocument, purgeCompanyDocuments, readCompanyDocument, removeCompanyDocument } from './application/company-documents';
 export { registerCompany } from './application/register-company';
 export { updateCompanyContact } from './application/update-company-contact';
 export { upsertArticle } from './application/upsert-article';
 export { editArticleSpecs } from './application/edit-article-specs';
 export { createSupplierRepositories } from './infrastructure/drizzle-repositories';
-export { articles, companies, companyRegistrations, companyReviewEvents } from './infrastructure/schema';
+export { articles, companies, companyDocuments, companyRegistrations, companyReviewEvents } from './infrastructure/schema';

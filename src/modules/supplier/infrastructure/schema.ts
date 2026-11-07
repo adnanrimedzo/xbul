@@ -68,3 +68,18 @@ export const companyReviewEvents = pgTable(
   },
   (t) => [index('company_review_events_company_idx').on(t.companyId, t.createdAt)],
 );
+
+export const companyDocuments = pgTable(
+  'company_documents',
+  {
+    id: uuid('id').primaryKey(),
+    companyId: uuid('company_id').notNull().references(() => companies.id, { onDelete: 'cascade' }),
+    kind: text('kind').notNull(),
+    fileName: text('file_name').notNull(),
+    contentType: text('content_type').notNull(),
+    sizeBytes: integer('size_bytes').notNull(),
+    storageKey: text('storage_key').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => [index('company_documents_company_idx').on(t.companyId)],
+);

@@ -120,6 +120,13 @@
       "when": 1794082396409,
       "tag": "0016_company-registration",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1794082795532,
+      "tag": "0017_company-documents",
+      "breakpoints": true
     }
   ]
 }

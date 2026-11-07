@@ -1,5 +1,6 @@
 import type { Article } from './article';
 import type { Company } from './company';
+import type { CompanyDocument } from './company-document';
 import type { Registration, ReviewEvent } from './registration';
 
 export interface CompanyRepository {
@@ -27,4 +28,12 @@ export interface RegistrationRepository {
 export interface ReviewEventRepository {
   add(e: ReviewEvent): Promise<void>;
   listByCompany(companyId: string): Promise<ReviewEvent[]>; // oldest first
+}
+
+export interface CompanyDocumentRepository {
+  save(d: CompanyDocument): Promise<void>;
+  findById(id: string): Promise<CompanyDocument | null>;
+  listByCompany(companyId: string): Promise<CompanyDocument[]>; // oldest first
+  delete(id: string): Promise<void>;
+  deleteByCompany(companyId: string): Promise<void>;
 }
