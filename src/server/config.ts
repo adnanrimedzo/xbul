@@ -8,7 +8,11 @@ export type AppConfig = {
   mailLogFile: string | null;
   allowPrivateHosts: boolean;
   evidenceDir: string; // where the local evidence store keeps files; Workers use the EVIDENCE bucket instead
+  oauth: OAuthConfig; // a provider's sign-in button shows only when its keys are set
 };
+
+export type OAuthKeys = { clientId: string; clientSecret: string };
+export type OAuthConfig = { google: OAuthKeys | null; microsoft: OAuthKeys | null };
 
 export function readConfig(env: Record<string, string | undefined> = process.env): AppConfig {
   const value = (name: string) => env[name]?.trim() || null;
@@ -26,6 +30,18 @@ export function readConfig(env: Record<string, string | undefined> = process.env
     throw new Error('RESEND_API_KEY is required in production (set ALLOW_CONSOLE_MAILER=1 to log mail instead)');
   }
 
+  // Half a pair turns the provider off rather than failing the request: the two secrets are set or removed one after
+  // the other, and every page would break in between. The error lands in Workers Logs so a typo doesn't go unseen.
+  const oauthKeys = (prefix: string, label: string): OAuthKeys | null => {
+    const clientId = value(`${prefix}_CLIENT_ID`);
+    const clientSecret = value(`${prefix}_CLIENT_SECRET`);
+    if (clientId && clientSecret) return { clientId, clientSecret };
+    if (clientId || clientSecret) {
+      console.error(`[config] ${prefix}_${clientId ? 'CLIENT_SECRET' : 'CLIENT_ID'} is missing, so ${label} sign-in is off`);
+    }
+    return null;
+  };
+
   return {
     databaseUrl: value('DATABASE_URL'),
     baseUrl,
@@ -36,6 +52,7 @@ export function readConfig(env: Record<string, string | undefined> = process.env
     mailLogFile: value('MAIL_LOG_FILE'),
     allowPrivateHosts: env.FETCH_ALLOW_PRIVATE_HOSTS === '1',
     evidenceDir: value('EVIDENCE_DIR') ?? './.data/evidence',
+    oauth: { google: oauthKeys('GOOGLE', 'Google'), microsoft: oauthKeys('MICROSOFT', 'Microsoft') },
   };
 }
 

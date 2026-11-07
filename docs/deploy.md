@@ -122,6 +122,35 @@ Mail is sent from the subdomain `mail.xbul.io`, so a sending problem can't hurt 
 
 `MAIL_FROM` is already set in `wrangler.jsonc`.
 
+## 6a. Turn on Google and Microsoft sign-in
+
+Each button on `/sign-in` appears only when its two keys are set. One app registration per provider serves both environments.
+
+**Google** (Google Cloud console, project of your choice):
+1. **APIs & Services → OAuth consent screen**: user type **External**, app name `xbul`, support email `hello@xbul.io`, authorised domain `xbul.io`, scopes `openid`, `email`, `profile` only. Publish the app (basic scopes need no Google review).
+2. **Credentials → Create credentials → OAuth client ID → Web application**. Authorised redirect URIs:
+   - `https://xbul.io/api/auth/callback/google`
+   - `https://staging.xbul.io/api/auth/callback/google`
+   - `http://localhost:3000/api/auth/callback/google` (for `pnpm dev`)
+
+**Microsoft** (Microsoft Entra admin center → **App registrations → New registration**):
+1. Supported account types: **Accounts in any organizational directory and personal Microsoft accounts**.
+2. Redirect URI, platform **Web**: `https://xbul.io/api/auth/callback/microsoft`. Under **Authentication**, add `https://staging.xbul.io/api/auth/callback/microsoft` and `http://localhost:3000/api/auth/callback/microsoft`.
+3. **Token configuration → Add optional claim → ID**: `email`, `verified_primary_email`, `verified_secondary_email`. Without them, work accounts can't prove their address is verified and are refused.
+4. **Certificates & secrets → New client secret**. Note its expiry date: sign-in with Microsoft stops when it expires.
+
+Set the keys on each worker, as in step 5:
+
+```bash
+pnpm wrangler secret put GOOGLE_CLIENT_ID --env staging      # and GOOGLE_CLIENT_SECRET, MICROSOFT_CLIENT_ID, MICROSOFT_CLIENT_SECRET
+```
+
+A provider signs someone in only when it vouches that the email address is verified. That keeps an unverified address from taking over an existing account or an address in `ADMIN_EMAILS`. Someone whose provider can't vouch is sent back to `/sign-in` and asked to use an email link.
+
+Personal Microsoft accounts (Outlook, Hotmail, Live) never send Microsoft's verified-email claims, so they are trusted another way: Microsoft checked the address before creating the account, and their sign-in token names Microsoft's personal-accounts directory. Work and school accounts still need Microsoft's verified claims from step 3.
+
+Until the Microsoft app has a verified publisher (**Branding & properties → Publisher verification**, which needs a Microsoft partner ID), people in other organisations' directories can't approve it themselves and see "Need admin approval". Personal accounts aren't affected.
+
 ## 7. Check the public address
 
 `PUBLIC_BASE_URL` in `wrangler.jsonc` is already `https://xbul.io` for production and `https://staging.xbul.io` for staging. It is the only origin setting: sign-in uses it too, and `/robots.txt` blocks all search engines unless it is exactly `https://xbul.io`.

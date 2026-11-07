@@ -6,6 +6,10 @@ export default defineConfig({
   testDir: 'e2e',
   workers: 1,
   fullyParallel: false,
+  // `next dev` compiles each route the first time a test visits it, which takes seconds on a 2-core CI runner, so the
+  // first tests to reach a page need far longer there than anywhere else. Locally the defaults stay, so a real hang
+  // still fails fast.
+  ...(process.env.CI && { timeout: 90_000, expect: { timeout: 20_000 } }),
   use: { baseURL, trace: 'retain-on-failure' },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: [
@@ -24,6 +28,11 @@ export default defineConfig({
         MAIL_LOG_FILE: '.outbox/e2e-mail.log',
         RESEND_API_KEY: '', // a developer's .env.local key must never send e2e mail
         FETCH_ALLOW_PRIVATE_HOSTS: '1',
+        // Dummy keys so the provider buttons render; e2e/sign-in.spec.ts stops each flow at the provider's door.
+        GOOGLE_CLIENT_ID: 'e2e-google-id',
+        GOOGLE_CLIENT_SECRET: 'e2e-google-secret',
+        MICROSOFT_CLIENT_ID: 'e2e-microsoft-id',
+        MICROSOFT_CLIENT_SECRET: 'e2e-microsoft-secret',
       },
     },
   ],
