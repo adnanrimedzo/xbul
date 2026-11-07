@@ -43,7 +43,7 @@ export function UploadEvidenceForm({ claimId, maxBytes, maxFiles }: { claimId: s
             if (big) e.currentTarget.value = '';
             else formRef.current?.requestSubmit();
           }}
-          className="field file:mr-3 file:cursor-pointer file:rounded-full file:border file:border-ink file:px-3 file:py-1 file:font-semibold"
+          className="field file:mr-3 file:cursor-pointer file:rounded-control file:border file:border-line file:bg-surface file:px-3 file:py-1 file:font-semibold"
         />
       </label>
       <p id={hintId} className="text-sm text-muted">

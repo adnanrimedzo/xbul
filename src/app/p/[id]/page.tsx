@@ -107,7 +107,7 @@ export default async function ProductPage({ params }: PageProps<'/p/[id]'>) {
       </Link>
       <div className="mt-4 grid items-start gap-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
         <div className="lg:sticky lg:top-6">
-          <GarmentImage src={product.imageUrl} alt={`${product.brand} — ${product.name}`} credit={{ host, href: product.sourceUrl }} className="aspect-[4/3] rounded-panel lg:aspect-[4/5]" />
+          <GarmentImage src={product.imageUrl} alt={`${product.brand} — ${product.name}`} credit={{ host, href: product.sourceUrl }} className="aspect-[4/3] rounded-card lg:aspect-[4/5]" />
         </div>
         <div className="flex min-w-0 flex-col gap-4">
           <div className="mb-2">

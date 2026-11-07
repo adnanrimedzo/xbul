@@ -1,24 +1,80 @@
 @import "tailwindcss";
 
-/* xbul.io brand tokens and rules: docs/design/DESIGN.md. Layout and shapes (inset rounded frames, pills, panels of cards) follow the Optivio reference. */
+/* xbul.io tokens and rules: docs/design/DESIGN.md. The look follows the Aoutive reference: monochrome, hairline grid, 4 px controls. */
+
+/* `dark:` utilities follow the resolved theme (an explicit choice, or the system setting when there is none). */
+@custom-variant dark {
+  &:where([data-theme="dark"], [data-theme="dark"] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where(:root:not([data-theme="light"]), :root:not([data-theme="light"]) *) {
+      @slot;
+    }
+  }
+}
+
+/* Light values. Every colour utility reads these variables, so the dark blocks below re-colour the whole site. */
 @theme {
-  --color-ink: #0f1012;
-  --color-paper: #f2f3f4;
-  --color-line: #d9dadc;
-  --color-muted: #5a5e65;
+  --color-bg: #fcfcfc;
+  --color-surface: #f4f4f4;
+  --color-fg: #1a1a1a;
+  --color-muted: #6b6b6b;
+  --color-line: #e4e4e4;
+  --color-inverse: #1a1a1a;
+  --color-on-inverse: #ffffff;
   --color-accent: #bf3f0a;
-  --color-accent-dark: #ff7a3d;
   --color-verified: #1b7f3b;
 
-  --font-sans: var(--font-archivo), "Segoe UI", Arial, sans-serif;
+  --font-display: var(--font-space-grotesk), "Segoe UI", Arial, sans-serif;
+  --font-sans: var(--font-inter), "Segoe UI", Arial, sans-serif;
   --font-mono: var(--font-plex-mono), Menlo, Consolas, monospace;
 
-  --radius-frame: 2.5rem;
-  --radius-panel: 2rem;
-  --radius-card: 1.5rem;
+  --radius-control: 4px;
+  --radius-card: 10px;
+}
+
+/* Kept unlayered so it wins over Tailwind's theme layer. Written twice: the system setting, and an explicit choice. */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --color-bg: #0b0b0c;
+    --color-surface: #151516;
+    --color-fg: #ededed;
+    --color-muted: #9a9a9a;
+    --color-line: #2a2a2c;
+    --color-inverse: #ededed;
+    --color-on-inverse: #0b0b0c;
+    --color-accent: #ff7a3d;
+    --color-verified: #4fcb7a;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --color-bg: #0b0b0c;
+  --color-surface: #151516;
+  --color-fg: #ededed;
+  --color-muted: #9a9a9a;
+  --color-line: #2a2a2c;
+  --color-inverse: #ededed;
+  --color-on-inverse: #0b0b0c;
+  --color-accent: #ff7a3d;
+  --color-verified: #4fcb7a;
+  color-scheme: dark;
+}
+:root {
+  color-scheme: light;
 }
 
 @layer base {
+  body {
+    overflow-x: clip;
+  }
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    font-weight: 500;
+  }
   button {
     cursor: pointer;
   }
@@ -26,36 +82,72 @@
     cursor: not-allowed;
   }
   :focus-visible {
-    outline: 2px solid var(--color-ink);
+    outline: 2px solid var(--color-accent);
     outline-offset: 2px;
-  }
-  .on-ink :focus-visible {
-    outline-color: #fff;
   }
 }
 
 @layer components {
+  /* The page column: hairlines left and right, like a sheet on a drafting table. */
+  .frame {
+    margin-inline: auto;
+    width: calc(100% - 2rem);
+    max-width: 1200px;
+    border-inline: 1px solid var(--color-line);
+  }
+  /* A full-width section of the frame: a top hairline with a "+" where it meets each side line. */
+  .band {
+    position: relative;
+    border-top: 1px solid var(--color-line);
+  }
+  .band::before,
+  .band::after {
+    content: "";
+    position: absolute;
+    top: -7px;
+    width: 13px;
+    height: 13px;
+    background:
+      linear-gradient(var(--color-fg), var(--color-fg)) center / 1px 100% no-repeat,
+      linear-gradient(var(--color-fg), var(--color-fg)) center / 100% 1px no-repeat;
+    pointer-events: none;
+  }
+  .band::before {
+    left: -7px;
+  }
+  .band::after {
+    right: -7px;
+  }
+
   .page {
     margin-inline: auto;
     width: 100%;
     max-width: calc(1120px + 3rem);
-    padding: 2rem 1.5rem 4rem;
+    padding: 2.5rem 1.5rem 4rem;
+  }
+  .eyebrow {
+    font-size: 0.875rem;
+    color: var(--color-muted);
   }
   .page-title {
+    font-family: var(--font-display);
     font-size: clamp(2rem, 5vw, 3rem);
-    font-weight: 800;
-    line-height: 1.1;
-    letter-spacing: -0.02em;
+    font-weight: 500;
+    line-height: 1.05;
+    letter-spacing: -0.045em;
     overflow-wrap: anywhere;
   }
   .section-title {
-    font-size: 1.5rem;
-    font-weight: 700;
+    font-family: var(--font-display);
+    font-size: 1.375rem;
+    font-weight: 500;
     line-height: 1.2;
+    letter-spacing: -0.02em;
   }
   .panel {
-    border-radius: var(--radius-panel);
-    background: var(--color-paper);
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-card);
+    background: var(--color-surface);
     padding: 1rem;
   }
   @media (min-width: 640px) {
@@ -64,29 +156,35 @@
     }
   }
   .card {
+    border: 1px solid var(--color-line);
     border-radius: var(--radius-card);
-    background: #fff;
+    background: var(--color-bg);
     padding: 1.5rem;
   }
   .field {
     width: 100%;
     min-height: 3rem;
-    border: 1px solid var(--color-muted);
-    border-radius: 0.75rem;
-    background: #fff;
+    border: 1px solid var(--color-line);
+    border-radius: var(--radius-control);
+    background: var(--color-bg);
     padding: 0.625rem 1rem;
     font-weight: 400;
+    transition: border-color 150ms ease-out;
+  }
+  .field:hover,
+  .field:focus {
+    border-color: var(--color-muted);
   }
   .field-label {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    font-weight: 600;
+    font-weight: 500;
   }
   .alert {
     border: 1px solid var(--color-accent);
-    border-radius: 0.75rem;
-    background: #fff;
+    border-radius: var(--radius-control);
+    background: var(--color-bg);
     padding: 0.75rem 1rem;
   }
   .link {
@@ -97,84 +195,51 @@
     transition: color 150ms ease-out;
   }
   .link:hover {
-    color: var(--color-ink);
-  }
-  .on-ink .link {
-    color: var(--color-accent-dark);
-  }
-  .on-ink .link:hover {
-    color: #fff;
-  }
-  .site-header {
-    border-radius: var(--radius-frame);
-  }
-  /* On the home page the header and the hero read as one dark frame. */
-  .site-header:has(+ main [data-hero]) {
-    border-bottom-left-radius: 0;
-    border-bottom-right-radius: 0;
+    color: var(--color-fg);
   }
 
-  /* The home hero's art: a field of dots with the loupe moving over it. The orange dots stay still while the lens moves, so it reads as looking through glass. */
-  .dot-field {
-    position: absolute;
-    inset: 0;
-    background-image: radial-gradient(circle, rgb(255 255 255 / 0.5) 1.5px, transparent 2px);
-    background-size: 14px 14px;
-    mask-image: radial-gradient(ellipse 42% 45% at 8% 82%, #000 15%, transparent 100%), radial-gradient(ellipse 48% 60% at 96% 28%, #000 15%, transparent 100%);
+  /* Logo files have their colours baked in, so each theme shows its own copy. */
+  .only-dark {
+    display: none;
   }
-  .loupe {
-    --size: 240px;
-    position: absolute;
-    top: 12%;
-    right: 3%;
-    width: var(--size);
-    height: var(--size);
-    animation: loupe-drift 36s ease-in-out infinite alternate;
+  [data-theme="dark"] .only-light {
+    display: none;
   }
-  .loupe-lens {
-    position: absolute;
-    left: 6.25%;
-    top: 6.25%;
-    width: 68.75%;
-    height: 68.75%;
-    overflow: hidden;
-    border-radius: 50%;
-    background: var(--color-ink);
+  [data-theme="dark"] .only-dark {
+    display: revert;
   }
-  .loupe-dots {
-    position: absolute;
-    inset: -240px;
-    background-image: radial-gradient(circle, var(--color-accent-dark) 3.5px, transparent 4px);
-    background-size: 28px 28px;
-    animation: loupe-still 36s ease-in-out infinite alternate;
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .only-light {
+      display: none;
+    }
+    :root:not([data-theme="light"]) .only-dark {
+      display: revert;
+    }
+  }
+
+  /* The home hero's art: a field of grey blocks fading in and out, one of them orange. */
+  .mosaic {
+    display: grid;
+    grid-template-columns: repeat(var(--cols), 1fr);
+  }
+  .mosaic > span {
+    aspect-ratio: 1;
+    animation: mosaic-blink 6s ease-in-out infinite;
+    animation-delay: calc(var(--d) * -1s);
   }
   @media (prefers-reduced-motion: reduce) {
-    .loupe,
-    .loupe-dots {
+    .mosaic > span {
       animation: none;
     }
   }
 }
 
-@keyframes loupe-drift {
-  from {
-    transform: translate(0, 0);
+@keyframes mosaic-blink {
+  0%,
+  100% {
+    opacity: 1;
   }
   50% {
-    transform: translate(-30px, 90px);
-  }
-  to {
-    transform: translate(10px, 150px);
-  }
-}
-@keyframes loupe-still {
-  from {
-    transform: translate(0, 0);
-  }
-  50% {
-    transform: translate(30px, -90px);
-  }
-  to {
-    transform: translate(-10px, -150px);
+    opacity: 0.25;
   }
 }

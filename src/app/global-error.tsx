@@ -13,7 +13,7 @@ export default function GlobalError({ error, retry }: { error: unknown; retry: (
 
   return (
     <html lang="en" className="h-full">
-      <body className="page min-h-full bg-white font-sans text-ink">
+      <body className="page min-h-full bg-bg font-sans text-fg">
         <h1 className="page-title">Something went wrong</h1>
         <p className="mt-3 mb-6">xbul.io can&apos;t load right now. Try again in a moment.</p>
         <Button variant="cta" type="button" onClick={() => retry()}>

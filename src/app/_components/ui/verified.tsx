@@ -1,10 +1,20 @@
 import Image from 'next/image';
 
+// The disc's check is drawn for each theme, so both files are rendered and CSS shows one.
+function Disc({ size }: { size: number }) {
+  return (
+    <>
+      <Image src="/logos/xbul-verified-light.svg" alt="" width={size} height={size} className="only-light shrink-0" />
+      <Image src="/logos/xbul-verified-dark.svg" alt="" width={size} height={size} className="only-dark shrink-0" />
+    </>
+  );
+}
+
 // Always carries the words "evidence reviewed", and belongs to a supplier and product together. Green is used for nothing else.
 export function VerifiedInline() {
   return (
-    <span className="inline-flex items-center gap-2 text-sm font-semibold">
-      <Image src="/logos/xbul-verified-light.svg" alt="" width={16} height={16} className="shrink-0" />
+    <span className="inline-flex items-center gap-2 text-sm font-medium">
+      <Disc size={16} />
       <span>Verified · evidence reviewed</span>
     </span>
   );
@@ -13,9 +23,9 @@ export function VerifiedInline() {
 export function VerifiedBadge() {
   return (
     <span className="inline-flex items-center gap-2">
-      <Image src="/logos/xbul-verified-light.svg" alt="" width={24} height={24} className="shrink-0" />
+      <Disc size={24} />
       <span className="flex flex-col leading-tight">
-        <strong className="font-semibold">Verified</strong>
+        <strong className="font-medium">Verified</strong>
         <span className="text-sm text-muted">Evidence reviewed</span>
       </span>
     </span>

@@ -16,7 +16,7 @@ const KINDS: [Kind, string][] = [
   ['original', 'We made this'],
   ['equivalent', 'Can make an equivalent'],
 ];
-const thumb = 'h-[90px] w-[72px] rounded-xl';
+const thumb = 'h-[90px] w-[72px] rounded-control';
 const plural = (n: number) => `${n} ${n === 1 ? 'product' : 'products'}`;
 // What a row starts with: what the supplier typed for it before, else the claim it already has (so publishing again restates that claim), else blank.
 const startingValues = (row: PreviewRow, before?: { articleCode: string; kind: Kind }): { articleCode: string; kind: Kind } => {
@@ -53,7 +53,7 @@ function ReadyRow({ row, onChange }: { row: Ready; onChange: (patch: Partial<Pic
       <GarmentImage src={row.imageUrl} alt={label} className={thumb} />
       <Status name={label}>
         {row.byHand ? 'Added by hand' : `Fetched${row.composition ? `: ${row.composition}` : ''}`}
-        {row.existing && <span className="mt-1 block font-semibold text-ink">Already on your page</span>}
+        {row.existing && <span className="mt-1 block font-semibold text-fg">Already on your page</span>}
         {row.imageUrl && (
           // The thumbnail is too small for the credit pill, so the photo's credit goes on the status line.
           <a href={row.url} target="_blank" rel="noopener noreferrer" className="link mt-1 block">
@@ -66,13 +66,13 @@ function ReadyRow({ row, onChange }: { row: Ready; onChange: (patch: Partial<Pic
           <span className="sr-only">Product code</span>
           <input value={row.articleCode} onChange={(e) => onChange({ articleCode: e.target.value })} maxLength={40} placeholder="Product code" className="field" />
         </label>
-        <fieldset className="flex overflow-hidden rounded-xl border border-ink">
+        <fieldset className="flex overflow-hidden rounded-control border border-line">
           <legend className="sr-only">Your role for {label}</legend>
           {KINDS.map(([kind, text]) => (
             // The radio covers its label invisibly, so the whole segment is the click target.
             <label
               key={kind}
-              className="relative flex min-h-12 flex-1 cursor-pointer items-center justify-center px-2 py-1 text-center text-sm leading-tight font-semibold transition-colors duration-150 has-checked:bg-ink has-checked:text-white has-focus-visible:outline-2 has-focus-visible:-outline-offset-2 has-focus-visible:outline-accent"
+              className="relative flex min-h-12 flex-1 cursor-pointer items-center justify-center px-2 py-1 text-center text-sm leading-tight font-semibold transition-colors duration-150 has-checked:bg-inverse has-checked:text-on-inverse has-focus-visible:outline-2 has-focus-visible:-outline-offset-2 has-focus-visible:outline-accent"
             >
               <input type="radio" name={group} value={kind} checked={row.kind === kind} onChange={() => onChange({ kind })} className="absolute inset-0 size-full cursor-pointer opacity-0" />
               {text}
@@ -101,7 +101,7 @@ function NeedsDetailsRow({ row, onSaved }: { row: NeedsDetails; onSaved: (saved:
 
   return (
     <RowShell>
-      <div aria-hidden="true" className={`${thumb} bg-paper`} />
+      <div aria-hidden="true" className={`${thumb} bg-surface`} />
       <Status name={<Url>{row.url}</Url>}>
         {row.guess ? 'This page only has a title. Check the brand and name.' : <>Couldn&apos;t read this page. Add the brand and name by hand.</>}
       </Status>
@@ -130,7 +130,7 @@ function NeedsDetailsRow({ row, onSaved }: { row: NeedsDetails; onSaved: (saved:
 function InvalidRow({ row }: { row: Invalid }) {
   return (
     <RowShell>
-      <div aria-hidden="true" className={`${thumb} bg-paper`} />
+      <div aria-hidden="true" className={`${thumb} bg-surface`} />
       <Status name={<Url>{row.url}</Url>}>{row.error}</Status>
     </RowShell>
   );
