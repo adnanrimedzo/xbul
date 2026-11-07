@@ -147,6 +147,10 @@ pnpm wrangler secret put GOOGLE_CLIENT_ID --env staging      # and GOOGLE_CLIENT
 
 A provider signs someone in only when it vouches that the email address is verified. That keeps an unverified address from taking over an existing account or an address in `ADMIN_EMAILS`. Someone whose provider can't vouch is sent back to `/sign-in` and asked to use an email link.
 
+Personal Microsoft accounts (Outlook, Hotmail, Live) never send Microsoft's verified-email claims, so they are trusted another way: Microsoft checked the address before creating the account, and their sign-in token names Microsoft's personal-accounts directory. Work and school accounts still need Microsoft's verified claims from step 3.
+
+Until the Microsoft app has a verified publisher (**Branding & properties → Publisher verification**, which needs a Microsoft partner ID), people in other organisations' directories can't approve it themselves and see "Need admin approval". Personal accounts aren't affected.
+
 ## 7. Check the public address
 
 `PUBLIC_BASE_URL` in `wrangler.jsonc` is already `https://xbul.io` for production and `https://staging.xbul.io` for staging. It is the only origin setting: sign-in uses it too, and `/robots.txt` blocks all search engines unless it is exactly `https://xbul.io`.

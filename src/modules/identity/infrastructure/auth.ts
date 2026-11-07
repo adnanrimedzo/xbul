@@ -8,6 +8,9 @@ import { account, rateLimit, session, user, verification } from './auth-schema';
 
 type OAuthKeys = { clientId: string; clientSecret: string };
 
+// The Microsoft Entra tenant that holds every personal Microsoft account (Outlook, Hotmail, Live).
+const MICROSOFT_PERSONAL_ACCOUNTS = '9188040d-6c67-4c5b-b112-36a304b66dad';
+
 // `rateLimit` forces the limiter on or off; left out, Better Auth enables it in production only.
 // `oauth` turns on each sign-in provider whose keys are given.
 export function createAuth(deps: {
@@ -30,7 +33,21 @@ export function createAuth(deps: {
     account: { encryptOAuthTokens: true }, // provider tokens are never used by the app; at rest they stay unreadable
     socialProviders: {
       ...(google && { google: { ...google, requireEmailVerification: true, prompt: 'select_account' as const } }),
-      ...(microsoft && { microsoft: { ...microsoft, tenantId: 'common', requireEmailVerification: true, prompt: 'select_account' as const } }),
+      ...(microsoft && {
+        microsoft: {
+          ...microsoft,
+          tenantId: 'common',
+          requireEmailVerification: true,
+          prompt: 'select_account' as const,
+          disableProfilePhoto: true, // otherwise the whole image is stored on the user; the privacy page promises a link at most
+          // Personal accounts never carry Microsoft's verified-email claims, but Microsoft checked the address before it
+          // created the account. Their tokens all name Microsoft's own directory, and the ID token comes straight from
+          // Microsoft's token endpoint in exchange for the sign-in code, so `tid` can't be forged. Work accounts keep
+          // Microsoft's verdict.
+          mapProfileToUser: (profile: { tid?: string; email?: string }) =>
+            profile.tid === MICROSOFT_PERSONAL_ACCOUNTS && profile.email ? { emailVerified: true } : {},
+        },
+      }),
     },
     // Counts live in Postgres: on Workers each request builds its own auth, so an in-memory limiter would never trip.
     rateLimit: { enabled: deps.rateLimit, storage: 'database' },
