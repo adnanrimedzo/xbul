@@ -36,7 +36,7 @@ export const CHROME = defineMessages({
     addProducts: 'Ürün ekle',
     registration: 'Kayıt',
     manufacturers: 'Üreticiler',
-    claims: 'İddialar',
+    claims: 'Beyanlar',
     registerCompany: 'Firmanızı kaydedin',
     mode: 'Mod',
     modeSearch: 'Arama',

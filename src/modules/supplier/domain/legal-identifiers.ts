@@ -61,9 +61,11 @@ export function normalizeTaxId(country: string, raw: string): string {
     return prefix + num;
   }
   if (c === 'GB') {
-    const num = v.replace(/^GB/, '');
+    // Northern Ireland traders use XI (and VIES checks them); everyone else GB.
+    const prefix = v.startsWith('XI') ? 'XI' : 'GB';
+    const num = v.replace(/^(GB|XI)/, '');
     if (!/^(\d{9}|\d{12})$/.test(num)) throw invalid();
-    return `GB${num}`;
+    return prefix + num;
   }
   if (c === 'CH') {
     const num = v.replace(/^CHE/, '').replace(/(MWST|TVA|IVA)$/, '');

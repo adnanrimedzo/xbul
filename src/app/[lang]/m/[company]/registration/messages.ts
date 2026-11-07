@@ -111,7 +111,7 @@ export const REGISTRATION = defineMessages({
   },
   tr: {
     title: 'Firma kaydı',
-    breadcrumb: 'Konum',
+    breadcrumb: 'Sayfa yolu',
     privacy: 'Bu bilgileri ve belgeleri yalnızca siz ve xbul.io yöneticileri görür.',
     banner: (status: CompanyStatus, note: string) =>
       ({

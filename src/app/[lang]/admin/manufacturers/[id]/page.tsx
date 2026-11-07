@@ -220,7 +220,7 @@ export default async function RegistrationReviewPage({ params }: PageProps<'/[la
                 <NoteDecisionForm action={requestChangesAction.bind(null, company.id)} label={t.changesNote} submit={t.requestChanges} />
               </>
             )}
-            {(company.status === 'submitted' || company.status === 'approved') && (
+            {company.status !== 'draft' && company.status !== 'rejected' && (
               <NoteDecisionForm action={rejectRegistrationAction.bind(null, company.id)} label={t.rejectNote} submit={t.reject} />
             )}
             <EditForm companyId={company.id} country={company.country} saved={registrationFormValues(registration)} label={t.edit} />

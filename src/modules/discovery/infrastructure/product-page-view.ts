@@ -1,12 +1,14 @@
-import { and, eq } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import type { Db } from '@/shared/db/client';
 import { PARTS, type ProductTypeId } from '@/shared/domain/taxonomy';
 import { products } from '@/modules/catalog';
 import { claims, rankClaims, type ClaimKind, type ClaimStatus } from '@/modules/claims';
-import { articles, companies, type CompanyKind } from '@/modules/supplier';
+import { articles, companies, type CompanyKind, type CompanyStatus } from '@/modules/supplier';
 import type { ClaimView, ProductPageView } from './types';
+import { canSeeCompany } from './visibility';
 
-export async function getProductPageView(db: Db, productId: string): Promise<ProductPageView | null> {
+// A visitor (null viewer) sees only approved companies' claims; an unapproved company's owner and the admins see its claims too.
+export async function getProductPageView(db: Db, productId: string, viewer: { userId: string; isAdmin: boolean } | null = null): Promise<ProductPageView | null> {
   const [p] = await db
     .select({ id: products.id, brand: products.brand, name: products.name, imageUrl: products.imageUrl, composition: products.composition, sourceUrl: products.sourceUrl, type: products.type })
     .from(products)
@@ -14,13 +16,15 @@ export async function getProductPageView(db: Db, productId: string): Promise<Pro
     .limit(1);
   if (!p) return null;
 
-  const rows = await db
-    .select({ claim: claims, company: companies, article: articles })
-    .from(claims)
-    .innerJoin(companies, eq(claims.companyId, companies.id))
-    .leftJoin(articles, eq(claims.articleId, articles.id))
-    .where(and(eq(claims.productId, productId), eq(companies.status, 'approved')));
-  if (rows.length === 0) return null; // nothing public yet, even for the owner of the only claim
+  const rows = (
+    await db
+      .select({ claim: claims, company: companies, article: articles })
+      .from(claims)
+      .innerJoin(companies, eq(claims.companyId, companies.id))
+      .leftJoin(articles, eq(claims.articleId, articles.id))
+      .where(eq(claims.productId, productId))
+  ).filter(({ company }) => canSeeCompany({ status: company.status as CompanyStatus, ownerUserId: company.ownerUserId }, viewer));
+  if (rows.length === 0) return null; // no claim this viewer may see
 
   const toView = ({ claim, company, article }: (typeof rows)[number]): ClaimView => ({
     claimId: claim.id,

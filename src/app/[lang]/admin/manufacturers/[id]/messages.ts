@@ -52,7 +52,7 @@ export const ADMIN_REVIEW = defineMessages({
     edit: 'Edit the registration',
   },
   tr: {
-    breadcrumb: 'Konum',
+    breadcrumb: 'Sayfa yolu',
     status: 'Durum',
     ownCompany: 'Bu firma size ait. Başka bir yönetici incelemeli.',
     company: 'Firma',

@@ -1,4 +1,5 @@
 import { defineMessages } from '@/i18n/locales';
+import type { PartId } from '@/shared/domain/taxonomy';
 
 export const PRODUCT = defineMessages({
   en: {
@@ -10,7 +11,15 @@ export const PRODUCT = defineMessages({
     weeks: (n: number) => `${n} ${n === 1 ? 'week' : 'weeks'}`,
     back: 'Back to search',
     viewOn: (host: string) => `View on ${host} ↗`,
-    whoMade: (label: string, full: boolean) => (full ? 'Who made it' : `Who made the ${label.toLowerCase()}`),
+    whoMade: {
+      garment: 'Who made it',
+      fabric: 'Who made the fabric',
+      yarn: 'Who made the yarn',
+      trims: 'Who made the trims and accessories',
+      sewing: 'Who did the cut, make and trim (CMT)',
+      washing: 'Who did the washing and finishing',
+      printing: 'Who did the printing and embroidery',
+    } satisfies Record<PartId, string>,
     fullProduct: 'Full product',
     partial: (label: string) => `Partial · ${label}`,
     claim: 'Are you a supplier? Claim this product',
@@ -26,7 +35,16 @@ export const PRODUCT = defineMessages({
     weeks: (n: number) => `${n} hafta`,
     back: 'Aramaya dön',
     viewOn: (host: string) => `${host} sitesinde görün ↗`,
-    whoMade: (label: string, full: boolean) => (full ? 'Üretici' : `${label} kimin`),
+    // Each title by hand: Turkish puts the part in the accusative, which the part's label can't give.
+    whoMade: {
+      garment: 'Üretici',
+      fabric: 'Kumaşı kim üretti',
+      yarn: 'İpliği kim üretti',
+      trims: 'Aksesuarı kim üretti',
+      sewing: 'Kesim-dikimi kim yaptı',
+      washing: 'Yıkama ve apreyi kim yaptı',
+      printing: 'Baskı ve nakışı kim yaptı',
+    },
     fullProduct: 'Tam ürün',
     partial: (label: string) => `Kısmi · ${label}`,
     claim: 'Üretici misiniz? Bu ürün için beyanda bulunun',

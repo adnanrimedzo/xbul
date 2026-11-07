@@ -22,6 +22,7 @@ test('search engines see both languages, each naming the other', async ({ page }
   await page.goto(`/tr/p/${DEMO.products.guess}`);
   await expect(page.locator('html')).toHaveAttribute('lang', 'tr');
   await expect(page.getByText('Bunu biz ürettik').first()).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Kumaşı kim üretti' })).toBeVisible();
   await expect(page.locator('link[rel=alternate][hreflang=en]')).toHaveAttribute('href', new RegExp(`/p/${DEMO.products.guess}$`));
   await expect(page.locator('link[rel=alternate][hreflang=tr]')).toHaveAttribute('href', new RegExp(`/tr/p/${DEMO.products.guess}$`));
 });

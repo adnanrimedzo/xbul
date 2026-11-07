@@ -74,7 +74,12 @@ const text = (v: string | null | undefined, max: number): string | null => {
   return s;
 };
 
-const realDate = (s: string): boolean => /^\d{4}-\d{2}-\d{2}$/.test(s) && new Date(`${s}T00:00:00Z`).toISOString().startsWith(s);
+// 2027-02-30 rolls over to March; 2027-99-99 is no date at all (toISOString would throw).
+const realDate = (s: string): boolean => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+  const d = new Date(`${s}T00:00:00Z`);
+  return !Number.isNaN(d.getTime()) && d.toISOString().startsWith(s);
+};
 
 export function normalizeRegistration(country: string, companyId: string, input: RegistrationInput, now: Date = new Date()): Registration {
   const legalName = blank(input.legalName);
@@ -178,7 +183,7 @@ export function approveCompany(c: Company, adminUserId: string, now: Date = new 
 }
 
 export function rejectCompany(c: Company, adminUserId: string, note: string, now: Date = new Date()) {
-  assertAdminMay(c, adminUserId, ['submitted', 'approved']);
+  assertAdminMay(c, adminUserId, ['submitted', 'changes_requested', 'approved']);
   return transition(c, 'rejected', adminUserId, 'rejected', noteOf(note), now);
 }
 

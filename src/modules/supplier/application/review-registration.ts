@@ -94,6 +94,7 @@ export async function editRegistrationAsAdmin(
 ): Promise<Registration> {
   const company = await load(deps, input.companyId);
   const after = normalizeRegistration(company.country, company.id, input.input);
+  if (after.taxId && (await deps.registrations.taxIdTaken(company.country, after.taxId, company.id))) throw new DomainError('registration.tax_id_taken');
   const event = editedEvent(company, input.adminUserId, diffRegistration(await deps.registrations.find(company.id), after));
   await deps.registrations.save(after);
   await deps.reviewEvents.add(event);

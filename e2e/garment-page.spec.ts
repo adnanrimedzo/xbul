@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { DEMO } from '../src/server/demo-ids';
+import { signIn } from './helpers';
 
 const url = `/p/${DEMO.products.guess}`;
 test('a visitor can reach the original supplier and an equivalent directly, with no account', async ({ page }) => {
@@ -39,4 +40,19 @@ test('unknown product is a 404, with the site chrome and a way home', async ({ p
   expect((await page.goto('/p/not-a-uuid'))?.status()).toBe(404);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(/not found/i);
   await expect(page.getByRole('link', { name: /back to xbul/i })).toHaveAttribute('href', '/');
+});
+test('a manufacturer waiting for approval opens its own product, which visitors cannot', async ({ page, browser }) => {
+  await signIn(page, 'pending@example.test'); // Ege Örme, not approved
+  await page.goto('/add');
+  await page.getByLabel(/brand links/i).fill('http://localhost:4010/title-only.html');
+  await page.getByRole('button', { name: /fetch/i }).click();
+  await page.getByTestId('preview-row').getByRole('button', { name: /save/i }).click();
+  await page.getByRole('button', { name: /publish 1 product/i }).click();
+  await expect(page).toHaveURL(/\/m\/ege-orme$/);
+  await page.getByText('Selvedge Jeans').click();
+  await expect(page).toHaveURL(/\/p\/[0-9a-f-]{36}$/);
+  await expect(page.getByTestId('original-claim')).toContainText('Ege Örme');
+  const visitor = await browser.newContext();
+  expect((await (await visitor.newPage()).goto(page.url()))?.status()).toBe(404);
+  await visitor.close();
 });

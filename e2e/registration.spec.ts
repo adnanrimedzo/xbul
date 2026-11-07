@@ -39,6 +39,8 @@ test('a Turkish mill registers, uploads its documents and submits', async ({ pag
   await expect(page.getByText('Under review.')).toBeVisible();
   await expect(page.getByLabel(/legal name/i)).toBeDisabled();
   await expect.poll(async () => (await lastMailTo('admin@example.test').catch(() => null))?.subject).toBe('New manufacturer to review: Aksu Denim');
+  await page.goto('/tr/m/aksu-denim/registration');
+  await expect(page.getByRole('navigation', { name: 'Sayfa yolu' })).toBeVisible();
 
   // Until it is approved the company is not public: a visitor with no session gets a 404.
   const visitor = await browser.newContext();

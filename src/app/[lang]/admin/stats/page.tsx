@@ -11,6 +11,7 @@ export default async function AdminStatsPage() {
   const stats = await getPlatformStats(db);
   const rows = [
     { key: 'suppliers', label: t.suppliers, value: stats.suppliers, note: t.suppliersNote },
+    { key: 'pending', label: t.pending, value: stats.pendingSuppliers, note: null },
     { key: 'products', label: t.products, value: stats.taggedProducts, note: t.productsNote },
     { key: 'searchers', label: t.searchers, value: stats.distinctSearchers, note: t.searchersNote },
     { key: 'searches', label: t.searches, value: stats.searches, note: t.searchesNote(stats.matchedSearches) },
@@ -28,7 +29,7 @@ export default async function AdminStatsPage() {
             <span data-testid={`stat-${row.key}`} className="font-display text-5xl leading-none font-medium tracking-[-0.04em]">
               {row.value}
             </span>
-            <p className="text-sm text-muted">{row.note}</p>
+            {row.note && <p className="text-sm text-muted">{row.note}</p>}
           </li>
         ))}
       </ul>

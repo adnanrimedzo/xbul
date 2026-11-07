@@ -28,6 +28,11 @@ describe('VIES', () => {
     await createViesChecker(f.fetchFn)(subject({ country: 'GR', taxId: 'EL123456789' }));
     expect(f.calls[0]!.url).toContain('/ms/EL/vat/123456789');
   });
+  it('checks a Northern Ireland (XI) number of a GB company as member state XI', async () => {
+    const f = fake(json({ isValid: true, name: 'A B' }));
+    await createViesChecker(f.fetchFn)(subject({ country: 'GB', taxId: 'XI123456789' }));
+    expect(f.calls[0]!.url).toBe('https://ec.europa.eu/taxation_customs/vies/rest-api/ms/XI/vat/123456789');
+  });
   it('passes when the member state withholds the name', async () => {
     const r = await createViesChecker(fake(json({ isValid: true, name: '---' })).fetchFn)(subject());
     expect(r).toMatchObject({ outcome: 'pass', summary: "VIES: valid, the member state doesn't share the name" });
@@ -49,11 +54,12 @@ describe('VIES', () => {
     const r = await createViesChecker(fake(respond).fetchFn)(subject());
     expect(r).toMatchObject({ source: 'eu_vies', outcome: 'unknown' });
   });
-  it('does not apply to TR, other countries or a missing tax number', async () => {
+  it('does not apply to TR, other countries, a GB number or a missing tax number', async () => {
     const f = fake(json({}));
     const check = createViesChecker(f.fetchFn);
     expect(await check(subject({ country: 'TR', taxId: '1234567890' }))).toBeNull();
     expect(await check(subject({ country: 'SA', taxId: '300000000000003' }))).toBeNull();
+    expect(await check(subject({ country: 'GB', taxId: 'GB123456789' }))).toBeNull();
     expect(await check(subject({ taxId: null }))).toBeNull();
     expect(f.calls).toHaveLength(0);
   });

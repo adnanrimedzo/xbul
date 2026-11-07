@@ -34,6 +34,7 @@ it.each([
   [{ facilityAddress: 'x'.repeat(301) }, 'registration.text_too_long'],
   [{ certifications: [{ scheme: 'gots', number: '', validUntil: null }] }, 'registration.certification_invalid'],
   [{ certifications: [{ scheme: 'gots', number: 'CU123', validUntil: '2027-02-30' }] }, 'registration.certification_invalid'],
+  [{ certifications: [{ scheme: 'gots', number: 'CU123', validUntil: '2027-99-99' }] }, 'registration.certification_invalid'],
 ])('rejects %j', (patch, code) =>
   expect(() => normalizeRegistration('TR', 'c1', { ...TR, ...patch })).toThrow(expect.objectContaining({ code })));
 
@@ -54,6 +55,7 @@ it('walks the review states', () => {
   expect(approveCompany(at('submitted'), 'admin').company.status).toBe('approved');
   expect(requestCompanyChanges(at('submitted'), 'admin', ' Upload the capacity report ').event).toMatchObject({ action: 'changes_requested', note: 'Upload the capacity report' });
   expect(rejectCompany(at('approved'), 'admin', 'A trader, not a manufacturer').company.status).toBe('rejected');
+  expect(rejectCompany(at('changes_requested'), 'admin', 'Never sent the papers').company.status).toBe('rejected');
 });
 
 it.each([

@@ -197,6 +197,21 @@ it('keeps companies that are not approved off every public view', async () => {
   expect((await getCompanyPageView(db2, 'gizli-mill'))?.company.status).toBe('draft');
 });
 
+it('shows an unapproved company’s claim on a product page to its owner and the admins only', async () => {
+  const db2 = await createTestDb();
+  const gizli = { ...createCompany({ name: 'Gizli Mill', city: 'Bursa', country: 'TR', ownerUserId: 'u-gizli', contact: { email: 'g@gizli.example' }, kind: 'fabric_mill' }), id: crypto.randomUUID() };
+  await createSupplierRepositories(db2).companies.save(gizli);
+  const only = { ...createProduct({ canonicalUrl: 'https://gizli.example/p', sourceUrl: 'https://gizli.example/p', brand: 'GIZLI', name: 'Secret', imageUrl: null, composition: null }), id: crypto.randomUUID() };
+  await createProductRepository(db2).save(only);
+  await createClaimRepository(db2).save(declareClaim({ productId: only.id, companyId: gizli.id, articleId: null, kind: 'original', scope: 'fabric' }));
+  const makers = async (viewer: { userId: string; isAdmin: boolean } | null) =>
+    (await getProductPageView(db2, only.id, viewer))?.parts.flatMap((p) => p.originals.map((c) => c.company.name)) ?? null;
+  expect(await makers(null)).toBeNull();
+  expect(await makers({ userId: 'u-gizli', isAdmin: false })).toEqual(['Gizli Mill']);
+  expect(await makers({ userId: 'someone', isAdmin: false })).toBeNull();
+  expect(await makers({ userId: 'someone', isAdmin: true })).toEqual(['Gizli Mill']);
+});
+
 it.each([
   ['approved', null, true],
   ['draft', null, false],

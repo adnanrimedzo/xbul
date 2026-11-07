@@ -11,7 +11,9 @@ const call = (fetchFn: typeof fetch, url: string) => fetchFn(url, { signal: Abor
 export function createViesChecker(fetchFn: typeof fetch = fetch): RegistryChecker {
   const unknown = (why: string) => result('eu_vies', 'unknown', `VIES: ${why}`);
   return async (s) => {
-    const ms = VIES_MEMBER_STATE[s.country.toUpperCase()];
+    const country = s.country.toUpperCase();
+    // A GB company's Northern Ireland (XI) number is in VIES; other GB numbers are not.
+    const ms = country === 'GB' && s.taxId?.startsWith('XI') ? 'XI' : VIES_MEMBER_STATE[country];
     if (!ms || !s.taxId) return null;
     try {
       const number = s.taxId.startsWith(ms) ? s.taxId.slice(ms.length) : s.taxId;

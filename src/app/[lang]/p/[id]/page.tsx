@@ -16,16 +16,18 @@ import { pageMessages } from '@/i18n/server';
 import { getProductPageView, type ClaimView, type ProductPageView } from '@/modules/discovery';
 import type { ArticleSpecs } from '@/modules/supplier';
 import { getContainer } from '@/server/container';
+import { getViewer } from '@/server/viewer';
 import { describeFabric, formatHs, PARTS, PRODUCT_TYPES, type PartId } from '@/shared/domain/taxonomy';
 import { PRODUCT } from './messages';
 
 type T = (typeof PRODUCT)['en'];
 
-// Shared by generateMetadata and the page, so the view is read once per request.
+// Shared by generateMetadata and the page, so the view is read once per request and both show the same claims.
+// An unapproved company's claims are there only for its owner and the admins.
 const loadView = cache(async (id: string) => {
   if (!z.uuid().safeParse(id).success) notFound();
-  const { db } = await getContainer();
-  return (await getProductPageView(db, id)) ?? notFound();
+  const [{ db }, viewer] = await Promise.all([getContainer(), getViewer()]);
+  return (await getProductPageView(db, id, viewer)) ?? notFound();
 });
 
 const moq = (s: ArticleSpecs) => (s.moq === null ? null : `MOQ ${s.moq}`);
@@ -141,7 +143,7 @@ function SupplierSection({ part, full, originals, equivalents, t, lang, href }: 
     <section data-testid={testId} aria-labelledby={`${testId}-title`} className="panel">
       <div className="flex flex-wrap items-center justify-between gap-2 px-2 pt-2 pb-4">
         <h2 id={`${testId}-title`} className="section-title">
-          {t.whoMade(label, full)}
+          {t.whoMade[part]}
         </h2>
         <Chip>{full ? t.fullProduct : t.partial(label)}</Chip>
       </div>

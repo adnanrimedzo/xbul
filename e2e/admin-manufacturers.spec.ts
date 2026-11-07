@@ -10,6 +10,7 @@ test('an admin asks for changes and the owner sees why', async ({ page }) => {
   await page.getByLabel(/note/i).first().fill('Upload your kapasite raporu.');
   await page.getByRole('button', { name: /request changes/i }).click();
   await expect(page.getByText('Changes requested')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Reject' })).toBeVisible(); // a company that never answers can still be rejected
   await signIn(page, 'pending@example.test');
   await page.goto('/m/ege-orme/registration');
   await expect(page.getByText('Upload your kapasite raporu.')).toBeVisible();

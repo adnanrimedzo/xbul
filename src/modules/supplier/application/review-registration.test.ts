@@ -123,3 +123,14 @@ it('an admin edit logs exactly the changed fields and keeps the status', async (
   expect(Object.keys(events[0]!.changes!)).toHaveLength(2);
   await expect(editRegistrationAsAdmin(deps, { companyId: company.id, adminUserId: 'admin', input: { ...FULL, taxId: '123' } })).rejects.toMatchObject({ code: 'registration.tax_id_invalid' });
 });
+
+it('an admin edit cannot give a company the tax number another company in its country holds', async () => {
+  const { repos, company, deps } = await setup();
+  const other = { ...createCompany({ name: 'Other Mill', city: 'Bursa', country: 'TR', ownerUserId: 'u2', contact: { email: 'o@other.test' }, kind: 'fabric_mill' }), status: 'approved' as const };
+  await repos.companies.save(other);
+  await repos.registrations.save(normalizeRegistration('TR', other.id, { ...FULL, taxId: '4840847211' }));
+  await expect(editRegistrationAsAdmin(deps, { companyId: company.id, adminUserId: 'admin', input: { ...FULL, taxId: '484 084 7211' } }))
+    .rejects.toMatchObject({ code: 'registration.tax_id_taken' });
+  expect((await repos.registrations.find(company.id))?.taxId).toBe('1234567890');
+  expect(await repos.reviewEvents.listByCompany(company.id)).toEqual([]);
+});
