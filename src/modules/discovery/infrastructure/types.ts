@@ -1,4 +1,5 @@
 import type { ClaimKind, ClaimScope, ClaimStatus, ReviewStatus } from '@/modules/claims';
+import type { FabricSpec } from '@/shared/domain/taxonomy';
 import type { ArticleSpecs, CompanyContact, CompanyKind, CompanyStatus } from '@/modules/supplier';
 
 export type CompanyRef = { id: string; slug: string; name: string; kind: CompanyKind; city: string; country: string; contact: CompanyContact };
@@ -10,7 +11,7 @@ export type ClaimView = {
   note: string | null;
   createdAt: Date;
   company: CompanyRef;
-  article: { id: string; slug: string; code: string; specs: ArticleSpecs } | null;
+  article: { id: string; slug: string; code: string; specs: ArticleSpecs; fabric: FabricSpec | null } | null;
 };
 
 // Each list is ranked: the verified original first, then declared originals, then equivalents (see rankClaims).
@@ -36,7 +37,7 @@ export type GarmentTile = {
 
 export type ArticlePageView = {
   company: CompanyRef & { ownerUserId: string; status: CompanyStatus };
-  article: { id: string; slug: string; code: string; specs: ArticleSpecs };
+  article: { id: string; slug: string; code: string; specs: ArticleSpecs; fabric: FabricSpec | null };
   garments: GarmentTile[];
 };
 

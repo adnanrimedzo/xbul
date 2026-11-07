@@ -1,4 +1,5 @@
 import { sql } from 'drizzle-orm';
+import type { FabricSpec } from '@/shared/domain/taxonomy';
 import { char, index, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 
 export const companies = pgTable('companies', {
@@ -28,6 +29,7 @@ export const articles = pgTable(
     finish: text('finish'),
     moq: text('moq'),
     leadTimeWeeks: integer('lead_time_weeks'),
+    fabric: jsonb('fabric').$type<FabricSpec>(),
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [

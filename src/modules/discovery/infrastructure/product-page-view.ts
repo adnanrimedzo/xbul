@@ -41,6 +41,7 @@ export async function getProductPageView(db: Db, productId: string): Promise<Pro
       slug: article.slug,
       code: article.code,
       specs: { weight: article.weight, composition: article.composition, finish: article.finish, moq: article.moq, leadTimeWeeks: article.leadTimeWeeks },
+      fabric: article.fabric,
     },
   });
 

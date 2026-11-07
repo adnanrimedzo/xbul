@@ -3,6 +3,7 @@ import { expect, it } from 'vitest';
 import { createTestDb } from '@/shared/db/testing';
 import { normalizeRegistration } from '../domain/registration';
 import { createSupplierRepositories } from '../infrastructure/drizzle-repositories';
+import { editArticleFabric } from './edit-article-fabric';
 import { editArticleSpecs } from './edit-article-specs';
 import { registerCompany } from './register-company';
 import { updateCompanyContact } from './update-company-contact';
@@ -62,6 +63,20 @@ it('persists specs and reads back plain domain objects', async () => {
   });
   expect(Object.isFrozen(await repos.articles.findById(a.id))).toBe(true);
   expect(await repos.articles.findById('00000000-0000-4000-8000-000000000000')).toBeNull();
+});
+
+const DENIM = { construction: 'woven', pattern: 'twill', twillRatio: '3/1', twillDirection: 'rht',
+  fibres: [{ code: 'co', percent: '98' }, { code: 'EA', percent: 2 }], weight: '12.5', weightUnit: 'oz', widthCm: '150', dye: 'rope', finishes: ['sanforized'] };
+
+it('the owner saves and clears a fabric sheet; others are refused', async () => {
+  const repos = createSupplierRepositories(await createTestDb());
+  const c = await registerCompany(repos, { name: 'Indigo Mill', city: 'Istanbul', country: 'TR', ownerUserId: 'u1', contact, kind: 'fabric_mill' });
+  const a = await upsertArticle(repos, { companyId: c.id, code: '60219/1' });
+  await expect(editArticleFabric(repos, { userId: 'u2', articleId: a.id, input: DENIM })).rejects.toMatchObject({ code: 'auth.forbidden' });
+  await editArticleFabric(repos, { userId: 'u1', articleId: a.id, input: DENIM });
+  expect((await repos.articles.findById(a.id))?.fabric?.weightGsm).toBe(424);
+  await editArticleFabric(repos, { userId: 'u1', articleId: a.id, input: null });
+  expect((await repos.articles.findById(a.id))?.fabric).toBeNull();
 });
 
 it('rejects spec edits for a missing article', async () => {

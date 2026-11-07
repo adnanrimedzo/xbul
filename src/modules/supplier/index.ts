@@ -9,7 +9,7 @@ export {
 } from './domain/registration';
 export { taxIdLabel } from './domain/legal-identifiers';
 export type { Article, ArticleSpecs } from './domain/article';
-export { createArticle, normalizeArticleCode, withSpecs } from './domain/article';
+export { createArticle, normalizeArticleCode, withFabric, withSpecs } from './domain/article';
 export type { CompanyDocument } from './domain/company-document';
 export { createCompanyDocument, MAX_COMPANY_DOCUMENTS } from './domain/company-document';
 export type { ArticleRepository, CheckRepository, CompanyDocumentRepository, CompanyRepository, RegistrationRepository, ReviewEventRepository } from './domain/repositories';
@@ -21,6 +21,7 @@ export { approveRegistration, editRegistrationAsAdmin, rejectRegistration, reque
 export { saveRegistration, submitRegistration } from './application/registration';
 export { updateCompanyContact } from './application/update-company-contact';
 export { upsertArticle } from './application/upsert-article';
+export { editArticleFabric } from './application/edit-article-fabric';
 export { editArticleSpecs } from './application/edit-article-specs';
 export { createSupplierRepositories } from './infrastructure/drizzle-repositories';
 export { articles, companies, companyChecks, companyDocuments, companyRegistrations, companyReviewEvents } from './infrastructure/schema';

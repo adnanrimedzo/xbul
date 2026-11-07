@@ -1,0 +1,43 @@
+import { defineMessages } from '@/i18n/locales';
+
+// The technical-sheet form's strings. Term labels (weaves, dyeing, finishes) come from the taxonomy.
+export const EDIT_FABRIC = defineMessages({
+  en: {
+    sheet: 'Technical sheet',
+    edit: 'Edit technical sheet',
+    construction: 'Construction',
+    pattern: 'Pattern',
+    twillRatio: 'Twill ratio',
+    twillDirection: 'Twill direction',
+    fibres: 'Composition',
+    fibre: 'Fibre',
+    percent: '%',
+    weight: 'Weight',
+    widthCm: 'Width (cm)',
+    dye: 'Dyeing',
+    finishes: 'Finishes',
+    none: '—',
+    clearHint: 'Choose no construction and save to remove the sheet.',
+    saved: 'Technical sheet saved.',
+    save: 'Save technical sheet',
+  },
+  tr: {
+    sheet: 'Teknik föy',
+    edit: 'Teknik föyü düzenle',
+    construction: 'Yapı',
+    pattern: 'Desen',
+    twillRatio: 'Dimi oranı',
+    twillDirection: 'Dimi yönü',
+    fibres: 'Kompozisyon',
+    fibre: 'Lif',
+    percent: '%',
+    weight: 'Gramaj',
+    widthCm: 'En (cm)',
+    dye: 'Boyama',
+    finishes: 'Apreler',
+    none: '—',
+    clearHint: 'Föyü kaldırmak için yapıyı boş bırakıp kaydedin.',
+    saved: 'Teknik föy kaydedildi.',
+    save: 'Teknik föyü kaydet',
+  },
+});

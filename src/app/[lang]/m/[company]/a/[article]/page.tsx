@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { cache } from 'react';
+import { Chip } from '@/app/_components/ui/chip';
 import { CopyLinkButton } from '@/app/_components/copy-link-button';
 import { SupplierContact } from '@/app/_components/supplier-contact';
 import { ClaimTag } from '@/app/_components/ui/claim-tag';
@@ -14,6 +15,8 @@ import { canSeeCompany, getArticlePageView } from '@/modules/discovery';
 import type { ArticleSpecs } from '@/modules/supplier';
 import { getContainer } from '@/server/container';
 import { getViewer } from '@/server/viewer';
+import { describeFabric } from '@/shared/domain/taxonomy';
+import { EditFabricForm } from './edit-fabric-form';
 import { EditSpecsForm } from './edit-specs-form';
 import { ARTICLE } from './messages';
 
@@ -48,7 +51,7 @@ export async function generateMetadata({ params }: PageProps<'/[lang]/m/[company
 
 export default async function ArticlePage({ params }: PageProps<'/[lang]/m/[company]/a/[article]'>) {
   const { company: companySlug, article: articleSlug } = await params;
-  const [{ company, article, garments }, viewer, { config }, { t, href }] = await Promise.all([loadView(companySlug, articleSlug), getViewer(), getContainer(), pageMessages(ARTICLE)]);
+  const [{ company, article, garments }, viewer, { config }, { t, lang, href }] = await Promise.all([loadView(companySlug, articleSlug), getViewer(), getContainer(), pageMessages(ARTICLE)]);
 
   const shareUrl = `${config.baseUrl}${href(`/m/${company.slug}/a/${article.slug}`)}`;
   const { specs } = article;
@@ -73,11 +76,17 @@ export default async function ArticlePage({ params }: PageProps<'/[lang]/m/[comp
           <h2 className="mb-1 font-semibold">{t.contact}</h2>
           <SupplierContact contact={company.contact} />
         </div>
+        {article.fabric && (
+          <div className="mt-6 flex flex-wrap gap-1.5" aria-label={t.sheet}>
+            {describeFabric(article.fabric, lang).map((chip) => (
+              <Chip key={chip}>{chip}</Chip>
+            ))}
+          </div>
+        )}
         <dl className="mt-6 grid grid-cols-2 gap-2 lg:grid-cols-4">
           {[
-            [t.weight, specs.weight ?? DASH],
-            [t.composition, specs.composition ?? DASH],
-            [t.finish, specs.finish ?? DASH],
+            // The technical sheet replaces the free-text weight, composition and finish.
+            ...(article.fabric ? [] : [[t.weight, specs.weight ?? DASH], [t.composition, specs.composition ?? DASH], [t.finish, specs.finish ?? DASH]]),
             [t.moqLead, specs.moq === null && specs.leadTimeWeeks === null ? DASH : `${specs.moq ?? DASH} · ${lead(t.weeks, specs)}`],
           ].map(([name, value]) => (
             <div key={name} className="card p-4!">
@@ -89,6 +98,7 @@ export default async function ArticlePage({ params }: PageProps<'/[lang]/m/[comp
         {viewer?.userId === company.ownerUserId && (
           <div className="mt-5">
             <EditSpecsForm articleId={article.id} specs={specs} />
+            <EditFabricForm articleId={article.id} fabric={article.fabric} />
           </div>
         )}
       </div>

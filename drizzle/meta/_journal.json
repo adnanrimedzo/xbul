@@ -134,6 +134,13 @@
       "when": 1794085184607,
       "tag": "0018_company-checks",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1794086998751,
+      "tag": "0019_article-fabric",
+      "breakpoints": true
     }
   ]
 }

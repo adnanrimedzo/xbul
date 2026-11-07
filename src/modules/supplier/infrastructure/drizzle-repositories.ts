@@ -31,6 +31,7 @@ const toArticle = (r: typeof articles.$inferSelect): Article =>
     code: r.code,
     slug: r.slug,
     specs: Object.freeze({ weight: r.weight, composition: r.composition, finish: r.finish, moq: r.moq, leadTimeWeeks: r.leadTimeWeeks }),
+    fabric: r.fabric,
     createdAt: r.createdAt,
   });
 

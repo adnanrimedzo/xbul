@@ -16,6 +16,7 @@ import { pageMessages } from '@/i18n/server';
 import { getProductPageView, type ClaimGroup, type ClaimView, type ProductPageView } from '@/modules/discovery';
 import type { ArticleSpecs } from '@/modules/supplier';
 import { getContainer } from '@/server/container';
+import { describeFabric } from '@/shared/domain/taxonomy';
 import { PRODUCT } from './messages';
 
 type T = (typeof PRODUCT)['en'];
@@ -97,9 +98,9 @@ function structuredData({ product, fabric, garment }: ProductPageView, baseUrl: 
   ];
 }
 
-function ClaimCard({ claim, testId, t, href }: { claim: ClaimView; testId: string; t: T; href: (path: string) => string }) {
+function ClaimCard({ claim, testId, t, lang, href }: { claim: ClaimView; testId: string; t: T; lang: Locale; href: (path: string) => string }) {
   const { company, article, kind, status, note } = claim;
-  const specs = article && [kind === 'original' && t.code(article.code), kind === 'original' && article.specs.weight, kind === 'original' && article.specs.composition, moq(article.specs), leadTime(t, article.specs)];
+  const specs = article && [kind === 'original' && t.code(article.code), ...(kind !== 'original' ? [] : article.fabric ? describeFabric(article.fabric, lang).slice(0, 3) : [article.specs.weight, article.specs.composition]), moq(article.specs), leadTime(t, article.specs)];
   return (
     <li data-testid={testId} className="card flex flex-col gap-3">
       <div>
@@ -132,7 +133,7 @@ function ClaimCard({ claim, testId, t, href }: { claim: ClaimView; testId: strin
 }
 
 // One side of the product: who made the fabric, or who made the garment. Nothing to show means no section.
-function SupplierSection({ title, testId, group: { originals, equivalents }, t, href }: { title: string; testId: string; group: ClaimGroup; t: T; href: (path: string) => string }) {
+function SupplierSection({ title, testId, group: { originals, equivalents }, t, lang, href }: { title: string; testId: string; group: ClaimGroup; t: T; lang: Locale; href: (path: string) => string }) {
   if (originals.length === 0 && equivalents.length === 0) return null;
   return (
     <section data-testid={testId} aria-labelledby={`${testId}-title`} className="panel">
@@ -141,10 +142,10 @@ function SupplierSection({ title, testId, group: { originals, equivalents }, t, 
       </h2>
       <ul className="flex flex-col gap-2">
         {originals.map((c) => (
-          <ClaimCard key={c.claimId} claim={c} testId="original-claim" t={t} href={href} />
+          <ClaimCard key={c.claimId} claim={c} testId="original-claim" t={t} lang={lang} href={href} />
         ))}
         {equivalents.map((c) => (
-          <ClaimCard key={c.claimId} claim={c} testId="equivalent-claim" t={t} href={href} />
+          <ClaimCard key={c.claimId} claim={c} testId="equivalent-claim" t={t} lang={lang} href={href} />
         ))}
       </ul>
     </section>
@@ -180,8 +181,8 @@ export default async function ProductPage({ params }: PageProps<'/[lang]/p/[id]'
             </p>
           </div>
 
-          <SupplierSection title={t.whoFabric} testId="fabric-suppliers" group={fabric} t={t} href={href} />
-          <SupplierSection title={t.whoGarment} testId="garment-suppliers" group={garment} t={t} href={href} />
+          <SupplierSection title={t.whoFabric} testId="fabric-suppliers" group={fabric} t={t} lang={lang} href={href} />
+          <SupplierSection title={t.whoGarment} testId="garment-suppliers" group={garment} t={t} lang={lang} href={href} />
           {anyVerified && <VerifiedExplanation className="px-2 py-4 sm:px-6" />}
 
           <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-t border-line px-2 pt-5 sm:px-6">
