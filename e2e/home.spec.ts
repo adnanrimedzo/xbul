@@ -40,5 +40,5 @@ test('the home page says supplier and product, not mill and garment', async ({ p
   await expect(page.getByPlaceholder('Paste a product link')).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Recently tagged products' })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Contact them directly' })).toBeVisible();
-  await expect(page.locator('meta[name=description]')).toHaveAttribute('content', 'Find the supplier behind any product.');
+  await expect(page.locator('meta[name=description]')).toHaveAttribute('content', /see the suppliers who made it or can make an equivalent/);
 });

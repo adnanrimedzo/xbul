@@ -2,14 +2,13 @@ import { readConfig } from '@/server/config';
 
 export const dynamic = 'force-dynamic';
 
+// Search and AI crawlers alike may read the public pages in both languages; the signed-in tools stay out.
+const PRIVATE = ['/admin/', '/add', '/api/', '/verify/', '/onboarding', '/sign-in'];
 const PRODUCTION = `User-agent: *
 Allow: /
-Disallow: /admin/
-Disallow: /add
-Disallow: /api/
-Disallow: /verify/
-Disallow: /onboarding
-Disallow: /sign-in
+${PRIVATE.flatMap((p) => [`Disallow: ${p}`, `Disallow: /tr${p}`]).join('\n')}
+
+Sitemap: https://xbul.io/sitemap.xml
 `;
 
 const EVERYWHERE_ELSE = `User-agent: *
