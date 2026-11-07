@@ -6,7 +6,7 @@ import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { actionLang } from '@/i18n/action';
 import { toActionError, type ActionResult } from '@/app/_lib/action-result';
-import { createSupplierRepositories, registerCompany } from '@/modules/supplier';
+import { COMPANY_KINDS, createSupplierRepositories, registerCompany } from '@/modules/supplier';
 import { getContainer } from '@/server/container';
 import { requireViewer } from '@/server/viewer';
 import { DomainError } from '@/shared/domain/errors';
@@ -34,7 +34,7 @@ export async function completeOnboardingAction(
     website: text('website'),
   };
 
-  const kind = z.enum(['fabric_mill', 'garment_maker']).safeParse(values.kind);
+  const kind = z.enum(COMPANY_KINDS).safeParse(values.kind);
   if (!kind.success) return { ...toActionError(new DomainError('company.kind_invalid'), await actionLang()), values };
 
   const { db } = await getContainer();

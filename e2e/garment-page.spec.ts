@@ -16,6 +16,8 @@ test('the garment page shows who made the fabric and who made the garment', asyn
   const garment = page.getByTestId('garment-suppliers');
   await expect(garment.getByTestId('original-claim')).toContainText('Anka Garments');
   await expect(garment.getByTestId('original-claim')).toContainText('Verified');
+  await expect(garment).toContainText('Full product');
+  await expect(page.getByTestId('fabric-suppliers')).toContainText('Partial · Fabric');
 });
 test('a visitor is invited to claim the product as a supplier', async ({ page }) => {
   await page.goto(url);
@@ -31,7 +33,7 @@ test('the copied garment link carries no handle', async ({ page, context }) => {
 test('link previews carry title and description', async ({ request }) => {
   const html = await (await request.get(url)).text();
   expect(html).toContain('<meta property="og:title" content="GUESS — Cropped Denim Blazer"');
-  expect(html).toMatch(/<meta property="og:description" content="Fabric by Indigo Mill \(code 60219\/1\) · Garment by Anka Garments · 2 suppliers can make an equivalent"/);
+  expect(html).toMatch(/<meta property="og:description" content="Finished product by Anka Garments · Fabric by Indigo Mill \(code 60219\/1\) · 2 suppliers can make an equivalent"/);
 });
 test('unknown product is a 404, with the site chrome and a way home', async ({ page }) => {
   expect((await page.goto('/p/not-a-uuid'))?.status()).toBe(404);

@@ -2,15 +2,13 @@
 
 import { useActionState } from 'react';
 import { Button } from '@/app/_components/ui/button';
+import type { CompanyKind } from '@/modules/supplier';
 import { useMessages } from '@/i18n/client';
 import { completeOnboardingAction } from './actions';
 import { ONBOARDING } from './messages';
 
-const KINDS = [
-  ['fabric_mill', 'makeFabric'],
-  ['garment_maker', 'makeGarments'],
-] as const;
 
+// The kinds come from the messages (typed to cover every kind): a client file can't import the supplier module's values.
 export function OnboardingForm({ defaultEmail }: { defaultEmail: string }) {
   const [state, formAction, pending] = useActionState(completeOnboardingAction, null);
   const { t } = useMessages(ONBOARDING);
@@ -20,10 +18,10 @@ export function OnboardingForm({ defaultEmail }: { defaultEmail: string }) {
     <form action={formAction} className="flex flex-col gap-5">
       <fieldset className="flex flex-col gap-1">
         <legend className="mb-1 font-semibold">{t.whatMake}</legend>
-        {KINDS.map(([value, text]) => (
+        {(Object.keys(t.kinds) as CompanyKind[]).map((value) => (
           <label key={value} className="flex min-h-11 items-center gap-3">
             <input type="radio" name="kind" value={value} required defaultChecked={values?.kind === value} className="size-5 accent-fg" />
-            {t[text]}
+            {t.kinds[value]}
           </label>
         ))}
       </fieldset>

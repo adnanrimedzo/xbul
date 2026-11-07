@@ -22,7 +22,7 @@ it.each([
   container.db = db;
   expect(await completeOnboardingAction(null, form(kind ? { kind } : {}))).toEqual({
     ok: false,
-    error: 'Choose fabric or garments.',
+    error: 'Choose what your company makes.',
     values: { kind, ...fields },
   });
   expect(await createSupplierRepositories(db).companies.findByOwner('u1')).toBeNull();

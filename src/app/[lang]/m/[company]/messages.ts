@@ -1,8 +1,9 @@
 import { defineMessages } from '@/i18n/locales';
+import { KIND_LABEL } from '@/app/_lib/kind-labels';
 import type { CompanyKind, CompanyStatus } from '@/modules/supplier';
 
-const KIND_EN: Record<CompanyKind, string> = { fabric_mill: 'Fabric mill', garment_maker: 'Garment maker' };
-const KIND_TR: Record<CompanyKind, string> = { fabric_mill: 'Kumaş fabrikası', garment_maker: 'Hazır giyim üreticisi' };
+const KIND_EN = KIND_LABEL.en;
+const KIND_TR = KIND_LABEL.tr;
 
 export const COMPANY = defineMessages({
   en: {

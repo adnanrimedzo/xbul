@@ -1,10 +1,10 @@
 import { and, eq } from 'drizzle-orm';
 import type { Db } from '@/shared/db/client';
-import type { ProductTypeId } from '@/shared/domain/taxonomy';
+import { PARTS, type ProductTypeId } from '@/shared/domain/taxonomy';
 import { products } from '@/modules/catalog';
-import { claims, rankClaims, type ClaimKind, type ClaimScope, type ClaimStatus } from '@/modules/claims';
+import { claims, rankClaims, type ClaimKind, type ClaimStatus } from '@/modules/claims';
 import { articles, companies, type CompanyKind } from '@/modules/supplier';
-import type { ClaimGroup, ClaimView, ProductPageView } from './types';
+import type { ClaimView, ProductPageView } from './types';
 
 export async function getProductPageView(db: Db, productId: string): Promise<ProductPageView | null> {
   const [p] = await db
@@ -46,9 +46,9 @@ export async function getProductPageView(db: Db, productId: string): Promise<Pro
     },
   });
 
-  const group = (scope: ClaimScope): ClaimGroup => {
-    const ranked = rankClaims(rows.filter((r) => r.claim.scope === scope).map(toView));
-    return { originals: ranked.filter((c) => c.kind === 'original'), equivalents: ranked.filter((c) => c.kind === 'equivalent') };
-  };
-  return { product: { ...p, type: p.type as ProductTypeId | null }, fabric: group('fabric'), garment: group('garment') };
+  const parts = PARTS.flatMap(({ id, full }) => {
+    const ranked = rankClaims(rows.filter((r) => r.claim.scope === id).map(toView));
+    return ranked.length === 0 ? [] : [{ part: id, full, originals: ranked.filter((c) => c.kind === 'original'), equivalents: ranked.filter((c) => c.kind === 'equivalent') }];
+  });
+  return { product: { ...p, type: p.type as ProductTypeId | null }, parts };
 }

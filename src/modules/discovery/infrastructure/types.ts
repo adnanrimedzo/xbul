@@ -1,5 +1,5 @@
 import type { ClaimKind, ClaimScope, ClaimStatus, ReviewStatus } from '@/modules/claims';
-import type { FabricSpec, ProductTypeId } from '@/shared/domain/taxonomy';
+import type { FabricSpec, PartId, ProductTypeId } from '@/shared/domain/taxonomy';
 import type { ArticleSpecs, CompanyContact, CompanyKind, CompanyStatus } from '@/modules/supplier';
 
 export type CompanyRef = { id: string; slug: string; name: string; kind: CompanyKind; city: string; country: string; contact: CompanyContact };
@@ -17,11 +17,10 @@ export type ClaimView = {
 // Each list is ranked: the verified original first, then declared originals, then equivalents (see rankClaims).
 export type ClaimGroup = { originals: ClaimView[]; equivalents: ClaimView[] };
 
-// Who made the fabric and who made the garment are separate lists, each with its own verified original.
+// One list per part that has claims, in PARTS order, each with its own verified original. `full` is true for the finished product.
 export type ProductPageView = {
   product: { id: string; brand: string; name: string; imageUrl: string | null; composition: string | null; sourceUrl: string; type: ProductTypeId | null };
-  fabric: ClaimGroup;
-  garment: ClaimGroup;
+  parts: (ClaimGroup & { part: PartId; full: boolean })[];
 };
 
 export type GarmentTile = {

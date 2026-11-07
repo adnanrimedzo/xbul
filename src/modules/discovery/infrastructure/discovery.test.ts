@@ -27,16 +27,27 @@ beforeAll(async () => {
 
 it('splits the garment page into who made the fabric and who made the garment', async () => {
   const v = await getProductPageView(db, DEMO.products.guess);
-  expect(v?.fabric.originals.map((c) => [c.company.name, c.status, c.article?.code, c.article?.specs.moq])).toEqual([['Indigo Mill', 'verified', '60219/1', '1,000 m']]);
-  expect(v?.fabric.equivalents.map((c) => c.company.name)).toEqual(['Denizli Indigo', 'Bursa Weave']);
-  expect(v?.fabric.equivalents[0]).toMatchObject({ note: 'Same twill, 13 oz, rigid. Swatch in stock.', article: null });
-  expect(v?.garment.originals.map((c) => [c.company.name, c.company.kind, c.status])).toEqual([['Anka Garments', 'garment_maker', 'verified']]);
-  expect(v?.garment.equivalents).toEqual([]);
+  const part = (id: string) => v?.parts.find((p) => p.part === id);
+  expect(part('fabric')?.originals.map((c) => [c.company.name, c.status, c.article?.code, c.article?.specs.moq])).toEqual([['Indigo Mill', 'verified', '60219/1', '1,000 m']]);
+  expect(part('fabric')?.equivalents.map((c) => c.company.name)).toEqual(['Denizli Indigo', 'Bursa Weave']);
+  expect(part('fabric')?.equivalents[0]).toMatchObject({ note: 'Same twill, 13 oz, rigid. Swatch in stock.', article: null });
+  expect(part('garment')?.originals.map((c) => [c.company.name, c.company.kind, c.status])).toEqual([['Anka Garments', 'garment_maker', 'verified']]);
+  expect(part('garment')?.equivalents).toEqual([]);
   // Contact details are public: every claim carries its supplier's, so a buyer needs no account to reach them.
-  expect(v?.fabric.originals[0]?.company.contact).toEqual({ email: 'sales@indigo-mill.example', phone: null, website: 'https://indigo-mill.example/' });
-  expect(v?.fabric.equivalents.map((c) => c.company.contact.email)).toEqual(['sales@denizli-indigo.example', 'sales@bursa-weave.example']);
+  expect(part('fabric')?.originals[0]?.company.contact).toEqual({ email: 'sales@indigo-mill.example', phone: null, website: 'https://indigo-mill.example/' });
+  expect(part('fabric')?.equivalents.map((c) => c.company.contact.email)).toEqual(['sales@denizli-indigo.example', 'sales@bursa-weave.example']);
   expect(v?.product).toMatchObject({ brand: 'GUESS', imageUrl: null, sourceUrl: 'https://guess.eu/en/cropped-denim-blazer-W5RN12' });
   expect(await getProductPageView(db, crypto.randomUUID())).toBeNull();
+});
+
+it('flags each part full or partial, in part order', async () => {
+  const db2 = await createTestDb();
+  await seedDemo(db2);
+  const marmara = { ...createCompany({ name: 'Marmara Yıkama', city: 'Bursa', country: 'TR', ownerUserId: 'u-marmara', contact: { email: 'm@marmara.example' }, kind: 'laundry' }), id: crypto.randomUUID(), status: 'approved' as const };
+  await createSupplierRepositories(db2).companies.save(marmara);
+  await createClaimRepository(db2).save(declareClaim({ productId: DEMO.products.guess, companyId: marmara.id, articleId: null, kind: 'original', scope: 'washing' }));
+  const v = await getProductPageView(db2, DEMO.products.guess);
+  expect(v?.parts.map((p) => [p.part, p.full])).toEqual([['garment', true], ['fabric', false], ['washing', false]]);
 });
 
 it('article page shows only that mill’s garments', async () => {
@@ -176,7 +187,7 @@ it('keeps companies that are not approved off every public view', async () => {
     await repo.save(declareClaim({ productId, companyId: gizli.id, articleId: null, kind, scope: 'fabric' }));
   }
   const v = await getProductPageView(db2, DEMO.products.guess);
-  expect([...v!.fabric.originals, ...v!.fabric.equivalents].map((c) => c.company.name)).not.toContain('Gizli Mill');
+  expect(v!.parts.flatMap((p) => [...p.originals, ...p.equivalents]).map((c) => c.company.name)).not.toContain('Gizli Mill');
   expect((await tile())?.equivalents).toBe(before);
   expect(await getProductPageView(db2, only.id)).toBeNull();
   expect(await hasPublicClaims(db2, only.id)).toBe(false);

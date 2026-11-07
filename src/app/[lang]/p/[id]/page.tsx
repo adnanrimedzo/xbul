@@ -13,10 +13,10 @@ import { VerifiedExplanation, VerifiedInline } from '@/app/_components/ui/verifi
 import { alternates, jsonLd } from '@/app/_lib/seo';
 import { localePath, OG_LOCALE, type Locale } from '@/i18n/locales';
 import { pageMessages } from '@/i18n/server';
-import { getProductPageView, type ClaimGroup, type ClaimView, type ProductPageView } from '@/modules/discovery';
+import { getProductPageView, type ClaimView, type ProductPageView } from '@/modules/discovery';
 import type { ArticleSpecs } from '@/modules/supplier';
 import { getContainer } from '@/server/container';
-import { describeFabric, formatHs, PRODUCT_TYPES } from '@/shared/domain/taxonomy';
+import { describeFabric, formatHs, PARTS, PRODUCT_TYPES, type PartId } from '@/shared/domain/taxonomy';
 import { PRODUCT } from './messages';
 
 type T = (typeof PRODUCT)['en'];
@@ -31,19 +31,20 @@ const loadView = cache(async (id: string) => {
 const moq = (s: ArticleSpecs) => (s.moq === null ? null : `MOQ ${s.moq}`);
 const leadTime = (t: T, s: ArticleSpecs) => (s.leadTimeWeeks === null ? null : t.weeks(s.leadTimeWeeks));
 
+const partLabel = (id: PartId, lang: Locale) => PARTS.find((p) => p.id === id)!.label[lang];
+
 const madeBy = (t: T, label: string, c: ClaimView | undefined) => c && t.madeBy(label, c.company.name, c.article?.code ?? null);
 
 export async function generateMetadata({ params }: PageProps<'/[lang]/p/[id]'>): Promise<Metadata> {
-  const [{ product, fabric, garment }, { config }, { t, lang, href }] = await Promise.all([loadView((await params).id), getContainer(), pageMessages(PRODUCT)]);
-  const equivalents = fabric.equivalents.length + garment.equivalents.length;
-  const parts = [
-    madeBy(t, t.fabricBy, fabric.originals[0]),
-    madeBy(t, t.garmentBy, garment.originals[0]),
+  const [{ product, parts }, { config }, { t, lang, href }] = await Promise.all([loadView((await params).id), getContainer(), pageMessages(PRODUCT)]);
+  const equivalents = parts.reduce((n, p) => n + p.equivalents.length, 0);
+  const made = [
+    ...parts.map((p) => madeBy(t, partLabel(p.part, lang), p.originals[0])),
     equivalents > 0 && t.equivalents(equivalents),
   ].filter(Boolean);
 
   const path = `/p/${product.id}`;
-  const description = parts.join(' · ') || t.metaFallback(product.brand, product.name);
+  const description = made.join(' · ') || t.metaFallback(product.brand, product.name);
   // Link previews keep the short "brand — name" title; the search result title carries the question people search for.
   const ogTitle = `${product.brand} — ${product.name}`;
   return {
@@ -63,10 +64,10 @@ export async function generateMetadata({ params }: PageProps<'/[lang]/p/[id]'>):
 }
 
 // schema.org Product, with only the suppliers that say "We made this" as its manufacturers, plus the breadcrumb trail.
-function structuredData({ product, fabric, garment }: ProductPageView, baseUrl: string, lang: Locale, t: T) {
+function structuredData({ product, parts }: ProductPageView, baseUrl: string, lang: Locale, t: T) {
   const abs = (path: string) => `${baseUrl}${localePath(lang, path)}`;
   const url = abs(`/p/${product.id}`);
-  const makers = new Map([...fabric.originals, ...garment.originals].map((c) => [c.company.id, c.company]));
+  const makers = new Map(parts.flatMap((p) => p.originals).map((c) => [c.company.id, c.company]));
   const brand = findBrand(brandSlug(product.brand));
   const crumbs = [
     { name: t.home, item: abs('/') },
@@ -132,14 +133,18 @@ function ClaimCard({ claim, testId, t, lang, href }: { claim: ClaimView; testId:
   );
 }
 
-// One side of the product: who made the fabric, or who made the garment. Nothing to show means no section.
-function SupplierSection({ title, testId, group: { originals, equivalents }, t, lang, href }: { title: string; testId: string; group: ClaimGroup; t: T; lang: Locale; href: (path: string) => string }) {
-  if (originals.length === 0 && equivalents.length === 0) return null;
+// One part of the product, flagged as the full product or a partial one.
+function SupplierSection({ part, full, originals, equivalents, t, lang, href }: ProductPageView['parts'][number] & { t: T; lang: Locale; href: (path: string) => string }) {
+  const testId = `${part}-suppliers`;
+  const label = partLabel(part, lang);
   return (
     <section data-testid={testId} aria-labelledby={`${testId}-title`} className="panel">
-      <h2 id={`${testId}-title`} className="section-title px-2 pt-2 pb-4">
-        {title}
-      </h2>
+      <div className="flex flex-wrap items-center justify-between gap-2 px-2 pt-2 pb-4">
+        <h2 id={`${testId}-title`} className="section-title">
+          {t.whoMade(label, full)}
+        </h2>
+        <Chip>{full ? t.fullProduct : t.partial(label)}</Chip>
+      </div>
       <ul className="flex flex-col gap-2">
         {originals.map((c) => (
           <ClaimCard key={c.claimId} claim={c} testId="original-claim" t={t} lang={lang} href={href} />
@@ -154,10 +159,10 @@ function SupplierSection({ title, testId, group: { originals, equivalents }, t, 
 
 export default async function ProductPage({ params }: PageProps<'/[lang]/p/[id]'>) {
   const [view, { config }, { t, lang, href }] = await Promise.all([loadView((await params).id), getContainer(), pageMessages(PRODUCT)]);
-  const { product, fabric, garment } = view;
+  const { product, parts } = view;
   const host = new URL(product.sourceUrl).hostname.replace(/^www\./, '');
   const shareUrl = `${config.baseUrl}${href(`/p/${product.id}`)}`;
-  const anyVerified = [...fabric.originals, ...garment.originals].some((c) => c.status === 'verified');
+  const anyVerified = parts.some((p) => p.originals.some((c) => c.status === 'verified'));
 
   return (
     <div className="page">
@@ -186,8 +191,9 @@ export default async function ProductPage({ params }: PageProps<'/[lang]/p/[id]'
             </p>
           </div>
 
-          <SupplierSection title={t.whoFabric} testId="fabric-suppliers" group={fabric} t={t} lang={lang} href={href} />
-          <SupplierSection title={t.whoGarment} testId="garment-suppliers" group={garment} t={t} lang={lang} href={href} />
+          {parts.map((p) => (
+            <SupplierSection key={p.part} {...p} t={t} lang={lang} href={href} />
+          ))}
           {anyVerified && <VerifiedExplanation className="px-2 py-4 sm:px-6" />}
 
           <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-3 border-t border-line px-2 pt-5 sm:px-6">

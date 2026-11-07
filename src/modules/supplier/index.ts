@@ -1,3 +1,4 @@
+export { COMPANY_KINDS } from './domain/company';
 export type { Company, CompanyContact, CompanyKind, CompanyStatus, ContactInput } from './domain/company';
 export { claimScopeOf, createCompany, normalizeContact } from './domain/company';
 export type {

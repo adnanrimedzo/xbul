@@ -1,5 +1,6 @@
 import { defineMessages } from '@/i18n/locales';
-import type { CompanyKind, CompanyStatus } from '@/modules/supplier';
+import { KIND_LABEL } from '@/app/_lib/kind-labels';
+import type { CompanyStatus } from '@/modules/supplier';
 
 type Counts = { pass: number; fail: number; unknown: number };
 
@@ -16,7 +17,7 @@ export const ADMIN_MANUFACTURERS = defineMessages({
       rejected: 'Rejected',
       draft: 'Draft',
     } satisfies Record<CompanyStatus, string>,
-    kinds: { fabric_mill: 'Fabric mill', garment_maker: 'Garment maker' } satisfies Record<CompanyKind, string>,
+    kinds: KIND_LABEL.en,
     submittedAgo: (ago: string) => `submitted ${ago}`,
     neverSubmitted: 'no submission on record',
     checks: (c: Counts) => `Checks: ${c.pass} pass, ${c.fail} fail, ${c.unknown} unknown`,
@@ -33,7 +34,7 @@ export const ADMIN_MANUFACTURERS = defineMessages({
       rejected: 'Reddedildi',
       draft: 'Taslak',
     },
-    kinds: { fabric_mill: 'Kumaş fabrikası', garment_maker: 'Hazır giyim üreticisi' },
+    kinds: KIND_LABEL.tr,
     submittedAgo: (ago: string) => `gönderilme: ${ago}`,
     neverSubmitted: 'gönderim kaydı yok',
     checks: (c: Counts) => `Kontroller: ${c.pass} geçti, ${c.fail} kaldı, ${c.unknown} belirsiz`,
