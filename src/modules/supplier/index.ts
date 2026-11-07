@@ -13,7 +13,7 @@ export { createArticle, normalizeArticleCode, withSpecs } from './domain/article
 export type { CompanyDocument } from './domain/company-document';
 export { createCompanyDocument, MAX_COMPANY_DOCUMENTS } from './domain/company-document';
 export type { ArticleRepository, CompanyDocumentRepository, CompanyRepository, RegistrationRepository, ReviewEventRepository } from './domain/repositories';
-export type { DocumentDeps, DocumentStore } from './application/ports';
+export type { DocumentDeps, DocumentStore, RegistryChecker } from './application/ports';
 export { addCompanyDocument, purgeCompanyDocuments, readCompanyDocument, removeCompanyDocument } from './application/company-documents';
 export { registerCompany } from './application/register-company';
 export { saveRegistration, submitRegistration } from './application/registration';
@@ -22,3 +22,4 @@ export { upsertArticle } from './application/upsert-article';
 export { editArticleSpecs } from './application/edit-article-specs';
 export { createSupplierRepositories } from './infrastructure/drizzle-repositories';
 export { articles, companies, companyDocuments, companyRegistrations, companyReviewEvents } from './infrastructure/schema';
+export { createGleifChecker, createViesChecker } from './infrastructure/registry-checkers';
