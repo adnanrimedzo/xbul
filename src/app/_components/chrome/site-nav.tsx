@@ -22,6 +22,7 @@ export async function SiteNav({ viewer }: { viewer: Viewer | null }) {
             <>
               <Link href={href(`/m/${company.slug}`)} className={item}>{t.myCompany}</Link>
               <Link href={href('/add')} className={item}>{t.addProducts}</Link>
+              <Link href={href(`/m/${company.slug}/registration`)} className={item}>{t.registration}</Link>
             </>
           ) : (
             <Link href={href('/onboarding')} className={item}>{t.registerCompany}</Link>

@@ -23,8 +23,10 @@ it('each mode has a home', () => {
 });
 
 it.each([
-  [{ company: { slug: 'indigo-mill' }, mode: 'manufacturer', modeChosen: false, isAdmin: false }, '/add'],
-  [{ company: { slug: 'indigo-mill' }, mode: 'search', modeChosen: true, isAdmin: false }, '/'],
+  [{ company: { slug: 'indigo-mill', status: 'approved' }, mode: 'manufacturer', modeChosen: false, isAdmin: false }, '/add'],
+  [{ company: { slug: 'indigo-mill', status: 'draft' }, mode: 'manufacturer', modeChosen: false, isAdmin: false }, '/m/indigo-mill/registration'],
+  [{ company: { slug: 'indigo-mill', status: 'changes_requested' }, mode: 'manufacturer', modeChosen: true, isAdmin: false }, '/m/indigo-mill/registration'],
+  [{ company: { slug: 'indigo-mill', status: 'draft' }, mode: 'search', modeChosen: true, isAdmin: false }, '/'],
   [{ company: null, mode: 'search', modeChosen: true, isAdmin: false }, '/'],
   [{ company: null, mode: 'admin', modeChosen: false, isAdmin: true }, '/admin/claims'], // an admin is here to review, unless they pick manufacturer
   [{ company: null, mode: 'manufacturer', modeChosen: true, isAdmin: true }, null], // an admin registering a company

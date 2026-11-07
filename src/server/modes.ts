@@ -1,3 +1,5 @@
+import type { CompanyStatus } from '@/modules/supplier';
+
 // A mode is display-only: it picks which links and home the viewer sees. It never authorizes anything;
 // requireAdmin and requireMill check isAdmin and company.
 export type Mode = 'search' | 'manufacturer' | 'admin';
@@ -23,12 +25,13 @@ export function modeHome(mode: Mode, companySlug: string | null): string {
 }
 
 export function onboardingRedirect(v: {
-  company: { slug: string } | null;
+  company: { slug: string; status: CompanyStatus } | null;
   mode: Mode;
   modeChosen: boolean;
   isAdmin: boolean;
 }): string | null {
-  if (v.company) return v.mode === 'manufacturer' ? '/add' : modeHome(v.mode, v.company.slug);
+  if (v.company && v.mode !== 'manufacturer') return modeHome(v.mode, v.company.slug);
+  if (v.company) return v.company.status === 'approved' ? '/add' : `/m/${v.company.slug}/registration`; // not public until approved
   if (v.modeChosen && v.mode !== 'manufacturer') return modeHome(v.mode, null);
   if (!v.modeChosen && v.isAdmin) return modeHome('admin', null);
   return null;

@@ -7,6 +7,7 @@ export {
   approveCompany, assertOwnerCanEdit, diffRegistration, missingForSubmit, normalizeRegistration, rejectCompany,
   requestCompanyChanges, requiredDocuments, submitCompany,
 } from './domain/registration';
+export { taxIdLabel } from './domain/legal-identifiers';
 export type { Article, ArticleSpecs } from './domain/article';
 export { createArticle, normalizeArticleCode, withSpecs } from './domain/article';
 export type { CompanyDocument } from './domain/company-document';
@@ -15,6 +16,7 @@ export type { ArticleRepository, CompanyDocumentRepository, CompanyRepository, R
 export type { DocumentDeps, DocumentStore } from './application/ports';
 export { addCompanyDocument, purgeCompanyDocuments, readCompanyDocument, removeCompanyDocument } from './application/company-documents';
 export { registerCompany } from './application/register-company';
+export { saveRegistration, submitRegistration } from './application/registration';
 export { updateCompanyContact } from './application/update-company-contact';
 export { upsertArticle } from './application/upsert-article';
 export { editArticleSpecs } from './application/edit-article-specs';

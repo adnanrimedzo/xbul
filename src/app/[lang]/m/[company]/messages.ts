@@ -1,5 +1,5 @@
 import { defineMessages } from '@/i18n/locales';
-import type { CompanyKind } from '@/modules/supplier';
+import type { CompanyKind, CompanyStatus } from '@/modules/supplier';
 
 const KIND_EN: Record<CompanyKind, string> = { fabric_mill: 'Fabric mill', garment_maker: 'Garment maker' };
 const KIND_TR: Record<CompanyKind, string> = { fabric_mill: 'Kumaş fabrikası', garment_maker: 'Hazır giyim üreticisi' };
@@ -20,6 +20,13 @@ export const COMPANY = defineMessages({
     underReview: 'Under review',
     rejected: 'Rejected: see why',
     getVerified: 'Get verified',
+    notPublic: {
+      draft: 'Not public yet. Complete your registration and submit it for review.',
+      submitted: "Not public yet. We're reviewing your registration.",
+      changes_requested: 'Not public yet. We need more information about your company.',
+      rejected: 'Your registration was not approved.',
+    } satisfies Record<Exclude<CompanyStatus, 'approved'>, string>,
+    goToRegistration: 'Go to your registration',
   },
   tr: {
     kindIn: (kind: CompanyKind, place: string) => `${place} merkezli ${KIND_TR[kind].toLocaleLowerCase('tr')}`,
@@ -36,5 +43,12 @@ export const COMPANY = defineMessages({
     underReview: 'İncelemede',
     rejected: 'Reddedildi: nedenini görün',
     getVerified: 'Doğrulama alın',
+    notPublic: {
+      draft: 'Henüz herkese açık değil. Kaydınızı tamamlayıp incelemeye gönderin.',
+      submitted: 'Henüz herkese açık değil. Kaydınızı inceliyoruz.',
+      changes_requested: 'Henüz herkese açık değil. Firmanız hakkında daha fazla bilgiye ihtiyacımız var.',
+      rejected: 'Kaydınız onaylanmadı.',
+    },
+    goToRegistration: 'Kaydınıza gidin',
   },
 });

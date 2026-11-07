@@ -55,6 +55,7 @@ const MESSAGES = defineMessages<Record<string, string>>({
     'registration.lei_invalid': 'Enter a valid 20-character LEI.',
     'registration.nace_invalid': 'Activity codes look like 13.20 or 13.20.01.',
     'registration.tax_id_invalid': 'Enter a valid tax number for your country.',
+    'registration.tax_id_taken': 'Another company has already registered this tax number. Write to hello@xbul.io.',
   },
   tr: {
     generic: 'Bir sorun oluştu. Lütfen tekrar deneyin.',
@@ -109,6 +110,7 @@ const MESSAGES = defineMessages<Record<string, string>>({
     'registration.lei_invalid': 'Geçerli, 20 karakterlik bir LEI girin.',
     'registration.nace_invalid': 'Faaliyet kodları 13.20 veya 13.20.01 biçiminde olmalı.',
     'registration.tax_id_invalid': 'Ülkeniz için geçerli bir vergi numarası girin.',
+    'registration.tax_id_taken': 'Bu vergi numarasıyla başka bir firma kayıtlı. hello@xbul.io adresine yazın.',
   },
 });
 

@@ -59,6 +59,8 @@ export async function generateMetadata({ params }: PageProps<'/[lang]/m/[company
 export default async function MillPage({ params }: PageProps<'/[lang]/m/[company]'>) {
   const [{ company, articles, garments }, viewer, { config }, { t, href }] = await Promise.all([loadView((await params).company), getViewer(), getContainer(), pageMessages(COMPANY)]);
   const isOwner = viewer?.userId === company.ownerUserId;
+  const ownStatus = isOwner ? viewer?.company?.status : undefined; // the owner's company is the viewer's
+  const pendingStatus = ownStatus && ownStatus !== 'approved' ? ownStatus : null;
   const place = `${company.city}, ${company.country}`;
   const pageUrl = `${config.baseUrl}${href(`/m/${company.slug}`)}`;
   const { email, phone, website } = company.contact;
@@ -78,6 +80,14 @@ export default async function MillPage({ params }: PageProps<'/[lang]/m/[company
   return (
     <div className="page flex flex-col gap-10">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(organization) }} />
+      {pendingStatus && (
+        <p className="alert flex flex-wrap items-center gap-x-3 gap-y-1">
+          <span className="font-semibold">{t.notPublic[pendingStatus]}</span>
+          <Link href={href(`/m/${company.slug}/registration`)} className="link">
+            {t.goToRegistration}
+          </Link>
+        </p>
+      )}
       <div className="panel p-6! sm:p-10!">
         <h1 className="page-title">{company.name}</h1>
         <p className="mt-3 text-lg">

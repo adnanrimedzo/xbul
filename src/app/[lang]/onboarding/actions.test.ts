@@ -28,9 +28,9 @@ it.each([
   expect(await createSupplierRepositories(db).companies.findByOwner('u1')).toBeNull();
 });
 
-it('registers the company as the kind chosen, then goes to Add', async () => {
+it('registers the company as the kind chosen, then goes to its registration page', async () => {
   const db = await createTestDb();
   container.db = db;
-  await expect(completeOnboardingAction(null, form({ kind: 'garment_maker' }))).rejects.toMatchObject({ digest: expect.stringContaining('/add') });
+  await expect(completeOnboardingAction(null, form({ kind: 'garment_maker' }))).rejects.toMatchObject({ digest: expect.stringContaining('/m/yeni-konfeksiyon/registration') });
   expect(await createSupplierRepositories(db).companies.findByOwner('u1')).toMatchObject({ slug: 'yeni-konfeksiyon', kind: 'garment_maker' });
 });

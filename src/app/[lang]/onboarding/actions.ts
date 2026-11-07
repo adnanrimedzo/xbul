@@ -38,17 +38,18 @@ export async function completeOnboardingAction(
   if (!kind.success) return { ...toActionError(new DomainError('company.kind_invalid'), await actionLang()), values };
 
   const { db } = await getContainer();
+  let slug: string;
   try {
-    await registerCompany(createSupplierRepositories(db), {
+    ({ slug } = await registerCompany(createSupplierRepositories(db), {
       kind: kind.data,
       name: values.companyName,
       city: values.city,
       country: values.country,
       ownerUserId: viewer.userId,
       contact: { email: values.contactEmail, phone: values.phone, website: values.website },
-    });
+    }));
   } catch (e) {
     return { ...toActionError(e, await actionLang()), values };
   }
-  redirect(localePath(await actionLang(), '/add')); // outside the try: redirect() works by throwing
+  redirect(localePath(await actionLang(), `/m/${slug}/registration`)); // outside the try: redirect() works by throwing
 }
