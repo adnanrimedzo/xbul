@@ -24,6 +24,11 @@ export default defineConfig({
         MAIL_LOG_FILE: '.outbox/e2e-mail.log',
         RESEND_API_KEY: '', // a developer's .env.local key must never send e2e mail
         FETCH_ALLOW_PRIVATE_HOSTS: '1',
+        // Dummy keys so the provider buttons render; e2e/sign-in.spec.ts stops each flow at the provider's door.
+        GOOGLE_CLIENT_ID: 'e2e-google-id',
+        GOOGLE_CLIENT_SECRET: 'e2e-google-secret',
+        MICROSOFT_CLIENT_ID: 'e2e-microsoft-id',
+        MICROSOFT_CLIENT_SECRET: 'e2e-microsoft-secret',
       },
     },
   ],

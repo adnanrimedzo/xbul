@@ -91,7 +91,7 @@ export const getContainer = cache(async (): Promise<Container> => {
   let auth = authByDb.get(db);
   if (!auth) {
     // On Workers the limiter is forced on, so it never depends on Better Auth detecting production from the bundle.
-    auth = createAuth({ db, mailer, baseUrl: config.baseUrl, secret: config.authSecret, rateLimit: cf ? true : undefined });
+    auth = createAuth({ db, mailer, baseUrl: config.baseUrl, secret: config.authSecret, rateLimit: cf ? true : undefined, oauth: config.oauth });
     authByDb.set(db, auth);
   }
   const { companies, articles } = createSupplierRepositories(db);
