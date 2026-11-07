@@ -21,9 +21,9 @@ it('console mailer appends a JSON line per message', async () => {
   info.mockRestore();
 });
 
-it('resend mailer sends from the configured address', async () => {
-  await createResendMailer('re_test', 'xm <hello@x.test>').send({ to: 'a@b.test', subject: 'Hi', text: 'Body' });
-  expect(resendSent).toEqual([{ from: 'xm <hello@x.test>', to: 'a@b.test', subject: 'Hi', text: 'Body' }]);
+it('resend mailer sends from the configured address, with replies going to the contact address', async () => {
+  await createResendMailer('re_test', 'xm <hello@mail.x.test>', 'hello@x.test').send({ to: 'a@b.test', subject: 'Hi', text: 'Body' });
+  expect(resendSent).toEqual([{ from: 'xm <hello@mail.x.test>', replyTo: 'hello@x.test', to: 'a@b.test', subject: 'Hi', text: 'Body' }]);
 });
 
 it('recording mailer keeps sent messages', async () => {

@@ -16,7 +16,7 @@
     {
       "binding": "HYPERDRIVE",
       // Paste the id printed by `pnpm wrangler hyperdrive create xbul-db …` (docs/deploy.md).
-      "id": "<HYPERDRIVE_ID>",
+      "id": "71e4580cff8f41f5bd3b959f7285e5bc",
       // `pnpm preview` connects here instead of Hyperdrive (the Docker Postgres in docs/deploy.md).
       "localConnectionString": "postgres://postgres:postgres@localhost:5432/xbul"
     }
@@ -27,7 +27,7 @@
   // PUBLIC_BASE_URL is the one canonical origin (sign-in included): pick apex or www and use it everywhere.
   "vars": {
     "PUBLIC_BASE_URL": "https://xbul.io",
-    "MAIL_FROM": "xbul <hello@xbul.io>"
+    "MAIL_FROM": "xbul <hello@mail.xbul.io>"
   },
   // Workers Logs: request logs and console output (e.g. a failed owner notification) in the dashboard.
   "observability": { "enabled": true },
@@ -46,14 +46,14 @@
       "hyperdrive": [
         {
           "binding": "HYPERDRIVE",
-          "id": "<HYPERDRIVE_STAGING_ID>",
+          "id": "b882a9d5399f41d8818d35cb7150d1f4",
           "localConnectionString": "postgres://postgres:postgres@localhost:5432/xbul"
         }
       ],
       "r2_buckets": [{ "binding": "EVIDENCE", "bucket_name": "xbul-evidence-staging" }],
       "vars": {
         "PUBLIC_BASE_URL": "https://staging.xbul.io",
-        "MAIL_FROM": "xbul staging <hello@xbul.io>"
+        "MAIL_FROM": "xbul staging <hello@mail.xbul.io>"
       },
       "observability": { "enabled": true }
     }

@@ -32,7 +32,7 @@ export function readConfig(env: Record<string, string | undefined> = process.env
     authSecret,
     adminEmails: (env.ADMIN_EMAILS ?? '').split(',').map((e) => e.trim().toLowerCase()).filter(Boolean),
     resendApiKey,
-    mailFrom: value('MAIL_FROM') ?? 'xbul <hello@xbul.io>',
+    mailFrom: value('MAIL_FROM') ?? 'xbul <hello@mail.xbul.io>',
     mailLogFile: value('MAIL_LOG_FILE'),
     allowPrivateHosts: env.FETCH_ALLOW_PRIVATE_HOSTS === '1',
     evidenceDir: value('EVIDENCE_DIR') ?? './.data/evidence',

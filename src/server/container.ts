@@ -86,7 +86,7 @@ export const getContainer = cache(async (): Promise<Container> => {
     evidenceStore = createLocalEvidenceStore(config.evidenceDir);
   }
   const mailer = config.resendApiKey
-    ? createResendMailer(config.resendApiKey, config.mailFrom)
+    ? createResendMailer(config.resendApiKey, config.mailFrom, 'hello@xbul.io')
     : createConsoleMailer(config.mailLogFile ?? undefined);
   let auth = authByDb.get(db);
   if (!auth) {
