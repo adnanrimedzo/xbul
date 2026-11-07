@@ -13,7 +13,7 @@ import { claimScopeOf, upsertArticle } from '@/modules/supplier';
 import { getContainer } from '@/server/container';
 import { requireMill } from '@/server/viewer';
 import { DomainError } from '@/shared/domain/errors';
-import { guessProductType, type ProductTypeId } from '@/shared/domain/taxonomy';
+import { guessProductType, PRODUCT_TYPES, type ProductTypeId } from '@/shared/domain/taxonomy';
 
 // `existing` is what the supplier already claimed for this product: the preview fills it in, so publishing again restates the same claim.
 export type PreviewRow =
@@ -146,6 +146,8 @@ export async function publishGarmentsAction(
   const { company } = await requireMill(); // never from the client
   const parsed = itemsSchema.safeParse(items);
   if (!parsed.success) return { ok: false, error: errorMessage('generic', await actionLang()) };
+  // The type is form input: refuse a bad one before any claim is written.
+  if (parsed.data.some(({ type }) => type && !Object.hasOwn(PRODUCT_TYPES, type))) return toActionError(new DomainError('product.type_invalid'), await actionLang());
 
   const { claims, evidence, evidenceStore, products, articles } = await getContainer();
   try {

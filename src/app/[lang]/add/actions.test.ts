@@ -280,3 +280,10 @@ it('previews the guessed product type, and stores the one the supplier publishes
   await expect(publishGarmentsAction([untouched(other!)])).rejects.toMatchObject({ digest: expect.stringContaining('/m/') });
   expect((await products.findById(other!.productId))?.type).toBeNull(); // the demo jacket is guessed, but an empty choice stores nothing
 });
+
+it('refuses an unknown product type before publishing any claim', async () => {
+  const { claims } = await setup();
+  const [row] = (await rowsOf('https://brand.test/denim')).flatMap((r) => (r.state === 'ready' ? [r] : []));
+  expect(await publishGarmentsAction([{ ...untouched(row!), type: 'wizard' }])).toEqual({ ok: false, error: 'Choose a product type from the list.' });
+  expect(await claims.findByProductAndCompany(row!.productId, DEMO.companies.indigo)).toBeNull();
+});
