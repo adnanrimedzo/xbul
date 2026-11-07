@@ -127,6 +127,13 @@
       "when": 1794082795532,
       "tag": "0017_company-documents",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1794085184607,
+      "tag": "0018_company-checks",
+      "breakpoints": true
     }
   ]
 }

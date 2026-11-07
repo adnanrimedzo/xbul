@@ -35,12 +35,13 @@ async function setup(mailer: Mailer = createRecordingMailer()) {
   const stored = new Map<string, Uint8Array>();
   const evidenceStore = { put: async (k: string, b: Uint8Array) => void stored.set(k, b), get: async (k: string) => stored.get(k) ?? null, delete: async (k: string) => void stored.delete(k) };
   const config = { adminEmails: ['admin@xbul.test', 'ops@xbul.test'], baseUrl: 'https://xbul.test' };
-  container.current = { ...repos, evidenceStore, mailer, config };
+  const checker = vi.fn(async () => null);
+  container.current = { ...repos, evidenceStore, mailer, config, checkers: [checker], ownerEmail: async () => 'ali@aksu.test' };
   const complete = async () => {
     await saveRegistration(repos, { userId: 'u1', input: FULL });
     for (const kind of ['tax_certificate', 'registry_extract', 'capacity_report']) expect(await upload(kind)).toEqual({ ok: true, data: undefined });
   };
-  return { repos, company, stored, complete };
+  return { repos, company, stored, complete, checker };
 }
 
 it('maps the form onto the registration: NACE codes split, blank certificate rows dropped', async () => {
@@ -89,11 +90,13 @@ it('uploads a document of the chosen kind, refuses a request with no file, and r
 
 it('submits and emails every admin the review link', async () => {
   const mailer = createRecordingMailer();
-  const { repos, company, complete } = await setup(mailer);
+  const { repos, company, complete, checker } = await setup(mailer);
   await complete();
   expect(await submitRegistrationAction()).toEqual({ ok: true, data: undefined });
   await Promise.all(afterTasks);
   expect((await repos.companies.findById(company.id))?.status).toBe('submitted');
+  expect(checker).toHaveBeenCalledTimes(1);
+  expect((await repos.checks.list(company.id)).map((c) => c.source)).toContain('tax_id_format');
   const text = `Aksu Denim (TR) submitted its registration.\n\nReview it: https://xbul.test/admin/manufacturers/${company.id}`;
   expect(mailer.sent).toEqual([
     { to: 'admin@xbul.test', subject: 'New manufacturer to review: Aksu Denim', text },
@@ -121,8 +124,9 @@ it('keeps the submission when an email fails, logging it and still mailing the o
 
 it('says what is wrong with an incomplete submission and emails nobody', async () => {
   const mailer = createRecordingMailer();
-  await setup(mailer);
+  const { checker } = await setup(mailer);
   expect(await submitRegistrationAction()).toEqual({ ok: false, error: 'Complete the missing items before you submit.' });
   expect(afterTasks).toEqual([]);
+  expect(checker).not.toHaveBeenCalled();
   expect(mailer.sent).toEqual([]);
 });

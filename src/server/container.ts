@@ -19,8 +19,8 @@ import {
   type EvidenceRepository,
   type EvidenceStore,
 } from '@/modules/claims';
-import { createAuth, type Auth } from '@/modules/identity';
-import { createSupplierRepositories, type ArticleRepository, type CompanyDocumentRepository, type CompanyRepository, type RegistrationRepository, type ReviewEventRepository } from '@/modules/supplier';
+import { createAuth, findUserEmail, type Auth } from '@/modules/identity';
+import { createGleifChecker, createSupplierRepositories, createViesChecker, type ArticleRepository, type CheckRepository, type RegistryChecker, type CompanyDocumentRepository, type CompanyRepository, type RegistrationRepository, type ReviewEventRepository } from '@/modules/supplier';
 import { createDb, createPostgresDb, type Db } from '@/shared/db/client';
 import { createConsoleMailer, createResendMailer, type Mailer } from '@/shared/mail/mailer';
 import { readConfig, resolveDatabaseUrl, type AppConfig } from './config';
@@ -35,6 +35,9 @@ export type Container = {
   registrations: RegistrationRepository;
   reviewEvents: ReviewEventRepository;
   documents: CompanyDocumentRepository;
+  checks: CheckRepository;
+  checkers: readonly RegistryChecker[];
+  ownerEmail: (userId: string) => Promise<string | null>;
   products: ProductRepository;
   fetcher: ProductPageFetcher;
   searches: SearchLog;
@@ -97,7 +100,7 @@ export const getContainer = cache(async (): Promise<Container> => {
     auth = createAuth({ db, mailer, baseUrl: config.baseUrl, secret: config.authSecret, rateLimit: cf ? true : undefined });
     authByDb.set(db, auth);
   }
-  const { companies, articles, registrations, reviewEvents, documents } = createSupplierRepositories(db);
+  const { companies, articles, registrations, reviewEvents, documents, checks } = createSupplierRepositories(db);
   return {
     config,
     db,
@@ -108,6 +111,9 @@ export const getContainer = cache(async (): Promise<Container> => {
     registrations,
     reviewEvents,
     documents,
+    checks,
+    checkers: [createViesChecker(), createGleifChecker()],
+    ownerEmail: (userId) => findUserEmail(db, userId),
     products: createProductRepository(db),
     fetcher: createHttpProductPageFetcher({ allowPrivateHosts: config.allowPrivateHosts }),
     searches: createSearchLog(db),

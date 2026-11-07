@@ -4,8 +4,9 @@ import type { Article } from '../domain/article';
 import type { Company, CompanyKind, CompanyStatus } from '../domain/company';
 import type { Registration, ReviewAction, ReviewEvent } from '../domain/registration';
 import type { CompanyDocument } from '../domain/company-document';
-import type { ArticleRepository, CompanyDocumentRepository, CompanyRepository, RegistrationRepository, ReviewEventRepository } from '../domain/repositories';
-import { articles, companies, companyDocuments, companyRegistrations, companyReviewEvents } from './schema';
+import { CHECK_ORDER, type CheckResult, type CheckSource, type CheckOutcome } from '../domain/checks';
+import type { ArticleRepository, CheckRepository, CompanyDocumentRepository, CompanyRepository, RegistrationRepository, ReviewEventRepository } from '../domain/repositories';
+import { articles, companies, companyChecks, companyDocuments, companyRegistrations, companyReviewEvents } from './schema';
 
 const toDocument = (r: typeof companyDocuments.$inferSelect): CompanyDocument => Object.freeze(r as CompanyDocument);
 
@@ -39,6 +40,7 @@ export function createSupplierRepositories(db: Db): {
   registrations: RegistrationRepository;
   reviewEvents: ReviewEventRepository;
   documents: CompanyDocumentRepository;
+  checks: CheckRepository;
 } {
   const companyBy = async (where: SQL) => {
     const [row] = await db.select().from(companies).where(where).limit(1);
@@ -97,6 +99,20 @@ export function createSupplierRepositories(db: Db): {
           ))
           .limit(1);
         return rows.length > 0;
+      },
+    },
+    checks: {
+      async replaceAll(companyId, results) {
+        await db.transaction(async (tx) => {
+          await tx.delete(companyChecks).where(eq(companyChecks.companyId, companyId));
+          if (results.length > 0) await tx.insert(companyChecks).values(results.map((r) => ({ ...r, companyId })));
+        });
+      },
+      async list(companyId) {
+        const rows = await db.select().from(companyChecks).where(eq(companyChecks.companyId, companyId));
+        return rows
+          .map((r): CheckResult => Object.freeze({ source: r.source as CheckSource, outcome: r.outcome as CheckOutcome, summary: r.summary, checkedAt: r.checkedAt }))
+          .sort((a, b) => CHECK_ORDER.indexOf(a.source) - CHECK_ORDER.indexOf(b.source));
       },
     },
     reviewEvents: {

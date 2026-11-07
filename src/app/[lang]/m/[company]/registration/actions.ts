@@ -6,7 +6,7 @@ import { z } from 'zod';
 import { actionLang } from '@/i18n/action';
 import { errorMessage } from '@/app/_lib/error-messages';
 import { toActionError, type ActionResult } from '@/app/_lib/action-result';
-import { addCompanyDocument, removeCompanyDocument, saveRegistration, submitRegistration, type Company, type RegistrationInput } from '@/modules/supplier';
+import { addCompanyDocument, removeCompanyDocument, runRegistrationChecks, saveRegistration, submitRegistration, type Company, type RegistrationInput } from '@/modules/supplier';
 import { getContainer } from '@/server/container';
 import { requireMill } from '@/server/viewer';
 import { DomainError } from '@/shared/domain/errors';
@@ -91,7 +91,7 @@ export async function removeCompanyDocumentAction(documentId: string): Promise<A
 
 export async function submitRegistrationAction(): Promise<ActionResult> {
   const { userId } = await requireMill();
-  const { companies, registrations, documents, reviewEvents, mailer, config } = await getContainer();
+  const { companies, registrations, documents, reviewEvents, checks, checkers, ownerEmail, mailer, config } = await getContainer();
   let company: Company;
   try {
     company = await submitRegistration({ companies, registrations, documents, reviewEvents }, { userId });
@@ -110,6 +110,8 @@ export async function submitRegistrationAction(): Promise<ActionResult> {
       }
     }
   });
+  // Its own callback, so a mail failure and a checks failure can't affect each other.
+  after(() => runRegistrationChecks({ companies, registrations, checks, checkers, ownerEmail }, company.id).catch((e) => console.error('[checks]', e)));
   revalidatePath('/', 'layout'); // the banner here and on the company page
   return { ok: true, data: undefined };
 }

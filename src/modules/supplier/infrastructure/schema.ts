@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { char, index, integer, jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
+import { char, index, integer, jsonb, pgTable, primaryKey, text, timestamp, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 
 export const companies = pgTable('companies', {
   id: uuid('id').primaryKey(),
@@ -82,4 +82,17 @@ export const companyDocuments = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [index('company_documents_company_idx').on(t.companyId)],
+);
+
+// The latest outcome per check source for a company; a re-run replaces them all.
+export const companyChecks = pgTable(
+  'company_checks',
+  {
+    companyId: uuid('company_id').notNull().references(() => companies.id, { onDelete: 'cascade' }),
+    source: text('source').notNull(),
+    outcome: text('outcome').notNull(),
+    summary: text('summary').notNull(),
+    checkedAt: timestamp('checked_at', { withTimezone: true }).notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.companyId, t.source] })],
 );
