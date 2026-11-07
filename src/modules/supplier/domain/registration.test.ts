@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
 import { createCompany, type Company, type CompanyStatus } from './company';
-import { approveCompany, missingForSubmit, normalizeRegistration, rejectCompany, requestCompanyChanges, submitCompany } from './registration';
+import { approveCompany, diffRegistration, missingForSubmit, normalizeRegistration, rejectCompany, requestCompanyChanges, submitCompany } from './registration';
 
 const TR = {
   legalName: 'Aksu Denim Tekstil San. ve Tic. A.Ş.', taxId: '123 456 7890', taxOffice: 'Esenler', registryNumber: '123456',
@@ -65,3 +65,11 @@ it.each([
   [() => rejectCompany(at('submitted'), 'admin', '  '), 'review.note_invalid'],
   [() => approveCompany(at('submitted', 'admin'), 'admin'), 'review.own_company'],
 ])('refuses %#', (run, code) => expect(run).toThrow(expect.objectContaining({ code })));
+
+it('diffs registrations regardless of object key order', () => {
+  const after = normalizeRegistration('TR', 'c1', TR);
+  // Postgres jsonb hands keys back as number, scheme, validUntil.
+  const before = { ...after, certifications: [{ number: '21.HTR.12345', scheme: 'oeko_tex_100', validUntil: '2027-06-30' }] } as unknown as typeof after;
+  expect(diffRegistration(before, after)).toEqual({});
+  expect(diffRegistration(before, { ...after, taxOffice: 'Beşiktaş' })).toEqual({ taxOffice: ['Esenler', 'Beşiktaş'] });
+});

@@ -187,13 +187,17 @@ export function requestCompanyChanges(c: Company, adminUserId: string, note: str
   return transition(c, 'changes_requested', adminUserId, 'changes_requested', noteOf(note), now);
 }
 
+// JSON with object keys sorted, so jsonb's key order (by length) doesn't read as a change.
+const canonical = (v: unknown): string =>
+  JSON.stringify(v, (_, x) => (x && typeof x === 'object' && !Array.isArray(x) ? Object.fromEntries(Object.entries(x).sort(([a], [b]) => (a < b ? -1 : 1))) : x));
+
 export function diffRegistration(before: Registration | null, after: Registration): Record<string, [unknown, unknown]> {
   const out: Record<string, [unknown, unknown]> = {};
   for (const key of Object.keys(after) as (keyof Registration)[]) {
     if (key === 'companyId' || key === 'updatedAt') continue;
     const a = before?.[key] ?? null;
     const b = after[key];
-    if (JSON.stringify(a) !== JSON.stringify(b)) out[key] = [a, b];
+    if (canonical(a) !== canonical(b)) out[key] = [a, b];
   }
   return out;
 }
