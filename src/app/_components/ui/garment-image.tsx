@@ -8,7 +8,7 @@ export function GarmentImage({ src, alt, credit, className = '' }: { src: string
   const [failedSrc, setFailedSrc] = useState<string | null>(null);
   const showPhoto = src !== null && failedSrc !== src;
   return (
-    <div className={`relative overflow-hidden bg-paper ${className}`} role={showPhoto ? undefined : 'img'} aria-label={showPhoto ? undefined : alt}>
+    <div className={`relative overflow-hidden bg-surface ${className}`} role={showPhoto ? undefined : 'img'} aria-label={showPhoto ? undefined : alt}>
       {showPhoto ? (
         // Brand hosts are arbitrary and we hotlink without re-hosting, so next/image's optimizer can't be used.
         // eslint-disable-next-line @next/next/no-img-element
@@ -25,16 +25,16 @@ export function GarmentImage({ src, alt, credit, className = '' }: { src: string
           }}
         />
       ) : (
-        <Image src="/logos/xbul-mark-mono.svg" alt="" width={64} height={64} className="absolute top-1/2 left-1/2 w-1/4 max-w-16 -translate-x-1/2 -translate-y-1/2 opacity-20" />
+        <Image src="/logos/xbul-mark-mono.svg" alt="" width={64} height={64} className="absolute top-1/2 left-1/2 w-1/4 max-w-16 -translate-x-1/2 -translate-y-1/2 opacity-20 dark:invert" />
       )}
       {/* The credit names the photo's source, so the placeholder gets none. */}
       {/* Without an href it is plain text: a link here would nest an <a> inside a tile's link. */}
       {credit && showPhoto && (credit.href ? (
-        <a href={credit.href} target="_blank" rel="noopener noreferrer" className="absolute bottom-3 left-3 rounded-full bg-ink px-3 py-1 font-mono text-sm text-white">
+        <a href={credit.href} target="_blank" rel="noopener noreferrer" className="absolute bottom-3 left-3 rounded-control bg-black/60 px-2.5 py-1 font-mono text-sm text-white backdrop-blur-sm">
           Photo: {credit.host} ↗
         </a>
       ) : (
-        <span className="absolute bottom-2 left-2 max-w-[calc(100%-1rem)] truncate rounded-full bg-ink px-2.5 py-0.5 font-mono text-xs text-white">Photo: {credit.host}</span>
+        <span className="absolute bottom-2 left-2 max-w-[calc(100%-1rem)] truncate rounded-control bg-black/60 px-2 py-0.5 font-mono text-xs text-white backdrop-blur-sm">Photo: {credit.host}</span>
       ))}
     </div>
   );

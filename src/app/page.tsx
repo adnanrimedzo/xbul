@@ -1,4 +1,4 @@
-import Image from 'next/image';
+import type { CSSProperties } from 'react';
 import { LinkButton } from '@/app/_components/ui/button';
 import { ClaimTag } from '@/app/_components/ui/claim-tag';
 import { GarmentGrid } from '@/app/_components/ui/garment-grid';
@@ -25,78 +25,98 @@ export default async function Home() {
 
   return (
     <>
-      <section data-hero className="on-ink relative mx-3 -mt-px overflow-hidden rounded-b-frame bg-ink text-white sm:mx-4">
-        <div aria-hidden="true">
-          <div className="dot-field" />
-          <div className="loupe max-[1279px]:hidden">
-            <div className="loupe-lens">
-              <div className="loupe-dots" />
-            </div>
-            <Image src="/logos/xbul-mark-white.svg" alt="" width={240} height={240} loading="eager" className="absolute inset-0 size-full" />
-          </div>
-        </div>
-        <div className="relative mx-auto flex max-w-[760px] flex-col items-center px-5 pt-16 pb-24 text-center sm:pt-24 sm:pb-32">
-          <h1 className="text-[clamp(2.75rem,8vw,5rem)] leading-none font-extrabold tracking-[-0.02em]">Who made this?</h1>
-          <p className="mt-4 text-lg">Find the supplier behind any product.</p>
-          <FindGarmentForm />
-        </div>
+      <section className="flex flex-col items-center px-5 pt-20 text-center sm:pt-28">
+        <h1 className="font-display text-[clamp(2.75rem,8vw,5.5rem)] leading-[0.95] font-medium tracking-[-0.06em]">Who made this?</h1>
+        <p className="mt-5 max-w-[40ch] text-lg text-muted">Find the supplier behind any product.</p>
+        <FindGarmentForm />
+        <Mosaic />
       </section>
 
-      <div className="page flex flex-col gap-16 pt-16">
-        <section aria-labelledby="recent-title">
-          <h2 id="recent-title" className="page-title mb-8">
-            Recently tagged products
-          </h2>
-          {tiles.length > 0 ? (
-            <GarmentGrid>
-              {tiles.map((t) => (
-                <GarmentTile key={t.productId} tile={t} href={`/p/${t.productId}`} tag={tileTag(t)} />
-              ))}
-            </GarmentGrid>
-          ) : (
-            <p className="text-muted">No products tagged yet.</p>
-          )}
-        </section>
-
-        <section aria-labelledby="how-title" className="panel">
-          <h2 id="how-title" className="page-title px-2 pt-2 pb-6 sm:px-6 sm:pt-4">
-            How it works
-          </h2>
-          <ol className="grid gap-3 md:grid-cols-3">
-            {STEPS.map(([title, body], i) => (
-              <li key={title} className="card flex flex-col gap-10">
-                <span className="font-mono text-sm font-medium text-accent">0{i + 1}</span>
-                <div>
-                  <h3 className="section-title">{title}</h3>
-                  <p className="mt-2 text-muted">{body}</p>
-                </div>
-              </li>
+      <section aria-labelledby="recent-title" className="band px-5 py-16 sm:px-8 sm:py-20">
+        <SectionHead eyebrow="Latest" id="recent-title" title="Recently tagged products" />
+        {tiles.length > 0 ? (
+          <GarmentGrid>
+            {tiles.map((t) => (
+              <GarmentTile key={t.productId} tile={t} href={`/p/${t.productId}`} tag={tileTag(t)} />
             ))}
-          </ol>
-        </section>
+          </GarmentGrid>
+        ) : (
+          <p className="text-center text-muted">No products tagged yet.</p>
+        )}
+      </section>
 
-        <section id="for-suppliers" className="grid scroll-mt-6 gap-3 lg:grid-cols-2">
-          <div className="on-ink flex flex-col items-start justify-between gap-10 rounded-panel bg-ink p-8 text-white sm:p-10">
-            <div>
-              <h2 className="page-title">Make things? Show the work you’ve already done.</h2>
-              <p className="mt-4 text-lg">Create a page, tag the products you’ve made or can make, and send evidence to earn a Verified badge for a product.</p>
-            </div>
-            <LinkButton variant="onDark" href={viewer?.company ? '/add' : '/sign-in'}>
-              {viewer?.company ? 'Add products' : 'Create your page'}
-            </LinkButton>
-          </div>
-          <div className="panel flex flex-col justify-between gap-10 p-8! sm:p-10!">
-            <VerifiedExplanation />
-            <div>
-              <h2 className="section-title">What the tags mean</h2>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <ClaimTag kind="original" />
-                <ClaimTag kind="equivalent" />
+      <section aria-labelledby="how-title" className="band pt-16 sm:pt-20">
+        <SectionHead eyebrow="Process" id="how-title" title="How it works" />
+        <ol className="grid border-t border-line md:grid-cols-3">
+          {STEPS.map(([title, body], i) => (
+            <li key={title} className="flex flex-col gap-10 border-line px-5 py-8 not-first:border-t sm:px-8 md:not-first:border-t-0 md:not-first:border-l">
+              <span className="font-mono text-sm text-muted">0{i + 1}</span>
+              <div>
+                <h3 className="section-title">{title}</h3>
+                <p className="mt-2 text-muted">{body}</p>
               </div>
+            </li>
+          ))}
+        </ol>
+      </section>
+
+      <section id="for-suppliers" className="band grid scroll-mt-6 lg:grid-cols-2">
+        <div className="flex flex-col items-start justify-between gap-10 px-5 py-12 sm:px-8 sm:py-16">
+          <div>
+            <p className="eyebrow">For makers</p>
+            <h2 className="page-title mt-3">Make things? Show the work you’ve already done.</h2>
+            <p className="mt-4 text-lg text-muted">Create a page, tag the products you’ve made or can make, and send evidence to earn a Verified badge for a product.</p>
+          </div>
+          <LinkButton variant="cta" href={viewer?.company ? '/add' : '/sign-in'}>
+            {viewer?.company ? 'Add products' : 'Create your page'}
+          </LinkButton>
+        </div>
+        <div className="flex flex-col justify-between gap-10 border-t border-line bg-surface px-5 py-12 sm:px-8 sm:py-16 lg:border-t-0 lg:border-l">
+          <VerifiedExplanation />
+          <div>
+            <h2 className="section-title">What the tags mean</h2>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <ClaimTag kind="original" />
+              <ClaimTag kind="equivalent" />
             </div>
           </div>
-        </section>
-      </div>
+        </div>
+      </section>
     </>
+  );
+}
+
+function SectionHead({ eyebrow, id, title }: { eyebrow: string; id: string; title: string }) {
+  return (
+    <div className="mb-10 flex flex-col items-center px-5 text-center sm:mb-12">
+      <p className="eyebrow">{eyebrow}</p>
+      <h2 id={id} className="page-title mt-3">
+        {title}
+      </h2>
+    </div>
+  );
+}
+
+// The hero's art: grey blocks thickening towards the bottom edge, like a product coming into focus, with one orange block.
+// Fixed arithmetic rather than Math.random, so the server and the browser draw the same field.
+const COLS = 24;
+const ROWS = 5;
+const CELLS = Array.from({ length: COLS * ROWS }, (_, i) => {
+  const row = Math.floor(i / COLS);
+  const on = (i * 37 + row * 11) % 9 < row + 1;
+  return { on, strong: on && (i * 13) % 5 === 0, accent: i === COLS * 3 + 17, delay: (i * 7) % 12 };
+});
+
+function Mosaic() {
+  return (
+    <div aria-hidden="true" className="mosaic mt-20 w-full sm:mt-24" style={{ '--cols': COLS } as CSSProperties}>
+      {CELLS.map((c, i) => (
+        <span
+          key={i}
+          className={c.accent ? 'bg-accent' : c.strong ? 'bg-line' : c.on ? 'bg-line/50' : ''}
+          style={{ '--d': c.on ? c.delay : 0, animationName: c.on ? undefined : 'none' } as CSSProperties}
+        />
+      ))}
+    </div>
   );
 }

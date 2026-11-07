@@ -25,7 +25,7 @@ function VerifyStep({ garment }: { garment: CompanyPageView['garments'][number] 
   if (garment.kind !== 'original' || garment.claimStatus !== 'declared') return null;
   if (garment.reviewStatus === 'pending') return <span className="inline-flex min-h-12 items-center font-semibold">Under review</span>;
   return (
-    <Link href={`/verify/${garment.claimId}`} className="inline-flex min-h-12 items-center rounded-full border border-ink px-5 font-semibold transition-colors duration-150 hover:bg-ink hover:text-white">
+    <Link href={`/verify/${garment.claimId}`} className="inline-flex min-h-12 items-center rounded-control border border-line px-5 font-semibold transition-colors duration-150 hover:bg-surface">
       {garment.reviewStatus === 'rejected' ? 'Rejected: see why' : 'Get verified'}
     </Link>
   );
@@ -75,7 +75,7 @@ export default async function MillPage({ params }: PageProps<'/m/[company]'>) {
           </h2>
           <div className="flex flex-wrap gap-2">
             {articles.map((a) => (
-              <Link key={a.slug} href={`/m/${company.slug}/a/${a.slug}`} className="rounded-full hover:underline">
+              <Link key={a.slug} href={`/m/${company.slug}/a/${a.slug}`} className="rounded-control hover:underline">
                 <Chip>
                   {a.code} · {a.garmentCount} {a.garmentCount === 1 ? 'product' : 'products'}
                 </Chip>

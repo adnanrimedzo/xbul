@@ -19,7 +19,7 @@ export function OnboardingForm({ defaultEmail }: { defaultEmail: string }) {
         <legend className="mb-1 font-semibold">What does your company make?</legend>
         {KINDS.map(([value, text]) => (
           <label key={value} className="flex min-h-11 items-center gap-3">
-            <input type="radio" name="kind" value={value} required defaultChecked={values?.kind === value} className="size-5 accent-ink" />
+            <input type="radio" name="kind" value={value} required defaultChecked={values?.kind === value} className="size-5 accent-fg" />
             {text}
           </label>
         ))}

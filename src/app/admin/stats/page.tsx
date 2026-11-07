@@ -22,7 +22,7 @@ export default async function AdminStatsPage() {
         {rows.map((row) => (
           <li key={row.key} className="card flex flex-col gap-3">
             <h2 className="font-semibold">{row.label}</h2>
-            <span data-testid={`stat-${row.key}`} className="text-5xl leading-none font-extrabold">
+            <span data-testid={`stat-${row.key}`} className="font-display text-5xl leading-none font-medium tracking-[-0.04em]">
               {row.value}
             </span>
             <p className="text-sm text-muted">{row.note}</p>
