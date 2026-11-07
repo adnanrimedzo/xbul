@@ -6,6 +6,10 @@ export default defineConfig({
   testDir: 'e2e',
   workers: 1,
   fullyParallel: false,
+  // `next dev` compiles each route the first time a test visits it, which takes seconds on a 2-core CI runner, so the
+  // first tests to reach a page need far longer there than anywhere else. Locally the defaults stay, so a real hang
+  // still fails fast.
+  ...(process.env.CI && { timeout: 90_000, expect: { timeout: 20_000 } }),
   use: { baseURL, trace: 'retain-on-failure' },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: [
