@@ -68,7 +68,7 @@ async function setup(overrides: { findByCanonicalUrl?: (url: string) => Promise<
 }
 
 // What the form submits for a row the supplier left alone: the code and role the preview filled in, or a blank code and "We made this".
-const untouched = (row: Extract<PreviewRow, { state: 'ready' }>) => ({ productId: row.productId, articleCode: row.existing?.articleCode ?? '', kind: row.existing?.kind ?? 'original' });
+const untouched = (row: Extract<PreviewRow, { state: 'ready' }>) => ({ productId: row.productId, articleCode: row.existing?.articleCode ?? '', kind: row.existing?.kind ?? 'original', type: '' });
 const preview = (...lines: string[]) => previewGarmentsAction(lines.join('\n'));
 const rowsOf = async (...lines: string[]) => {
   const result = await preview(...lines);
@@ -80,7 +80,7 @@ it('previews a fetched garment with the brand, name and composition the page dec
   const { products } = await setup();
   const [row] = await rowsOf('https://brand.test/denim');
   const saved = await products.findByCanonicalUrl('https://brand.test/denim');
-  expect(row).toEqual({ url: 'https://brand.test/denim', state: 'ready', productId: saved!.id, brand: 'GUESS', name: 'Washed Denim Jacket', imageUrl: null, composition: '100% Cotton' });
+  expect(row).toEqual({ url: 'https://brand.test/denim', state: 'ready', productId: saved!.id, brand: 'GUESS', name: 'Washed Denim Jacket', imageUrl: null, composition: '100% Cotton', type: 'jacket', typeLocked: false });
 });
 
 it('gives one row to spellings of the same link, and fetches it once', async () => {
@@ -149,7 +149,7 @@ it('saves a link the mill described by hand, and says which field is too long', 
   const saved = await products.findByCanonicalUrl('https://brand.test/blocked');
   expect(result).toEqual({
     ok: true,
-    data: { url: 'https://brand.test/blocked', state: 'ready', productId: saved!.id, brand: 'ZARA', name: 'Black Denim Overshirt', imageUrl: null, composition: null },
+    data: { url: 'https://brand.test/blocked', state: 'ready', productId: saved!.id, brand: 'ZARA', name: 'Black Denim Overshirt', imageUrl: null, composition: null, type: 'shirt', typeLocked: false },
   });
 
   expect(await addManualProductAction({ url: 'https://brand.test/x', brand: 'B'.repeat(61), name: 'Jacket' })).toEqual({ ok: false, error: 'Brand must be 1–60 characters.' });
@@ -208,8 +208,8 @@ it('publishes the ready rows under the mill from the session, then goes to its p
 
   await expect(
     publishGarmentsAction([
-      { productId: coded!, articleCode: ' 60777/2 ', kind: 'equivalent' },
-      { productId: plain!, articleCode: '', kind: 'original' },
+      { productId: coded!, articleCode: ' 60777/2 ', kind: 'equivalent', type: '' },
+      { productId: plain!, articleCode: '', kind: 'original', type: '' },
     ]),
   ).rejects.toMatchObject({ digest: expect.stringContaining(`/m/${DEMO.companySlugs.indigo}`) });
 
@@ -224,7 +224,7 @@ it('deletes the files behind an original when it is republished as another kind,
     companyId: DEMO.companies.indigo, claimId: (await claims.findByProductAndCompany(DEMO.products.liujo, DEMO.companies.indigo))!.id, fileName: 'invoice.pdf', bytes: new TextEncoder().encode('%PDF-1.7 hello'),
   });
   const republish = (kind: 'original' | 'equivalent') =>
-    expect(publishGarmentsAction([{ productId: DEMO.products.liujo, articleCode: '60409/1', kind }])).rejects.toMatchObject({ digest: expect.stringContaining('/m/') });
+    expect(publishGarmentsAction([{ productId: DEMO.products.liujo, articleCode: '60409/1', kind, type: '' }])).rejects.toMatchObject({ digest: expect.stringContaining('/m/') });
 
   await republish('original');
   expect(await store.get(file.storageKey)).not.toBeNull();
@@ -235,16 +235,16 @@ it('deletes the files behind an original when it is republished as another kind,
 it("files a garment maker's claims under the garment scope", async () => {
   const { claims } = await setup();
   viewer.company = { id: DEMO.companies.anka, slug: DEMO.companySlugs.anka, kind: 'garment_maker' };
-  await expect(publishGarmentsAction([{ productId: DEMO.products.armani, articleCode: '', kind: 'original' }]))
+  await expect(publishGarmentsAction([{ productId: DEMO.products.armani, articleCode: '', kind: 'original', type: '' }]))
     .rejects.toMatchObject({ digest: expect.stringContaining(`/m/${DEMO.companySlugs.anka}`) });
   expect(await claims.findByProductAndCompany(DEMO.products.armani, DEMO.companies.anka)).toMatchObject({ kind: 'original', scope: 'garment' });
 });
 
 it.each([
   ['no items', []],
-  ['a malformed product id', [{ productId: 'nope', articleCode: '', kind: 'original' }]],
+  ['a malformed product id', [{ productId: 'nope', articleCode: '', kind: 'original', type: '' }]],
   ['an unknown kind', [{ productId: DEMO.products.guess, articleCode: '', kind: 'order' }]],
-  ['an article code over 40 characters', [{ productId: DEMO.products.guess, articleCode: 'A'.repeat(41), kind: 'original' }]],
+  ['an article code over 40 characters', [{ productId: DEMO.products.guess, articleCode: 'A'.repeat(41), kind: 'original', type: '' }]],
 ])('refuses %s without saving', async (_name, items) => {
   const { claims } = await setup();
   const before = await claims.findByProductAndCompany(DEMO.products.guess, DEMO.companies.indigo);
@@ -260,10 +260,30 @@ it('lets nobody but a signed-in mill fetch, add or publish', async () => {
   viewer.refuse = Object.assign(new Error('NEXT_REDIRECT'), { digest: 'NEXT_REDIRECT;replace;/sign-in;307;' });
   await expect(preview('https://brand.test/fresh')).rejects.toBe(viewer.refuse);
   await expect(addManualProductAction({ url: 'https://brand.test/by-hand', brand: 'ZARA', name: 'Jacket' })).rejects.toBe(viewer.refuse);
-  await expect(publishGarmentsAction([{ productId: productId!, articleCode: '60777/2', kind: 'original' }])).rejects.toBe(viewer.refuse);
+  await expect(publishGarmentsAction([{ productId: productId!, articleCode: '60777/2', kind: 'original', type: '' }])).rejects.toBe(viewer.refuse);
 
   expect(fetched).toEqual([]);
   expect(await products.findByCanonicalUrl('https://brand.test/fresh')).toBeNull();
   expect(await products.findByCanonicalUrl('https://brand.test/by-hand')).toBeNull();
   expect(await claims.findByProductAndCompany(productId!, DEMO.companies.indigo)).toBeNull();
+});
+
+it('previews the guessed product type, and stores the one the supplier publishes only when given', async () => {
+  const { products } = await setup();
+  const added = await addManualProductAction({ url: 'https://brand.test/skinny', brand: 'ZARA', name: 'Skinny Jeans' });
+  const row = added.ok && added.data.state === 'ready' ? added.data : undefined;
+  expect(row).toMatchObject({ type: 'jeans', typeLocked: false });
+  await expect(publishGarmentsAction([{ ...untouched(row!), type: 'jeans' }])).rejects.toMatchObject({ digest: expect.stringContaining('/m/') });
+  expect((await products.findById(row!.productId))?.type).toBe('jeans');
+
+  const [other] = (await rowsOf('https://brand.test/other')).flatMap((r) => (r.state === 'ready' ? [r] : []));
+  await expect(publishGarmentsAction([untouched(other!)])).rejects.toMatchObject({ digest: expect.stringContaining('/m/') });
+  expect((await products.findById(other!.productId))?.type).toBeNull(); // the demo jacket is guessed, but an empty choice stores nothing
+});
+
+it('refuses an unknown product type before publishing any claim', async () => {
+  const { claims } = await setup();
+  const [row] = (await rowsOf('https://brand.test/denim')).flatMap((r) => (r.state === 'ready' ? [r] : []));
+  expect(await publishGarmentsAction([{ ...untouched(row!), type: 'wizard' }])).toEqual({ ok: false, error: 'Choose a product type from the list.' });
+  expect(await claims.findByProductAndCompany(row!.productId, DEMO.companies.indigo)).toBeNull();
 });

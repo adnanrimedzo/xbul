@@ -1,5 +1,6 @@
 import type { ClaimKind, ClaimScope, ClaimStatus, ReviewStatus } from '@/modules/claims';
-import type { ArticleSpecs, CompanyContact, CompanyKind } from '@/modules/supplier';
+import type { FabricSpec, PartId, ProductTypeId } from '@/shared/domain/taxonomy';
+import type { ArticleSpecs, CompanyContact, CompanyKind, CompanyStatus } from '@/modules/supplier';
 
 export type CompanyRef = { id: string; slug: string; name: string; kind: CompanyKind; city: string; country: string; contact: CompanyContact };
 
@@ -10,17 +11,16 @@ export type ClaimView = {
   note: string | null;
   createdAt: Date;
   company: CompanyRef;
-  article: { id: string; slug: string; code: string; specs: ArticleSpecs } | null;
+  article: { id: string; slug: string; code: string; specs: ArticleSpecs; fabric: FabricSpec | null } | null;
 };
 
 // Each list is ranked: the verified original first, then declared originals, then equivalents (see rankClaims).
 export type ClaimGroup = { originals: ClaimView[]; equivalents: ClaimView[] };
 
-// Who made the fabric and who made the garment are separate lists, each with its own verified original.
+// One list per part that has claims, in PARTS order, each with its own verified original. `full` is true for the finished product.
 export type ProductPageView = {
-  product: { id: string; brand: string; name: string; imageUrl: string | null; composition: string | null; sourceUrl: string };
-  fabric: ClaimGroup;
-  garment: ClaimGroup;
+  product: { id: string; brand: string; name: string; imageUrl: string | null; composition: string | null; sourceUrl: string; type: ProductTypeId | null };
+  parts: (ClaimGroup & { part: PartId; full: boolean })[];
 };
 
 export type GarmentTile = {
@@ -35,13 +35,13 @@ export type GarmentTile = {
 };
 
 export type ArticlePageView = {
-  company: CompanyRef & { ownerUserId: string };
-  article: { id: string; slug: string; code: string; specs: ArticleSpecs };
+  company: CompanyRef & { ownerUserId: string; status: CompanyStatus };
+  article: { id: string; slug: string; code: string; specs: ArticleSpecs; fabric: FabricSpec | null };
   garments: GarmentTile[];
 };
 
 export type CompanyPageView = {
-  company: CompanyRef & { ownerUserId: string };
+  company: CompanyRef & { ownerUserId: string; status: CompanyStatus };
   articles: { slug: string; code: string; garmentCount: number }[];
   // The claimId is this mill's claim on the garment, with where its claim and its review stand.
   garments: (GarmentTile & { claimId: string; claimStatus: ClaimStatus; reviewStatus: ReviewStatus })[];
@@ -57,4 +57,5 @@ export type PendingReview = {
 };
 
 // How the platform stands against the launch targets of 20-30 suppliers, 200-300 products and 10-20 searching customers.
-export type PlatformStats = { suppliers: number; taggedProducts: number; searches: number; matchedSearches: number; distinctSearchers: number };
+// `suppliers` counts approved companies; `pendingSuppliers` those waiting for review.
+export type PlatformStats = { suppliers: number; pendingSuppliers: number; taggedProducts: number; searches: number; matchedSearches: number; distinctSearchers: number };

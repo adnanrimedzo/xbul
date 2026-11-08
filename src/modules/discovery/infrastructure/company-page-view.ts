@@ -2,7 +2,7 @@ import { asc, count, desc, eq } from 'drizzle-orm';
 import type { Db } from '@/shared/db/client';
 import { products } from '@/modules/catalog';
 import { claims, type ClaimStatus, type ReviewStatus } from '@/modules/claims';
-import { articles, companies, type CompanyKind } from '@/modules/supplier';
+import { articles, companies, type CompanyKind, type CompanyStatus } from '@/modules/supplier';
 import { tileColumns, toTile } from './garment-tiles';
 import type { CompanyPageView } from './types';
 
@@ -35,6 +35,7 @@ export async function getCompanyPageView(db: Db, companySlug: string): Promise<C
       country: c.country,
       contact: { email: c.contactEmail, phone: c.contactPhone, website: c.website },
       ownerUserId: c.ownerUserId,
+      status: c.status as CompanyStatus,
     },
     articles: articleRows,
     garments: garments.map(({ kind, claimId, claimStatus, reviewStatus, ...tile }) => ({

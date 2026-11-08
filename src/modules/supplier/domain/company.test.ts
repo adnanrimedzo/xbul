@@ -27,7 +27,10 @@ it('rejects an unknown kind', () =>
   expect(() => createCompany({ name: 'Taypa', city: 'Istanbul', country: 'TR', ownerUserId: 'u1', contact: { email: 'a@b.test' }, kind: 'wizard' as never }))
     .toThrow(expect.objectContaining({ code: 'company.kind_invalid' })));
 
-it.each([['fabric_mill', 'fabric'], ['garment_maker', 'garment']] as const)('%s claims %s', (k, scope) => expect(claimScopeOf(k)).toBe(scope));
+it.each([
+  ['garment_maker', 'garment'], ['fabric_mill', 'fabric'], ['yarn_spinner', 'yarn'], ['trims_maker', 'trims'],
+  ['sewing_contractor', 'sewing'], ['laundry', 'washing'], ['print_house', 'printing'],
+] as const)('%s claims %s', (k, scope) => expect(claimScopeOf(k)).toBe(scope));
 
 it('needs at least one way to reach the supplier', () => {
   expect(() => normalizeContact({})).toThrow(expect.objectContaining({ code: 'company.contact_required' }));

@@ -1,10 +1,11 @@
 import { DomainError } from '@/shared/domain/errors';
 import { newId } from '@/shared/domain/ids';
+import type { PartId } from '@/shared/domain/taxonomy';
 
 export type ClaimKind = 'original' | 'equivalent';
 export type ClaimStatus = 'declared' | 'verified';
-// Which side of the product the claiming company made: the fabric or the garment.
-export type ClaimScope = 'fabric' | 'garment';
+// Which part of the product the claiming company made. `garment` means the finished product (full).
+export type ClaimScope = PartId;
 // Where an original's proof stands: not sent, waiting for an admin, or sent back with a note.
 export type ReviewStatus = 'none' | 'pending' | 'rejected';
 

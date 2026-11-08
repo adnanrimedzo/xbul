@@ -3,7 +3,7 @@ import type { Db } from '@/shared/db/client';
 import { createProduct, createProductRepository } from '@/modules/catalog';
 import { createClaimRepository, declareClaim, verifyClaim, type ClaimKind } from '@/modules/claims';
 import { user } from '@/modules/identity';
-import { claimScopeOf, createArticle, createCompany, createSupplierRepositories, companies, withSpecs } from '@/modules/supplier';
+import { claimScopeOf, createArticle, createCompany, createSupplierRepositories, companies, normalizeRegistration, withSpecs } from '@/modules/supplier';
 import { DEMO } from './demo-ids';
 
 const BASE = new Date('2026-01-01T09:00:00Z');
@@ -14,7 +14,7 @@ export async function seedDemo(db: Db): Promise<void> {
   const [existing] = await db.select({ id: companies.id }).from(companies).where(eq(companies.id, DEMO.companies.indigo)).limit(1);
   if (existing) return;
 
-  const { companies: companyRepo, articles } = createSupplierRepositories(db);
+  const { companies: companyRepo, articles, registrations } = createSupplierRepositories(db);
   const productRepo = createProductRepository(db);
   const claimRepo = createClaimRepository(db);
 
@@ -23,6 +23,8 @@ export async function seedDemo(db: Db): Promise<void> {
     { key: 'denizli', name: 'Denizli Indigo' },
     { key: 'bursa', name: 'Bursa Weave' },
     { key: 'maker', name: 'Anka Garments' },
+    { key: 'pending', name: 'Ege Örme' },
+    { key: 'pending2', name: 'Marmara Denim' },
   ] as const;
   await db.insert(user).values(
     people.map((p) => ({ id: DEMO.users[p.key], name: p.name, email: DEMO.emails[p.key], emailVerified: true, createdAt: BASE, updatedAt: BASE })),
@@ -38,7 +40,35 @@ export async function seedDemo(db: Db): Promise<void> {
     const ownerUserId = DEMO.users[m.owner];
     const contact = { email: `sales@${DEMO.companySlugs[m.key]}.example`, website: m.website };
     const company = createCompany({ name: m.name, city: m.city, country: 'TR', ownerUserId, contact, kind: m.kind }, BASE);
-    await companyRepo.save({ ...company, id: DEMO.companies[m.key] });
+    await companyRepo.save({ ...company, id: DEMO.companies[m.key], status: 'approved' });
+  }
+
+  // Two complete Turkish registrations waiting in the admin queue, Ege first. No documents: they are uploaded files.
+  // One owner each, since a user owns at most one company.
+  const submitted = [
+    { key: 'ege', owner: 'pending', name: 'Ege Örme', city: 'Izmir', legalName: 'Ege Örme Tekstil San. ve Tic. A.Ş.', taxId: '4840847211', taxOffice: 'Kordon', nace: '13.91',
+      registeredAddress: 'Kemalpaşa Cd. 4, Bornova, İzmir', facilityAddress: 'Kemalpaşa OSB 12. Sk. 3, Kemalpaşa, İzmir', capacity: '120,000 m' },
+    { key: 'marmara', owner: 'pending2', name: 'Marmara Denim', city: 'Bursa', legalName: 'Marmara Denim Tekstil A.Ş.', taxId: '6180401230', taxOffice: 'Uludağ', nace: '13.20',
+      registeredAddress: 'Ankara Yolu Cd. 210, Yıldırım, Bursa', facilityAddress: 'Demirtaş OSB 7. Cd. 9, Osmangazi, Bursa', capacity: '300,000 m' },
+  ] as const;
+  for (const [i, m] of submitted.entries()) {
+    const id = DEMO.companies[m.key];
+    const contact = { email: `sales@${DEMO.companySlugs[m.key]}.example`, website: `https://${DEMO.companySlugs[m.key]}.example` };
+    const company = createCompany({ name: m.name, city: m.city, country: 'TR', ownerUserId: DEMO.users[m.owner], contact, kind: 'fabric_mill' }, at(10 + i));
+    await companyRepo.save({ ...company, id, status: 'submitted' });
+    await registrations.save(normalizeRegistration('TR', id, {
+      legalName: m.legalName,
+      taxId: m.taxId,
+      taxOffice: m.taxOffice,
+      registryNumber: `${12345 + i}`,
+      mersisNumber: `0${m.taxId}00015`,
+      registeredAddress: m.registeredAddress,
+      facilityAddress: m.facilityAddress,
+      naceCodes: [m.nace],
+      employees: '50-249',
+      monthlyCapacity: m.capacity,
+      certifications: [{ scheme: 'oeko_tex_100', number: `21.HTR.${40000 + i}`, validUntil: '2027-06-30' }],
+    }, at(10 + i)));
   }
 
   const a60219 = withSpecs(createArticle({ companyId: DEMO.companies.indigo, code: '60219/1' }, BASE), {

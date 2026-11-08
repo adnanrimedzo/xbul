@@ -7,7 +7,7 @@ const SECRET = 's'.repeat(32);
 const lookups: string[] = [];
 const recorded: { matched: boolean; visitorHash: string | null }[] = [];
 let stored: Product | null = null;
-let claimed = true; // whether any mill has a claim on the stored product
+let claimed = true; // whether any approved mill has a claim on the stored product
 let logFails = false;
 let requestHeaders = new Headers();
 beforeEach(() => {
@@ -25,6 +25,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 vi.mock('next/headers', () => ({ headers: async () => requestHeaders }));
+vi.mock('@/modules/discovery', () => ({ hasPublicClaims: async (_db: unknown, productId: string) => claimed && productId === stored?.id }));
 vi.mock('@/server/container', () => ({
   getContainer: async () => ({
     products: {
@@ -33,7 +34,7 @@ vi.mock('@/server/container', () => ({
         return stored;
       },
     },
-    claims: { existsForProduct: async (productId: string) => claimed && productId === stored?.id },
+    db: {},
     searches: {
       record: async (input: { matched: boolean; visitorHash: string | null }) => {
         if (logFails) throw new Error('database down');

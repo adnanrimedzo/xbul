@@ -1,16 +1,28 @@
 import { DomainError } from '@/shared/domain/errors';
 import { newId } from '@/shared/domain/ids';
 import { slugify } from '@/shared/domain/slug';
+import type { PartId } from '@/shared/domain/taxonomy';
+import type { CompanyStatus } from './registration';
+
+export type { CompanyStatus };
 
 export type CompanyContact = Readonly<{ email: string | null; phone: string | null; website: string | null }>;
 export type ContactInput = { email?: string | null; phone?: string | null; website?: string | null };
 
-export type CompanyKind = 'fabric_mill' | 'garment_maker';
+export const COMPANY_KINDS = ['garment_maker', 'fabric_mill', 'yarn_spinner', 'trims_maker', 'sewing_contractor', 'laundry', 'print_house'] as const;
+export type CompanyKind = (typeof COMPANY_KINDS)[number];
 
-// A company is either a fabric mill or a garment maker, and its claims count for that side only.
-// Plain strings, not the claims module's type: a domain file may not import another module.
-const SCOPE_OF: Record<CompanyKind, 'fabric' | 'garment'> = { fabric_mill: 'fabric', garment_maker: 'garment' };
-export const claimScopeOf = (kind: CompanyKind): 'fabric' | 'garment' => SCOPE_OF[kind];
+// Each kind of company makes one part of a product, and its claims count for that part only.
+const SCOPE_OF: Record<CompanyKind, PartId> = {
+  garment_maker: 'garment',
+  fabric_mill: 'fabric',
+  yarn_spinner: 'yarn',
+  trims_maker: 'trims',
+  sewing_contractor: 'sewing',
+  laundry: 'washing',
+  print_house: 'printing',
+};
+export const claimScopeOf = (kind: CompanyKind): PartId => SCOPE_OF[kind];
 
 export type Company = Readonly<{
   id: string;
@@ -21,6 +33,7 @@ export type Company = Readonly<{
   country: string;
   ownerUserId: string;
   contact: CompanyContact;
+  status: CompanyStatus;
   createdAt: Date;
 }>;
 
@@ -59,5 +72,5 @@ export function createCompany(
   if (!/^[A-Z]{2}$/.test(country)) throw new DomainError('company.country_invalid');
   if (!Object.hasOwn(SCOPE_OF, input.kind)) throw new DomainError('company.kind_invalid');
   const contact = normalizeContact(input.contact);
-  return Object.freeze({ id: newId(), slug, name, kind: input.kind, city, country, ownerUserId: input.ownerUserId, contact, createdAt: now });
+  return Object.freeze({ id: newId(), slug, name, kind: input.kind, city, country, ownerUserId: input.ownerUserId, contact, status: 'draft', createdAt: now });
 }

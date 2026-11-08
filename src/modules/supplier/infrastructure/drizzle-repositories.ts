@@ -1,9 +1,14 @@
-import { and, eq, type SQL } from 'drizzle-orm';
+import { and, asc, eq, inArray, ne, type SQL } from 'drizzle-orm';
 import type { Db } from '@/shared/db/client';
 import type { Article } from '../domain/article';
-import type { Company, CompanyKind } from '../domain/company';
-import type { ArticleRepository, CompanyRepository } from '../domain/repositories';
-import { articles, companies } from './schema';
+import type { Company, CompanyKind, CompanyStatus } from '../domain/company';
+import type { Registration, ReviewAction, ReviewEvent } from '../domain/registration';
+import type { CompanyDocument } from '../domain/company-document';
+import { CHECK_ORDER, type CheckResult, type CheckSource, type CheckOutcome } from '../domain/checks';
+import type { ArticleRepository, CheckRepository, CompanyDocumentRepository, CompanyRepository, RegistrationRepository, ReviewEventRepository } from '../domain/repositories';
+import { articles, companies, companyChecks, companyDocuments, companyRegistrations, companyReviewEvents } from './schema';
+
+const toDocument = (r: typeof companyDocuments.$inferSelect): CompanyDocument => Object.freeze(r as CompanyDocument);
 
 const toCompany = (r: typeof companies.$inferSelect): Company =>
   Object.freeze({
@@ -15,6 +20,7 @@ const toCompany = (r: typeof companies.$inferSelect): Company =>
     country: r.country,
     ownerUserId: r.ownerUserId,
     contact: Object.freeze({ email: r.contactEmail, phone: r.contactPhone, website: r.website }),
+    status: r.status as CompanyStatus,
     createdAt: r.createdAt,
   });
 
@@ -25,10 +31,18 @@ const toArticle = (r: typeof articles.$inferSelect): Article =>
     code: r.code,
     slug: r.slug,
     specs: Object.freeze({ weight: r.weight, composition: r.composition, finish: r.finish, moq: r.moq, leadTimeWeeks: r.leadTimeWeeks }),
+    fabric: r.fabric,
     createdAt: r.createdAt,
   });
 
-export function createSupplierRepositories(db: Db): { companies: CompanyRepository; articles: ArticleRepository } {
+export function createSupplierRepositories(db: Db): {
+  companies: CompanyRepository;
+  articles: ArticleRepository;
+  registrations: RegistrationRepository;
+  reviewEvents: ReviewEventRepository;
+  documents: CompanyDocumentRepository;
+  checks: CheckRepository;
+} {
   const companyBy = async (where: SQL) => {
     const [row] = await db.select().from(companies).where(where).limit(1);
     return row ? toCompany(row) : null;
@@ -62,6 +76,72 @@ export function createSupplierRepositories(db: Db): { companies: CompanyReposito
       async slugExists(companyId, slug) {
         const rows = await db.select({ id: articles.id }).from(articles).where(and(eq(articles.companyId, companyId), eq(articles.slug, slug))).limit(1);
         return rows.length > 0;
+      },
+    },
+    registrations: {
+      async find(companyId) {
+        const [r] = await db.select().from(companyRegistrations).where(eq(companyRegistrations.companyId, companyId)).limit(1);
+        return r ? (Object.freeze(r) as Registration) : null;
+      },
+      async save(r) {
+        const row = { ...r, naceCodes: [...r.naceCodes], certifications: [...r.certifications] };
+        await db.insert(companyRegistrations).values(row).onConflictDoUpdate({ target: companyRegistrations.companyId, set: row });
+      },
+      async taxIdTaken(country, taxId, exceptCompanyId) {
+        const rows = await db
+          .select({ id: companies.id })
+          .from(companyRegistrations)
+          .innerJoin(companies, eq(companies.id, companyRegistrations.companyId))
+          .where(and(
+            eq(companies.country, country),
+            eq(companyRegistrations.taxId, taxId),
+            ne(companies.id, exceptCompanyId),
+            inArray(companies.status, ['submitted', 'changes_requested', 'approved']),
+          ))
+          .limit(1);
+        return rows.length > 0;
+      },
+    },
+    checks: {
+      async replaceAll(companyId, results) {
+        await db.transaction(async (tx) => {
+          await tx.delete(companyChecks).where(eq(companyChecks.companyId, companyId));
+          if (results.length > 0) await tx.insert(companyChecks).values(results.map((r) => ({ ...r, companyId })));
+        });
+      },
+      async list(companyId) {
+        const rows = await db.select().from(companyChecks).where(eq(companyChecks.companyId, companyId));
+        return rows
+          .map((r): CheckResult => Object.freeze({ source: r.source as CheckSource, outcome: r.outcome as CheckOutcome, summary: r.summary, checkedAt: r.checkedAt }))
+          .sort((a, b) => CHECK_ORDER.indexOf(a.source) - CHECK_ORDER.indexOf(b.source));
+      },
+    },
+    reviewEvents: {
+      async add(e) {
+        await db.insert(companyReviewEvents).values(e);
+      },
+      async listByCompany(companyId) {
+        const rows = await db.select().from(companyReviewEvents).where(eq(companyReviewEvents.companyId, companyId)).orderBy(asc(companyReviewEvents.createdAt));
+        return rows.map((r): ReviewEvent => Object.freeze({ ...r, action: r.action as ReviewAction }));
+      },
+    },
+    documents: {
+      async save(d) {
+        await db.insert(companyDocuments).values(d).onConflictDoUpdate({ target: companyDocuments.id, set: d });
+      },
+      async findById(id) {
+        const [r] = await db.select().from(companyDocuments).where(eq(companyDocuments.id, id)).limit(1);
+        return r ? toDocument(r) : null;
+      },
+      async listByCompany(companyId) {
+        const rows = await db.select().from(companyDocuments).where(eq(companyDocuments.companyId, companyId)).orderBy(asc(companyDocuments.createdAt));
+        return rows.map(toDocument);
+      },
+      async delete(id) {
+        await db.delete(companyDocuments).where(eq(companyDocuments.id, id));
+      },
+      async deleteByCompany(companyId) {
+        await db.delete(companyDocuments).where(eq(companyDocuments.companyId, companyId));
       },
     },
   };

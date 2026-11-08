@@ -5,7 +5,8 @@ import { z } from 'zod';
 import { actionLang } from '@/i18n/action';
 import { errorMessage } from '@/app/_lib/error-messages';
 import { toActionError, type ActionResult } from '@/app/_lib/action-result';
-import { editArticleSpecs } from '@/modules/supplier';
+import { editArticleFabric, editArticleSpecs } from '@/modules/supplier';
+import type { FabricSpecInput } from '@/shared/domain/taxonomy';
 import { getContainer } from '@/server/container';
 import { requireViewer } from '@/server/viewer';
 
@@ -31,6 +32,35 @@ export async function editArticleSpecsAction(_prev: ActionResult | null, form: F
   const { articles, companies } = await getContainer();
   try {
     await editArticleSpecs({ articles, companies }, { userId, articleId, specs });
+  } catch (e) {
+    return toActionError(e, await actionLang());
+  }
+  revalidatePath('/m/[company]/a/[article]', 'page');
+  return { ok: true, data: undefined };
+}
+
+// An empty construction clears the sheet. Blank fibre rows are skipped; everything else is the domain's to judge.
+export async function editArticleFabricAction(_prev: ActionResult | null, form: FormData): Promise<ActionResult> {
+  const { userId } = await requireViewer();
+  const articleId = z.uuid().safeParse(form.get('articleId'));
+  if (!articleId.success) return { ok: false, error: errorMessage('generic', await actionLang()) };
+  const str = (k: string) => String(form.get(k) ?? '');
+  const input: FabricSpecInput | null = str('construction') === '' ? null : {
+    construction: str('construction'),
+    pattern: str('pattern'),
+    twillRatio: str('twillRatio'),
+    twillDirection: str('twillDirection'),
+    fibres: [0, 1, 2, 3].map((i) => ({ code: str(`fibre${i}`), percent: str(`percent${i}`) })).filter((f) => f.code !== '' || f.percent.trim() !== ''),
+    weight: str('weight'),
+    weightUnit: str('weightUnit'),
+    widthCm: str('widthCm'),
+    dye: str('dye'),
+    finishes: form.getAll('finishes').map(String),
+  };
+
+  const { articles, companies } = await getContainer();
+  try {
+    await editArticleFabric({ articles, companies }, { userId, articleId: articleId.data, input });
   } catch (e) {
     return toActionError(e, await actionLang());
   }

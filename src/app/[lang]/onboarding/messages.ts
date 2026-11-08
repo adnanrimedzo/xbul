@@ -1,12 +1,20 @@
 import { defineMessages } from '@/i18n/locales';
+import type { CompanyKind } from '@/modules/supplier';
 
 export const ONBOARDING = defineMessages({
   en: {
     welcome: 'Welcome',
     intro: 'Tell us who you are so we can set up your account.',
     whatMake: 'What does your company make?',
-    makeFabric: 'We make fabric',
-    makeGarments: 'We make garments',
+    kinds: {
+      garment_maker: 'We make garments (finished product)',
+      fabric_mill: 'We make fabric',
+      yarn_spinner: 'We spin yarn',
+      trims_maker: 'We make trims (buttons, zips, labels)',
+      sewing_contractor: 'We cut and sew for others (CMT)',
+      laundry: 'We wash and finish garments',
+      print_house: 'We print and embroider',
+    } satisfies Record<CompanyKind, string>,
     companyName: 'Company name',
     city: 'City',
     country: 'Country',
@@ -17,13 +25,22 @@ export const ONBOARDING = defineMessages({
     phone: 'Phone',
     website: 'Website',
     continue: 'Continue',
+    onlySearching: 'Only searching?',
+    searchManufacturers: 'Search manufacturers',
   },
   tr: {
     welcome: 'Hoş geldiniz',
     intro: 'Hesabınızı oluşturabilmemiz için bize kim olduğunuzu söyleyin.',
     whatMake: 'Şirketiniz ne üretiyor?',
-    makeFabric: 'Kumaş üretiyoruz',
-    makeGarments: 'Hazır giyim üretiyoruz',
+    kinds: {
+      garment_maker: 'Hazır giyim üretiyoruz (bitmiş ürün)',
+      fabric_mill: 'Kumaş üretiyoruz',
+      yarn_spinner: 'İplik üretiyoruz',
+      trims_maker: 'Aksesuar üretiyoruz (düğme, fermuar, etiket)',
+      sewing_contractor: 'Fason kesim-dikim yapıyoruz',
+      laundry: 'Yıkama ve apre yapıyoruz',
+      print_house: 'Baskı ve nakış yapıyoruz',
+    } satisfies Record<CompanyKind, string>,
     companyName: 'Şirket adı',
     city: 'Şehir',
     country: 'Ülke',
@@ -34,5 +51,7 @@ export const ONBOARDING = defineMessages({
     phone: 'Telefon',
     website: 'Web sitesi',
     continue: 'Devam',
+    onlySearching: 'Sadece arama mı yapacaksınız?',
+    searchManufacturers: 'Üretici arayın',
   },
 });

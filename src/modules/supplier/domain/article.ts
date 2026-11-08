@@ -1,6 +1,7 @@
 import { DomainError } from '@/shared/domain/errors';
 import { newId } from '@/shared/domain/ids';
 import { slugify } from '@/shared/domain/slug';
+import { normalizeFabricSpec, type FabricSpec, type FabricSpecInput } from '@/shared/domain/taxonomy';
 
 export type ArticleSpecs = Readonly<{
   weight: string | null;
@@ -16,6 +17,7 @@ export type Article = Readonly<{
   code: string;
   slug: string;
   specs: ArticleSpecs;
+  fabric: FabricSpec | null;
   createdAt: Date;
 }>;
 
@@ -30,7 +32,7 @@ export function createArticle(input: { companyId: string; code: string }, now: D
   const slug = slugify(code);
   if (!slug) throw new DomainError('article.code_invalid');
   const specs: ArticleSpecs = Object.freeze({ weight: null, composition: null, finish: null, moq: null, leadTimeWeeks: null });
-  return Object.freeze({ id: newId(), companyId: input.companyId, code, slug, specs, createdAt: now });
+  return Object.freeze({ id: newId(), companyId: input.companyId, code, slug, specs, fabric: null, createdAt: now });
 }
 
 const text = (v: string | null, max: number): string | null => {
@@ -57,4 +59,9 @@ export function withSpecs(a: Article, patch: Partial<ArticleSpecs>): Article {
     leadTimeWeeks: int(s.leadTimeWeeks, 0, 52, 'article.lead_time_invalid'),
   });
   return Object.freeze({ ...a, specs });
+}
+
+// null clears the technical sheet.
+export function withFabric(a: Article, input: FabricSpecInput | null): Article {
+  return Object.freeze({ ...a, fabric: input === null ? null : normalizeFabricSpec(input) });
 }

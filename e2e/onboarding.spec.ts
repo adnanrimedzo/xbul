@@ -1,19 +1,19 @@
 import { expect, test } from '@playwright/test';
 import { signIn } from './helpers';
 
-test('a new mill signs in, registers its company and lands on Add', async ({ page }) => {
+test('a new mill signs in, registers its company and lands on its registration page', async ({ page }) => {
   await signIn(page, 'new-mill@example.test');
   await expect(page).toHaveURL(/\/onboarding/);
   await page.getByRole('radio', { name: /we make fabric/i }).check();
-  await page.getByLabel(/company name/i).fill('Aksu Denim');
+  await page.getByLabel(/company name/i).fill('Kartal Denim');
   await page.getByLabel(/city/i).fill('Istanbul');
   await page.getByLabel(/country/i).fill('TR');
-  await page.getByLabel(/contact email/i).fill('sales@aksu-denim.test');
+  await page.getByLabel(/contact email/i).fill('sales@kartal-denim.test');
   await page.getByRole('button', { name: /continue/i }).click();
-  await expect(page).toHaveURL(/\/add$/);
-  await page.goto('/m/aksu-denim');
+  await expect(page).toHaveURL(/\/m\/kartal-denim\/registration$/);
+  await page.goto('/m/kartal-denim');
   await expect(page.getByText('No products linked yet.')).toBeVisible();
-  await expect(page.getByRole('link', { name: 'sales@aksu-denim.test' })).toHaveAttribute('href', 'mailto:sales@aksu-denim.test');
+  await expect(page.getByRole('link', { name: 'sales@kartal-denim.test' })).toHaveAttribute('href', 'mailto:sales@kartal-denim.test');
 });
 
 test('a garment maker registers and its claims count as garment claims', async ({ page }) => {
@@ -24,7 +24,7 @@ test('a garment maker registers and its claims count as garment claims', async (
   await page.getByLabel(/country/i).fill('TR');
   await page.getByLabel(/contact email/i).fill('a@yeni.test');
   await page.getByRole('button', { name: /continue/i }).click();
-  await expect(page).toHaveURL(/\/add$/);
+  await expect(page).toHaveURL(/\/m\/yeni-konfeksiyon\/registration$/);
   await page.goto('/m/yeni-konfeksiyon');
   await expect(page.getByText('Garment maker')).toBeVisible();
 });

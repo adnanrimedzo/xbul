@@ -1,6 +1,9 @@
+import { readFile } from 'node:fs/promises';
 import { expect, it } from 'vitest';
 import { createTestDb } from '@/shared/db/testing';
+import { normalizeRegistration } from '../domain/registration';
 import { createSupplierRepositories } from '../infrastructure/drizzle-repositories';
+import { editArticleFabric } from './edit-article-fabric';
 import { editArticleSpecs } from './edit-article-specs';
 import { registerCompany } from './register-company';
 import { updateCompanyContact } from './update-company-contact';
@@ -62,6 +65,20 @@ it('persists specs and reads back plain domain objects', async () => {
   expect(await repos.articles.findById('00000000-0000-4000-8000-000000000000')).toBeNull();
 });
 
+const DENIM = { construction: 'woven', pattern: 'twill', twillRatio: '3/1', twillDirection: 'rht',
+  fibres: [{ code: 'co', percent: '98' }, { code: 'EA', percent: 2 }], weight: '12.5', weightUnit: 'oz', widthCm: '150', dye: 'rope', finishes: ['sanforized'] };
+
+it('the owner saves and clears a fabric sheet; others are refused', async () => {
+  const repos = createSupplierRepositories(await createTestDb());
+  const c = await registerCompany(repos, { name: 'Indigo Mill', city: 'Istanbul', country: 'TR', ownerUserId: 'u1', contact, kind: 'fabric_mill' });
+  const a = await upsertArticle(repos, { companyId: c.id, code: '60219/1' });
+  await expect(editArticleFabric(repos, { userId: 'u2', articleId: a.id, input: DENIM })).rejects.toMatchObject({ code: 'auth.forbidden' });
+  await editArticleFabric(repos, { userId: 'u1', articleId: a.id, input: DENIM });
+  expect((await repos.articles.findById(a.id))?.fabric?.weightGsm).toBe(424);
+  await editArticleFabric(repos, { userId: 'u1', articleId: a.id, input: null });
+  expect((await repos.articles.findById(a.id))?.fabric).toBeNull();
+});
+
 it('rejects spec edits for a missing article', async () => {
   const repos = createSupplierRepositories(await createTestDb());
   await expect(editArticleSpecs(repos, { userId: 'u1', articleId: '00000000-0000-4000-8000-000000000000', specs: {} }))
@@ -87,4 +104,41 @@ it('refuses to clear every contact detail', async () => {
 it('a user with no company cannot update contact details', async () => {
   const repos = createSupplierRepositories(await createTestDb());
   await expect(updateCompanyContact(repos, { userId: 'nobody', contact: { email: 'x@y.test' } })).rejects.toMatchObject({ code: 'auth.forbidden' });
+});
+
+it('registers new companies as drafts and keeps the companies that existed before review public', async () => {
+  const repos = createSupplierRepositories(await createTestDb());
+  const c = await registerCompany(repos, { name: 'Aksu Denim', city: 'Istanbul', country: 'TR', ownerUserId: 'u1', contact, kind: 'fabric_mill' });
+  expect((await repos.companies.findById(c.id))?.status).toBe('draft');
+  const sql = await readFile('drizzle/0016_company-registration.sql', 'utf8');
+  expect(sql).toMatch(/ADD COLUMN "status" text DEFAULT 'approved' NOT NULL/);
+  expect(sql).toMatch(/ALTER COLUMN "status" SET DEFAULT 'draft'/);
+});
+
+it('round-trips a registration and its review events, and spots a taken tax number', async () => {
+  const repos = createSupplierRepositories(await createTestDb());
+  const c = await registerCompany(repos, { name: 'Aksu Denim', city: 'Istanbul', country: 'TR', ownerUserId: 'u1', contact, kind: 'fabric_mill' });
+  const reg = normalizeRegistration('TR', c.id, {
+    legalName: 'Aksu Denim Tekstil A.Ş.', taxId: '123 456 7890', registryNumber: '123456', naceCodes: ['13.20.01'],
+    employees: '50-249', certifications: [{ scheme: 'gots', number: 'CU123', validUntil: '2027-06-30' }],
+  });
+  await repos.registrations.save(reg);
+  expect(await repos.registrations.find(c.id)).toEqual(reg);
+  expect(await repos.registrations.find(crypto.randomUUID())).toBeNull();
+
+  const t = new Date('2026-01-01T00:00:00Z');
+  const event = (id: string, action: 'submitted' | 'approved', createdAt: Date) =>
+    ({ id, companyId: c.id, actorUserId: 'u1', action, note: null, changes: null, createdAt }) as const;
+  await repos.reviewEvents.add(event(crypto.randomUUID(), 'approved', new Date(t.getTime() + 1000)));
+  await repos.reviewEvents.add(event(crypto.randomUUID(), 'submitted', t));
+  expect((await repos.reviewEvents.listByCompany(c.id)).map((e) => e.action)).toEqual(['submitted', 'approved']);
+
+  const second = await registerCompany(repos, { name: 'Other Mill', city: 'Bursa', country: 'TR', ownerUserId: 'u2', contact, kind: 'fabric_mill' });
+  const taken = () => repos.registrations.taxIdTaken('TR', '1234567890', second.id);
+  expect(await taken()).toBe(false);
+  for (const [status, expected] of [['submitted', true], ['changes_requested', true], ['approved', true], ['rejected', false]] as const) {
+    await repos.companies.save({ ...c, status });
+    expect(await taken()).toBe(expected);
+  }
+  expect(await repos.registrations.taxIdTaken('DE', '1234567890', second.id)).toBe(false);
 });

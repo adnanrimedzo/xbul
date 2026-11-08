@@ -17,9 +17,18 @@ const xml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replac
 export async function GET(): Promise<Response> {
   const { db, config } = await getContainer();
   const [productRows, companyRows, articleRows] = await Promise.all([
-    db.selectDistinct({ id: products.id }).from(products).innerJoin(claims, eq(claims.productId, products.id)),
-    db.select({ slug: companies.slug }).from(companies),
-    db.select({ company: companies.slug, slug: articles.slug }).from(articles).innerJoin(companies, eq(companies.id, articles.companyId)),
+    db
+      .selectDistinct({ id: products.id })
+      .from(products)
+      .innerJoin(claims, eq(claims.productId, products.id))
+      .innerJoin(companies, eq(claims.companyId, companies.id))
+      .where(eq(companies.status, 'approved')),
+    db.select({ slug: companies.slug }).from(companies).where(eq(companies.status, 'approved')),
+    db
+      .select({ company: companies.slug, slug: articles.slug })
+      .from(articles)
+      .innerJoin(companies, eq(companies.id, articles.companyId))
+      .where(eq(companies.status, 'approved')),
   ]);
   const paths = [
     ...STATIC_PATHS,

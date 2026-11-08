@@ -6,7 +6,7 @@ import { Button } from './ui/button';
 
 // One row's button, with its own pending state and its own error. The server page binds the row's id into the action.
 // With `confirmLabel`, the first click only arms the button and the second one (now reading confirmLabel) runs the action.
-export function RowActionButton({ action, label, confirmLabel }: { action: () => Promise<ActionResult>; label: string; confirmLabel?: string }) {
+export function RowActionButton({ action, label, confirmLabel, disabled = false }: { action: () => Promise<ActionResult>; label: string; confirmLabel?: string; disabled?: boolean }) {
   const [state, formAction, pending] = useActionState<ActionResult | null>(action, null);
   const [armed, setArmed] = useState(false);
   return (
@@ -14,7 +14,7 @@ export function RowActionButton({ action, label, confirmLabel }: { action: () =>
       <Button
         variant="ghost"
         type="submit"
-        disabled={pending}
+        disabled={pending || disabled}
         onClick={(e) => {
           if (!confirmLabel || armed) return;
           e.preventDefault();

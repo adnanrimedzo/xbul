@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { DEMO } from '../src/server/demo-ids';
+import { signIn } from './helpers';
 
 const url = `/p/${DEMO.products.guess}`;
 test('a visitor can reach the original supplier and an equivalent directly, with no account', async ({ page }) => {
@@ -16,6 +17,8 @@ test('the garment page shows who made the fabric and who made the garment', asyn
   const garment = page.getByTestId('garment-suppliers');
   await expect(garment.getByTestId('original-claim')).toContainText('Anka Garments');
   await expect(garment.getByTestId('original-claim')).toContainText('Verified');
+  await expect(garment).toContainText('Full product');
+  await expect(page.getByTestId('fabric-suppliers')).toContainText('Partial · Fabric');
 });
 test('a visitor is invited to claim the product as a supplier', async ({ page }) => {
   await page.goto(url);
@@ -31,10 +34,25 @@ test('the copied garment link carries no handle', async ({ page, context }) => {
 test('link previews carry title and description', async ({ request }) => {
   const html = await (await request.get(url)).text();
   expect(html).toContain('<meta property="og:title" content="GUESS — Cropped Denim Blazer"');
-  expect(html).toMatch(/<meta property="og:description" content="Fabric by Indigo Mill \(code 60219\/1\) · Garment by Anka Garments · 2 suppliers can make an equivalent"/);
+  expect(html).toMatch(/<meta property="og:description" content="Finished product by Anka Garments · Fabric by Indigo Mill \(code 60219\/1\) · 2 suppliers can make an equivalent"/);
 });
 test('unknown product is a 404, with the site chrome and a way home', async ({ page }) => {
   expect((await page.goto('/p/not-a-uuid'))?.status()).toBe(404);
   await expect(page.getByRole('heading', { level: 1 })).toHaveText(/not found/i);
   await expect(page.getByRole('link', { name: /back to xbul/i })).toHaveAttribute('href', '/');
+});
+test('a manufacturer waiting for approval opens its own product, which visitors cannot', async ({ page, browser }) => {
+  await signIn(page, 'pending@example.test'); // Ege Örme, not approved
+  await page.goto('/add');
+  await page.getByLabel(/brand links/i).fill('http://localhost:4010/title-only.html');
+  await page.getByRole('button', { name: /fetch/i }).click();
+  await page.getByTestId('preview-row').getByRole('button', { name: /save/i }).click();
+  await page.getByRole('button', { name: /publish 1 product/i }).click();
+  await expect(page).toHaveURL(/\/m\/ege-orme$/);
+  await page.getByText('Selvedge Jeans').click();
+  await expect(page).toHaveURL(/\/p\/[0-9a-f-]{36}$/);
+  await expect(page.getByTestId('original-claim')).toContainText('Ege Örme');
+  const visitor = await browser.newContext();
+  expect((await (await visitor.newPage()).goto(page.url()))?.status()).toBe(404);
+  await visitor.close();
 });

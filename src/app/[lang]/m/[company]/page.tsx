@@ -9,7 +9,7 @@ import { ClaimTag } from '@/app/_components/ui/claim-tag';
 import { GarmentGrid } from '@/app/_components/ui/garment-grid';
 import { GarmentTile } from '@/app/_components/ui/garment-tile';
 import { VerifiedExplanation, VerifiedInline } from '@/app/_components/ui/verified';
-import { getCompanyPageView, type CompanyPageView } from '@/modules/discovery';
+import { canSeeCompany, getCompanyPageView, type CompanyPageView } from '@/modules/discovery';
 import { alternates, jsonLd } from '@/app/_lib/seo';
 import { OG_LOCALE } from '@/i18n/locales';
 import { pageMessages } from '@/i18n/server';
@@ -18,6 +18,7 @@ import { getViewer } from '@/server/viewer';
 import { withdrawClaimAction } from './actions';
 import { EditContactForm } from './edit-contact-form';
 import { COMPANY } from './messages';
+import { REGISTRATION } from './registration/messages';
 
 type T = (typeof COMPANY)['en'];
 
@@ -39,7 +40,9 @@ function VerifyStep({ garment, t, href }: { garment: CompanyPageView['garments']
 const loadView = cache(async (slug: string) => {
   if (!SLUG.test(slug)) notFound();
   const { db } = await getContainer();
-  return (await getCompanyPageView(db, slug)) ?? notFound();
+  const view = (await getCompanyPageView(db, slug)) ?? notFound();
+  if (!canSeeCompany(view.company, await getViewer())) notFound(); // not approved: only the owner and admins can open it
+  return view;
 });
 
 export async function generateMetadata({ params }: PageProps<'/[lang]/m/[company]'>): Promise<Metadata> {
@@ -57,8 +60,14 @@ export async function generateMetadata({ params }: PageProps<'/[lang]/m/[company
 }
 
 export default async function MillPage({ params }: PageProps<'/[lang]/m/[company]'>) {
-  const [{ company, articles, garments }, viewer, { config }, { t, href }] = await Promise.all([loadView((await params).company), getViewer(), getContainer(), pageMessages(COMPANY)]);
+  const [{ company, articles, garments }, viewer, { config, registrations }, { t, href }, { t: reg }] = await Promise.all([
+    loadView((await params).company), getViewer(), getContainer(), pageMessages(COMPANY), pageMessages(REGISTRATION),
+  ]);
+  // Certificates are public once an admin has approved the company (and checked them).
+  const certifications = company.status === 'approved' ? ((await registrations.find(company.id))?.certifications ?? []) : [];
   const isOwner = viewer?.userId === company.ownerUserId;
+  const ownStatus = isOwner ? viewer?.company?.status : undefined; // the owner's company is the viewer's
+  const pendingStatus = ownStatus && ownStatus !== 'approved' ? ownStatus : null;
   const place = `${company.city}, ${company.country}`;
   const pageUrl = `${config.baseUrl}${href(`/m/${company.slug}`)}`;
   const { email, phone, website } = company.contact;
@@ -78,6 +87,14 @@ export default async function MillPage({ params }: PageProps<'/[lang]/m/[company
   return (
     <div className="page flex flex-col gap-10">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: jsonLd(organization) }} />
+      {pendingStatus && (
+        <p className="alert flex flex-wrap items-center gap-x-3 gap-y-1">
+          <span className="font-semibold">{t.notPublic[pendingStatus]}</span>
+          <Link href={href(`/m/${company.slug}/registration`)} className="link">
+            {t.goToRegistration}
+          </Link>
+        </p>
+      )}
       <div className="panel p-6! sm:p-10!">
         <h1 className="page-title">{company.name}</h1>
         <p className="mt-3 text-lg">
@@ -90,6 +107,19 @@ export default async function MillPage({ params }: PageProps<'/[lang]/m/[company
         {isOwner && (
           <div className="mt-5">
             <EditContactForm contact={company.contact} />
+          </div>
+        )}
+        {certifications.length > 0 && (
+          <div className="mt-5">
+            <h2 className="mb-1 font-semibold">{t.certifications}</h2>
+            <ul>
+              {certifications.map((c) => (
+                <li key={`${c.scheme}-${c.number}`}>
+                  {reg.schemes[c.scheme]} {c.number}
+                  {c.validUntil && <span className="text-muted">, {t.validUntil(c.validUntil)}</span>}
+                </li>
+              ))}
+            </ul>
           </div>
         )}
       </div>

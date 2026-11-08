@@ -4,12 +4,13 @@ import { useId, useState, useTransition, type FormEvent, type ReactNode } from '
 import { Button } from '@/app/_components/ui/button';
 import { GarmentImage } from '@/app/_components/ui/garment-image';
 import { useMessages } from '@/i18n/client';
+import { PRODUCT_TYPES, type ProductTypeId } from '@/shared/domain/taxonomy';
 import { addManualProductAction, previewGarmentsAction, publishGarmentsAction, type PreviewRow } from './actions';
 import { ADD } from './messages';
 
 type Kind = 'original' | 'equivalent';
 // A fetched row plus what the supplier has typed for it so far (`byHand`: it was added with a brand and name, not fetched).
-type Row = PreviewRow & { articleCode: string; kind: Kind; byHand?: boolean };
+type Row = PreviewRow & { articleCode: string; kind: Kind; typeChoice: string; byHand?: boolean };
 type Ready = Extract<Row, { state: 'ready' }>;
 type NeedsDetails = Extract<Row, { state: 'needs_details' }>;
 type Invalid = Extract<Row, { state: 'invalid' }>;
@@ -20,9 +21,13 @@ const KINDS = [
 ] as const;
 const thumb = 'h-[90px] w-[72px] rounded-control';
 // What a row starts with: what the supplier typed for it before, else the claim it already has (so publishing again restates that claim), else blank.
-const startingValues = (row: PreviewRow, before?: { articleCode: string; kind: Kind }): { articleCode: string; kind: Kind } => {
+const startingValues = (row: PreviewRow, before?: { articleCode: string; kind: Kind; typeChoice: string }): { articleCode: string; kind: Kind; typeChoice: string } => {
   const existing = row.state === 'ready' ? row.existing : undefined;
-  return { articleCode: before?.articleCode ?? existing?.articleCode ?? '', kind: before?.kind ?? existing?.kind ?? 'original' };
+  return {
+    articleCode: before?.articleCode ?? existing?.articleCode ?? '',
+    kind: before?.kind ?? existing?.kind ?? 'original',
+    typeChoice: before?.typeChoice ?? (row.state === 'ready' ? (row.type ?? '') : ''),
+  };
 };
 
 function RowShell({ children }: { children: ReactNode }) {
@@ -46,9 +51,9 @@ function Status({ name, children }: { name: ReactNode; children: ReactNode }) {
 // A pasted link is shown as typed (links are case-sensitive), and a long one wraps rather than overflowing.
 const Url = ({ children }: { children: string }) => <span className="font-mono text-sm break-all">{children}</span>;
 
-function ReadyRow({ row, onChange }: { row: Ready; onChange: (patch: Partial<Pick<Row, 'articleCode' | 'kind'>>) => void }) {
+function ReadyRow({ row, onChange }: { row: Ready; onChange: (patch: Partial<Pick<Row, 'articleCode' | 'kind' | 'typeChoice'>>) => void }) {
   const group = useId();
-  const { t } = useMessages(ADD);
+  const { t, lang } = useMessages(ADD);
   const label = `${row.brand} — ${row.name}`;
   return (
     <RowShell>
@@ -81,6 +86,16 @@ function ReadyRow({ row, onChange }: { row: Ready; onChange: (patch: Partial<Pic
             </label>
           ))}
         </fieldset>
+        <label className="sm:col-span-full">
+          <select aria-label={t.productType} value={row.typeChoice} disabled={row.typeLocked} onChange={(e) => onChange({ typeChoice: e.target.value })} className="field">
+            <option value="">{t.notSure}</option>
+            {(Object.entries(PRODUCT_TYPES) as [ProductTypeId, (typeof PRODUCT_TYPES)[ProductTypeId]][]).map(([id, type]) => (
+              <option key={id} value={id}>
+                {type.name[lang]}
+              </option>
+            ))}
+          </select>
+        </label>
       </div>
     </RowShell>
   );
@@ -171,7 +186,7 @@ export function AddGarmentsForm() {
     setPublishError(null);
     startPublish(async () => {
       // On success the action redirects to the company page, so only a failure comes back here.
-      const result = await publishGarmentsAction(ready.map(({ productId, articleCode, kind }) => ({ productId, articleCode, kind })));
+      const result = await publishGarmentsAction(ready.map(({ productId, articleCode, kind, typeChoice }) => ({ productId, articleCode, kind, type: typeChoice })));
       if (!result.ok) setPublishError(result.error);
     });
   }

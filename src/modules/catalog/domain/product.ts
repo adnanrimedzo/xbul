@@ -1,5 +1,6 @@
 import { DomainError } from '@/shared/domain/errors';
 import { newId } from '@/shared/domain/ids';
+import type { ProductTypeId } from '@/shared/domain/taxonomy';
 
 export type Product = Readonly<{
   id: string;
@@ -9,12 +10,13 @@ export type Product = Readonly<{
   name: string;
   imageUrl: string | null;
   composition: string | null;
+  type: ProductTypeId | null;
   createdAt: Date;
 }>;
 
 export type ProductSnapshot = { brand: string; name: string; imageUrl: string | null; composition: string | null };
 
-export function createProduct(input: Omit<Product, 'id' | 'createdAt'>, now: Date = new Date()): Product {
+export function createProduct(input: Omit<Product, 'id' | 'createdAt' | 'type'>, now: Date = new Date()): Product {
   const brand = input.brand.trim();
   if (brand.length < 1 || brand.length > 60) throw new DomainError('product.brand_invalid');
   const name = input.name.trim();
@@ -28,6 +30,7 @@ export function createProduct(input: Omit<Product, 'id' | 'createdAt'>, now: Dat
     name,
     imageUrl,
     composition: input.composition,
+    type: null,
     createdAt: now,
   });
 }

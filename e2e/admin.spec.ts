@@ -3,9 +3,9 @@ import { signIn } from './helpers';
 
 test('an admin with no company lands on the review queue, not the company form', async ({ page }) => {
   await signIn(page, 'admin@example.test');
-  await expect(page).toHaveURL(/\/admin\/claims$/);
+  await expect(page).toHaveURL(/\/admin\/manufacturers$/);
   await page.goto('/onboarding');
-  await expect(page).toHaveURL(/\/admin\/claims$/);
+  await expect(page).toHaveURL(/\/admin\/manufacturers$/);
   await expect(page.getByLabel(/company name/i)).toHaveCount(0);
 });
 test('non-admins are sent home', async ({ page }) => {
@@ -18,6 +18,8 @@ test('an admin sees the search it just ran counted', async ({ page }) => {
   await page.goto('/admin/stats');
   await expect(page.getByRole('heading', { name: 'Visitor-days' })).toBeVisible();
   await expect(page.getByText('Target: 10–20 customers. One address counts once a day, so this overstates customers.')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Waiting for review' })).toBeVisible();
+  await expect(page.getByTestId('stat-pending')).toHaveText(/^\d+$/);
   const before = Number(await page.getByTestId('stat-searches').textContent());
   await page.goto('/');
   await page.getByPlaceholder(/paste a product link/i).fill('https://example.com/counted');
@@ -33,4 +35,10 @@ test('non-admins can’t see stats', async ({ page }) => {
 });
 test('the request inbox is gone', async ({ page }) => {
   expect((await page.goto('/requests'))?.status()).toBe(404);
+});
+test('the Turkish admin pages say beyan for claims and show who waits for review', async ({ page }) => {
+  await signIn(page, 'admin@example.test');
+  await page.goto('/tr/admin/stats');
+  await expect(page.getByRole('navigation', { name: 'Ana menü' }).getByRole('link', { name: 'Beyanlar' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'İncelemede bekleyen' })).toBeVisible();
 });
