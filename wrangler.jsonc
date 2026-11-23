@@ -59,7 +59,8 @@
       "vars": {
         "PUBLIC_BASE_URL": "https://staging.xbul.io",
         "MAIL_FROM": "xbul staging <hello@mail.xbul.io>",
-        "PHOTO_SEARCH_PUBLIC": "0"
+        // On in staging, the test bed for the real models and the match thresholds (docs/runbook.md, Photo search).
+        "PHOTO_SEARCH_PUBLIC": "1"
       },
       "observability": { "enabled": true }
     }
