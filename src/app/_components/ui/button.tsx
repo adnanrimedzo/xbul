@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import type { ButtonHTMLAttributes, ComponentProps } from 'react';
+import type { ComponentProps } from 'react';
 
 const VARIANTS = {
   // Solid: the one main action in a view.
@@ -15,7 +15,7 @@ type Style = { variant: Variant; size?: Size };
 const classes = ({ variant, size = 'md' }: Style, className: string) =>
   `inline-flex items-center justify-center gap-2 rounded-control font-medium whitespace-nowrap transition duration-150 disabled:opacity-40 ${SIZES[size]} ${VARIANTS[variant]} ${className}`;
 
-export function Button({ variant, size, className = '', ...props }: Style & ButtonHTMLAttributes<HTMLButtonElement>) {
+export function Button({ variant, size, className = '', ...props }: Style & ComponentProps<'button'>) {
   return <button className={classes({ variant, size }, className)} {...props} />;
 }
 

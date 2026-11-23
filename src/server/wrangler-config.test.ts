@@ -44,3 +44,10 @@ test('workflows take the pnpm version from package.json', () => {
 test('the worker runs beside the database', () => {
   expect(prod.placement).toEqual({ region: 'aws:eu-central-1' });
 });
+
+test('both workers can run photo search, and it starts hidden from buyers', () => {
+  for (const worker of [prod, staging]) {
+    expect(worker.ai).toEqual({ binding: 'AI' });
+    expect(worker.vars.PHOTO_SEARCH_PUBLIC).toBe('0');
+  }
+});

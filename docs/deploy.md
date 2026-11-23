@@ -86,6 +86,13 @@ pnpm wrangler r2 bucket create xbul-evidence --update-config=false
 pnpm wrangler r2 bucket lifecycle add xbul-evidence expire-evidence evidence/ --expire-days 90
 ```
 
+Photo search stores two more kinds of file in the same bucket. Suppliers' product photos (`supplier-photos/`) stay until the supplier deletes them. Buyers' search photos (`photo-searches/`) must go after 7 days. The app clears them as new searches come in, and this rule is the backstop:
+
+```bash
+pnpm wrangler r2 bucket lifecycle add xbul-evidence-staging expire-photo-searches photo-searches/ --expire-days 7
+pnpm wrangler r2 bucket lifecycle add xbul-evidence expire-photo-searches photo-searches/ --expire-days 7
+```
+
 Weekly database backups go in their own bucket, for production only. They hold personal data, so they expire too:
 
 ```bash
@@ -96,6 +103,16 @@ pnpm wrangler r2 bucket lifecycle add xbul-backups expire-backups db/ --expire-d
 Never attach a public domain or an `r2.dev` URL to any of these buckets.
 
 The evidence lifecycle rule is a backstop. The app deletes a file when its claim is decided, withdrawn or changed, but a delete can fail, and the app logs it (`[evidence] could not delete …`) without retrying. A file that is left over must not stay forever, so every object under `evidence/` expires after 90 days. The same rule also takes the files of a claim nobody got round to deciding. Their downloads then answer 404, so an admin rejects the claim with a note and the supplier uploads the documents again. A supplier who never submitted can remove the listed files and add them again.
+
+## 4a. Photo search
+
+Photo search runs on Workers AI and on pgvector in the database. Nothing to create by hand:
+
+- **Workers AI** is the `AI` binding in `wrangler.jsonc`, for both workers. It bills to the Cloudflare account; a search costs a fraction of a cent (a vision check plus an image embedding). The models are named once in `src/modules/photos/infrastructure/workers-ai-photo-model.ts`.
+- **pgvector** is created by migration `0021_photos` (`CREATE EXTENSION vector`). Neon supports it. `pnpm db:migrate` runs `scripts/migrate.ts`, not `drizzle-kit migrate`, because drizzle-kit can't load the extension into a local PGlite database.
+- **Launch switch.** `PHOTO_SEARCH_PUBLIC` in `wrangler.jsonc` is `"0"`: suppliers can add product photos (in manufacturer mode, *Product photos*), but buyers don't see photo search yet. Once enough photos are published, set it to `"1"` and deploy. The home page then shows the camera button and "Or search with a photo".
+
+Before going public, calibrate the match thresholds on staging (see [runbook.md](runbook.md), *Photo search*).
 
 ## 5. Set the secrets
 
@@ -229,7 +246,7 @@ What then runs:
 
 - **Check the first backup.** While the test supplier from step 10 still exists, start `Back up the database` by hand, download the dump from the `xbul-backups` bucket in the dashboard, then run `bash scripts/verify-restore.sh <dump file>`. A database with no companies fails this check on purpose. Delete the downloaded file afterwards.
 - **Uptime monitor.** Add `https://xbul.io/api/health` to a free external uptime monitor that emails you. It has to be outside Cloudflare, so it can tell you when Cloudflare can't reach the site.
-- **Rate limit.** Under **Security → WAF → Rate limiting rules**, add the one rule the Free plan allows: path equals `/`, more than 50 requests in 10 seconds per IP, block for 10 seconds. It limits anonymous search spam, and no real visitor reaches it. Sign-in has its own limiter in the app.
+- **Rate limit.** Under **Security → WAF → Rate limiting rules**, add the one rule the Free plan allows: path equals `/` **or** the request has a `Next-Action` header (`http.request.uri.path eq "/" or len(http.request.headers["next-action"]) > 0`), more than 50 requests in 10 seconds per IP, block for 10 seconds. It limits anonymous search spam, link and photo alike: a server action can be posted to any page path, so the header catches photo searches wherever they're sent. No real visitor reaches it. Sign-in has its own limiter in the app, and photo checks have daily caps in the app (30 per visitor, 100 per supplier company).
 - **Billing.** Set a billing notification in Cloudflare and Neon.
 
 ## Checking the Workers build locally (optional)
@@ -237,8 +254,10 @@ What then runs:
 1. Start Postgres in Docker:
 
    ```bash
-   docker run -d --name xm-pg -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=xbul -p 5432:5432 postgres:17
+   docker run -d --name xm-pg -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=xbul -p 5432:5432 pgvector/pgvector:pg17
    ```
+
+   The `pgvector` image is plain Postgres 17 plus the vector extension that photo search needs.
 
 2. Migrate and seed it:
 
@@ -249,7 +268,7 @@ What then runs:
 
 3. Copy `.dev.vars.example` to `.dev.vars` and fill in a 32+ character `BETTER_AUTH_SECRET`. Wrangler reads `.dev.vars`, and OpenNext doesn't bundle it.
 4. Move any `.env*` file except `.env.example` (e.g. your `.env.local` for `pnpm dev`) out of the project root. Otherwise the preview refuses to build, for the same reason as in step 8. Put it back afterwards.
-5. Run `pnpm preview`, then open `http://localhost:8787`.
+5. Run `pnpm preview`, then open `http://localhost:8787`. Photo search uses the real Workers AI here (Wrangler always runs the `AI` binding remotely, so you must be logged in, and it bills to your account). To see it as a buyer, set `PHOTO_SEARCH_PUBLIC=1` in `.dev.vars`.
 
 Magic links are printed in the preview's console.
 
@@ -267,7 +286,8 @@ When you're done, remove the container with `docker rm -f xm-pg`.
 - Brand sites that block fetching have no scraping fallback, so the supplier enters those products by hand.
 - There is no PWA share target.
 - There are no buyer accounts and no ratings. Buyers search and contact suppliers without signing in.
-- There are no supplier subscriptions, paid visibility or visual search.
+- There are no supplier subscriptions or paid visibility.
+- Photo search matches suppliers' own product photos and fabric specs, not brand catalog images, and there is no text search over photo tags.
 - There are no analytics for suppliers. The only figures are the platform-wide counts an admin sees on `/admin/stats`.
 - There is no email when a claim is submitted or decided. Admins check `/admin/claims`, and suppliers see the result on their page.
 - There is no incremental cache, because every page renders on demand.

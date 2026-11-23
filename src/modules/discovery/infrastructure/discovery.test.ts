@@ -170,7 +170,7 @@ it('counts suppliers, tagged products, searches and distinct searchers', async (
   await log.record({ matched: false, visitorHash: 'a' });
   await log.record({ matched: true, visitorHash: 'b' });
   await log.record({ matched: false, visitorHash: null });
-  expect(await getPlatformStats(own)).toEqual({ suppliers: 4, pendingSuppliers: 2, taggedProducts: 3, searches: 4, matchedSearches: 2, distinctSearchers: 2 });
+  expect(await getPlatformStats(own)).toEqual({ suppliers: 4, pendingSuppliers: 2, taggedProducts: 3, searches: 4, matchedSearches: 2, distinctSearchers: 2, photoSearches: 0, acceptedPhotoSearches: 0, publishedPhotos: 0 });
 });
 
 it('keeps companies that are not approved off every public view', async () => {

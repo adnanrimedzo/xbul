@@ -28,7 +28,7 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function Home() {
-  const [{ db, config }, viewer, { t, lang, href }] = await Promise.all([getContainer(), getViewer(), pageMessages(HOME)]);
+  const [{ db, config, photoSearchPublic }, viewer, { t, lang, href }] = await Promise.all([getContainer(), getViewer(), pageMessages(HOME)]);
   const addsProducts = viewer?.mode === 'manufacturer' && !!viewer.company; // the Add products link belongs to manufacturer mode
   const tiles = await listRecentlyTagged(db, 9);
   // Counts joined by " · ", each only when there is one: "1 made it · 2 can make it", "2 can make it", or "Tagged" if neither.
@@ -71,7 +71,7 @@ export default async function Home() {
       <section id="find" className="flex scroll-mt-6 flex-col items-center px-5 pt-20 text-center sm:pt-28">
         <h1 className="font-display text-[clamp(2.75rem,8vw,5.5rem)] leading-[0.95] font-medium tracking-[-0.06em]">{t.title}</h1>
         <p className="mt-5 max-w-[40ch] text-lg text-muted">{t.subtitle}</p>
-        <FindGarmentForm />
+        <FindGarmentForm photoSearch={photoSearchPublic} />
         <HeroScene />
       </section>
 

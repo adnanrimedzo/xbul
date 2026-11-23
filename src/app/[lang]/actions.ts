@@ -8,16 +8,14 @@ import { redirect } from 'next/navigation';
 import { findProductByUrl, type SearchLog } from '@/modules/catalog';
 import { hasPublicClaims } from '@/modules/discovery';
 import { getContainer } from '@/server/container';
-import { visitorHash } from '@/app/_lib/visitor-hash';
+import { clientIp, visitorHash } from '@/app/_lib/visitor-hash';
 
 const MAX_URL = 2048;
 
 // Counting is best effort: a search that can't be counted is logged and still answered.
 async function countSearch(searches: SearchLog, matched: boolean, secret: string) {
   try {
-    const h = await headers();
-    const ip = h.get('cf-connecting-ip') || h.get('x-forwarded-for')?.split(',')[0]?.trim() || null;
-    await searches.record({ matched, visitorHash: visitorHash(ip, secret, new Date()) });
+    await searches.record({ matched, visitorHash: visitorHash(clientIp(await headers()), secret, new Date()) });
   } catch (error) {
     console.error('could not count a search', error);
   }

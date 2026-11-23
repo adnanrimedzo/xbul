@@ -9,7 +9,8 @@ import { ClaimTag } from '@/app/_components/ui/claim-tag';
 import { GarmentGrid } from '@/app/_components/ui/garment-grid';
 import { GarmentTile } from '@/app/_components/ui/garment-tile';
 import { VerifiedExplanation, VerifiedInline } from '@/app/_components/ui/verified';
-import { canSeeCompany, getCompanyPageView, type CompanyPageView } from '@/modules/discovery';
+import { canSeeCompany, getCompanyPageView, listPublishedPhotos, type CompanyPageView } from '@/modules/discovery';
+import { GarmentImage } from '@/app/_components/ui/garment-image';
 import { alternates, jsonLd } from '@/app/_lib/seo';
 import { OG_LOCALE } from '@/i18n/locales';
 import { pageMessages } from '@/i18n/server';
@@ -60,9 +61,11 @@ export async function generateMetadata({ params }: PageProps<'/[lang]/m/[company
 }
 
 export default async function MillPage({ params }: PageProps<'/[lang]/m/[company]'>) {
-  const [{ company, articles, garments }, viewer, { config, registrations }, { t, href }, { t: reg }] = await Promise.all([
+  const [{ company, articles, garments }, viewer, { config, registrations, db }, { t, href }, { t: reg }] = await Promise.all([
     loadView((await params).company), getViewer(), getContainer(), pageMessages(COMPANY), pageMessages(REGISTRATION),
   ]);
+  // The page itself is only reachable when canSeeCompany passes, so its published photos can always show.
+  const photos = await listPublishedPhotos(db, company.id);
   // Certificates are public once an admin has approved the company (and checked them).
   const certifications = company.status === 'approved' ? ((await registrations.find(company.id))?.certifications ?? []) : [];
   const isOwner = viewer?.userId === company.ownerUserId;
@@ -173,6 +176,33 @@ export default async function MillPage({ params }: PageProps<'/[lang]/m/[company
           <p className="text-muted">{t.none}</p>
         )}
       </section>
+
+      {(photos.length > 0 || isOwner) && (
+        <section aria-labelledby="photos-title" data-testid="company-photos">
+          <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+            <h2 id="photos-title" className="section-title">
+              {t.photos}
+            </h2>
+            {isOwner && (
+              <Link href={href(`/m/${company.slug}/photos`)} className="link">
+                {t.managePhotos}
+              </Link>
+            )}
+          </div>
+          {photos.length > 0 ? (
+            <ul className="grid grid-cols-2 gap-4 md:grid-cols-4">
+              {photos.map((p) => (
+                <li key={p.id} className="flex flex-col gap-2">
+                  <GarmentImage src={`/api/supplier-photos/${p.id}`} alt={p.tags.title ?? t.photoAlt(company.name)} className="aspect-square rounded-control border border-line" />
+                  {p.tags.title && <p className="text-sm">{p.tags.title}</p>}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-muted">{t.addPhotos}</p>
+          )}
+        </section>
+      )}
 
       {garments.some((g) => g.claimStatus === 'verified') && <VerifiedExplanation className="border-t border-line pt-6" />}
     </div>

@@ -3,7 +3,7 @@ import { getContainer } from './container';
 
 // A Workers request: getCloudflareContext returns its env and ctx, and after() queues work for after the response.
 const workers = vi.hoisted(() => ({
-  env: {} as { HYPERDRIVE?: { connectionString: string }; EVIDENCE?: object },
+  env: {} as { HYPERDRIVE?: { connectionString: string }; EVIDENCE?: object; AI?: object },
   waitUntil: [] as Promise<unknown>[],
   after: [] as (() => unknown)[],
 }));
@@ -17,12 +17,14 @@ const hyperdrive = 'postgres://u:p@127.0.0.1:1/hd';
 
 // The EVIDENCE R2 binding: the container stores through it on Workers.
 const bucket = { put: vi.fn(async () => {}), get: vi.fn(async () => null), delete: vi.fn(async () => {}) };
+// The Workers AI binding: photo search runs through it on Workers.
+const ai = { run: vi.fn(async () => ({})) };
 
 beforeEach(() => {
   vi.stubEnv('BETTER_AUTH_SECRET', 's'.repeat(32));
   vi.stubEnv('PUBLIC_BASE_URL', 'https://xbul.io');
   vi.stubEnv('DATABASE_URL', '');
-  workers.env = { HYPERDRIVE: { connectionString: hyperdrive }, EVIDENCE: bucket };
+  workers.env = { HYPERDRIVE: { connectionString: hyperdrive }, EVIDENCE: bucket, AI: ai };
   workers.waitUntil = [];
   workers.after = [];
 });
@@ -39,13 +41,24 @@ it('builds a fresh Hyperdrive pool per request and ends it after the response', 
 });
 
 it('refuses to run on Workers without the HYPERDRIVE binding', async () => {
-  workers.env = { EVIDENCE: bucket };
+  workers.env = { EVIDENCE: bucket, AI: ai };
   await expect(getContainer()).rejects.toThrow(/HYPERDRIVE/);
 });
 
 it('refuses to run on Workers without the EVIDENCE binding, so documents never go to local disk', async () => {
-  workers.env = { HYPERDRIVE: { connectionString: hyperdrive } };
+  workers.env = { HYPERDRIVE: { connectionString: hyperdrive }, AI: ai };
   await expect(getContainer()).rejects.toThrow(/EVIDENCE/);
+});
+
+it('refuses to run on Workers without the AI binding, and uses it for photos', async () => {
+  workers.env = { HYPERDRIVE: { connectionString: hyperdrive }, EVIDENCE: bucket };
+  await expect(getContainer()).rejects.toThrow(/AI binding/);
+  workers.env = { HYPERDRIVE: { connectionString: hyperdrive }, EVIDENCE: bucket, AI: ai };
+  const { photoModel, photoSearchPublic } = await getContainer();
+  expect(photoModel?.embeddingModel).toBe('@cf/google/embeddinggemma-2');
+  expect(photoSearchPublic).toBe(false); // until PHOTO_SEARCH_PUBLIC=1
+  vi.stubEnv('PHOTO_SEARCH_PUBLIC', '1');
+  expect((await getContainer()).photoSearchPublic).toBe(true);
 });
 
 it('stores evidence in the EVIDENCE bucket on Workers', async () => {

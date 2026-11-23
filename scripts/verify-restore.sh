@@ -8,7 +8,8 @@ dump="${1:?Usage: verify-restore.sh <dump file>}"
 
 name="xbul-restore-$$"
 trap 'docker rm -f -v "$name" > /dev/null 2>&1 || true' EXIT
-docker run -d --name "$name" -e POSTGRES_PASSWORD=postgres postgres:17 > /dev/null
+# pgvector: the dump creates the vector extension (photo search), which plain postgres:17 lacks.
+docker run -d --name "$name" -e POSTGRES_PASSWORD=postgres pgvector/pgvector:pg17 > /dev/null
 
 # Over TCP, because Postgres's first start during setup listens on its socket only and would look ready too early.
 for _ in $(seq 1 60); do

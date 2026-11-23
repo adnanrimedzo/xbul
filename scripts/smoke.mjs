@@ -10,6 +10,8 @@ const checks = [
   ['sign-in page', '/sign-in', (res) => res.status === 200],
   ['database', '/api/health', async (res) => res.status === 200 && (await res.json()).status === 'ok'],
   ['private files stay hidden', '/api/evidence/00000000-0000-4000-8000-000000000000', async (res) => res.status === 404 && (await res.text()) === ''],
+  ['unknown supplier photos stay hidden', '/api/supplier-photos/00000000-0000-4000-8000-000000000000', async (res) => res.status === 404 && (await res.text()) === ''],
+  ['unknown search photos stay hidden', '/api/photo-searches/00000000-0000-4000-8000-000000000000', async (res) => res.status === 404 && (await res.text()) === ''],
   ['admin pages turn visitors away', '/admin/stats', (res) => res.status === 307 && !(res.headers.get('location') ?? '').includes('/admin')],
   ['logo (static file)', '/logos/xbul-logo-white.svg', (res) => res.status === 200 && (res.headers.get('content-type') ?? '').includes('image/svg+xml')],
   ['pages refuse framing', '/', (res) => res.headers.get('x-frame-options') === 'DENY'],

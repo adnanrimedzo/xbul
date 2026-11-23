@@ -13,6 +13,9 @@ export const ADMIN_STATS = defineMessages({
     searchersNote: 'Target: 10–20 customers. One address counts once a day, so this overstates customers.',
     searches: 'Searches',
     searchesNote: (n: number) => `${n} found`,
+    photoSearches: 'Photo searches',
+    photoSearchesNote: (n: number) => `${n} showed a textile product`,
+    photos: 'Published product photos',
   },
   tr: {
     title: 'İstatistikler',
@@ -26,5 +29,8 @@ export const ADMIN_STATS = defineMessages({
     searchersNote: 'Hedef: 10–20 müşteri. Bir adres günde bir kez sayılır, bu yüzden müşteri sayısı olduğundan fazla görünür.',
     searches: 'Aramalar',
     searchesNote: (n: number) => `${n} sonuç bulundu`,
+    photoSearches: 'Fotoğrafla aramalar',
+    photoSearchesNote: (n: number) => `${n} tanesinde tekstil ürünü vardı`,
+    photos: 'Yayındaki ürün fotoğrafları',
   },
 });

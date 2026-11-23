@@ -7,3 +7,8 @@ export function visitorHash(ip: string | null, secret: string, now: Date): strin
   if (!ip) return null;
   return createHash('sha256').update(`${now.toISOString().slice(0, 10)}:${ip}:${secret}`).digest('hex');
 }
+
+// The visitor's address as Cloudflare reports it, else the first hop a proxy recorded (next dev), else none.
+export function clientIp(h: { get(name: string): string | null }): string | null {
+  return h.get('cf-connecting-ip') || h.get('x-forwarded-for')?.split(',')[0]?.trim() || null;
+}

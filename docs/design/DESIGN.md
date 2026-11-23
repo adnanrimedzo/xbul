@@ -41,6 +41,8 @@ The look follows the Aoutive reference (https://aoutive.framer.website/): the pa
 - Focus: 2 px `accent` outline, 2 px offset, in both themes.
 - Motion: 150 to 200 ms for state changes. Respect reduced-motion.
 - Tags: `We made this` (solid line), `Can make an equivalent` (dashed line). Plex Mono 14 px.
+- Drop targets (photo upload): a dashed `line` border on a `card` radius, with a real file input behind a visible `cta` button, plus drag and drop and paste. A dashed border means "drop here" only on these large zones; on a tag it still means "Can make an equivalent".
+- Photo matches: `Looks the same`, `Similar` and `Fabric spec matches` chips, with a muted "Matches: …" line naming the fabric details that agree. Never claim more than that the photos look alike.
 
 ## Verified badge (critical)
 - Solid green disc with a check. No ring, no handle, so it can't be confused with the logo.

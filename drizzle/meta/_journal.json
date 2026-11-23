@@ -148,6 +148,13 @@
       "when": 1794087309107,
       "tag": "0020_product-type",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1795448032798,
+      "tag": "0021_photos",
+      "breakpoints": true
     }
   ]
 }

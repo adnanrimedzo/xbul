@@ -15,7 +15,7 @@ const xml = (s: string) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replac
 // Every public page in both languages, each entry naming its other-language twin (hreflang), as Google asks for.
 // A route rather than sitemap.ts because it reads the database and the per-environment base URL at request time.
 export async function GET(): Promise<Response> {
-  const { db, config } = await getContainer();
+  const { db, config, photoSearchPublic } = await getContainer();
   const [productRows, companyRows, articleRows] = await Promise.all([
     db
       .selectDistinct({ id: products.id })
@@ -32,6 +32,7 @@ export async function GET(): Promise<Response> {
   ]);
   const paths = [
     ...STATIC_PATHS,
+    ...(photoSearchPublic ? ['/photo'] : []),
     ...productRows.map((r) => `/p/${r.id}`),
     ...companyRows.map((r) => `/m/${r.slug}`),
     ...articleRows.map((r) => `/m/${r.company}/a/${r.slug}`),

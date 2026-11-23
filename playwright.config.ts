@@ -16,7 +16,7 @@ export default defineConfig({
     { command: 'node e2e/fixture-server.mjs', port: 4010 },
     {
       // A fresh seeded PGlite database per run; `.data` must exist because PGlite's mkdir isn't recursive.
-      command: 'rm -rf .data/e2e .data/e2e-evidence .outbox && mkdir -p .data && pnpm drizzle-kit migrate && pnpm seed && pnpm next dev -p 3100',
+      command: 'rm -rf .data/e2e .data/e2e-evidence .outbox && mkdir -p .data && pnpm db:migrate && pnpm seed && pnpm next dev -p 3100',
       port: 3100,
       timeout: 120_000,
       env: {
@@ -28,6 +28,9 @@ export default defineConfig({
         MAIL_LOG_FILE: '.outbox/e2e-mail.log',
         RESEND_API_KEY: '', // a developer's .env.local key must never send e2e mail
         FETCH_ALLOW_PRIVATE_HOSTS: '1',
+        // Photo search with the deterministic fake model (it keys off the e2e/fixtures/photos sizes), switched on for buyers.
+        PHOTO_AI: 'fake',
+        PHOTO_SEARCH_PUBLIC: '1',
         // Dummy keys so the provider buttons render; e2e/sign-in.spec.ts stops each flow at the provider's door.
         GOOGLE_CLIENT_ID: 'e2e-google-id',
         GOOGLE_CLIENT_SECRET: 'e2e-google-secret',

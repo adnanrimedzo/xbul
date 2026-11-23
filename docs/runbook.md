@@ -9,6 +9,7 @@ How to look after the live site. Setting it up is in [deploy.md](deploy.md). Com
 - In the Cloudflare dashboard, open **Workers & Pages → xbul → Observability** and look for these log lines:
   - `[evidence] could not delete`: a document wasn't deleted. The 90-day rule removes it later. If you see many, check R2's status.
   - `[db] pool error` or `[health] database check failed`: database trouble.
+  - `[photos] … failed` or `[photos] could not delete`: Workers AI or R2 trouble behind photo search. Buyers see "Photo search is busy"; see *Photo search* below.
 
 ## Every month
 
@@ -94,7 +95,11 @@ select id, owner_user_id from companies where slug = '<company slug>';
 
 select e.storage_key
 from claim_evidence e join claims c on c.id = e.claim_id
-where c.company_id = '<company id>';
+where c.company_id = '<company id>'
+union all
+select storage_key from company_documents where company_id = '<company id>'
+union all
+select photo_key from supplier_photos where company_id = '<company id>';
 ```
 
 Delete each file listed. This has to come first, because deleting the company removes the only record of them:
@@ -113,6 +118,36 @@ commit;
 ```
 
 For someone with no company, run only the `user` line. Products stay, because other suppliers may have tagged them. The person's data remains in database backups until those expire, within 90 days.
+
+## Photo search
+
+Buyers upload a photo; Workers AI checks it is a textile product and embeds it; the app compares the vector with suppliers' published product photos (pgvector, exact cosine scan) and their fabric specs. The code is in `src/modules/photos`, the matching query in `src/modules/discovery/infrastructure/photo-matches.ts`.
+
+**Calibrate the thresholds** before `PHOTO_SEARCH_PUBLIC=1`, and again after changing a model. On staging, publish about 30 supplier photos, then search with about 40 photos: the same items shot differently, similar items, fabric close-ups whose weave you know, non-textiles and tricky cases. Signed in as an admin, the results page shows each match's raw score. Set `SAME`, `SIMILAR` and `SIMILAR_FLOOR` in `src/modules/photos/domain/rank-matches.ts` between the scores of right and wrong matches, and `ATTR_MIN_CONFIDENCE` / `WEAVE_MIN_CONFIDENCE_FAR` in `fabric-attributes.ts` from how often the fabric details were right per kind of shot.
+
+**"Photo search is busy"** means Workers AI failed twice in a row (rate limit, timeout or outage). Check the `[photos] … failed` log lines and Workers AI's status. Nothing was stored for those attempts.
+
+**Change a model.** Edit `VISION_MODEL` or `EMBEDDING_MODEL` in `workers-ai-photo-model.ts`. Every vector records the model that made it, and search only compares vectors of the current model, so after an embedding model change existing supplier photos stop matching until re-embedded. There is no re-embed job yet: suppliers re-upload, or write a one-off script against the bucket (the photos are under `supplier-photos/`). A model with a different vector length also needs a migration.
+
+**Remove a photo** (an admin decision, or a complaint about rights). Find it, delete the row, then the file:
+
+```sql
+select id, photo_key from supplier_photos where company_id = '<company id>';
+delete from supplier_photos where id = '<photo id>';
+```
+
+```bash
+pnpm wrangler r2 object delete "xbul-evidence/<photo key>" --remote
+```
+
+**A buyer asks to delete their search photo.** Ask for the results link; its last part is the search id.
+
+```sql
+select photo_key from photo_checks where id = '<search id>';
+update photo_checks set photo_key = null, embedding = null where id = '<search id>';
+```
+
+Then delete the file as above. Buyer photos expire after 7 days anyway (app prune plus the R2 lifecycle rule).
 
 ## Change the database schema
 
