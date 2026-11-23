@@ -1,12 +1,13 @@
 import { BRANDS, brandSlug, TURKIYE_FACT } from '@/app/[lang]/brands/brands';
 import { HOME } from '@/app/[lang]/home-messages';
-import { readConfig } from '@/server/config';
+import { getContainer } from '@/server/container';
 
 export const dynamic = 'force-dynamic';
 
 // llms.txt (https://llmstxt.org): a plain summary of the site for AI assistants, built from the same copy the pages use.
 export async function GET(): Promise<Response> {
-  const base = readConfig().baseUrl;
+  const { config, photoSearchPublic } = await getContainer();
+  const base = config.baseUrl;
   const t = HOME.en;
   const body = `# xbul.io
 
@@ -19,7 +20,7 @@ The site is in English (bare paths) and Turkish (under /tr).
 ## Main pages
 
 - [Search by product link](${base}/): paste a product URL from any brand's website
-- [Brands](${base}/brands): who makes clothes for well-known brands
+${photoSearchPublic ? `- [Search with a photo](${base}/photo): upload a photo of clothing or fabric to see suppliers who make the same or similar products\n` : ''}- [Brands](${base}/brands): who makes clothes for well-known brands
 - [How it works](${base}/#how-it-works)
 - [FAQ](${base}/#faq)
 - [Türkçe](${base}/tr)

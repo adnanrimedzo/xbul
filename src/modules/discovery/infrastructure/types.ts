@@ -58,4 +58,7 @@ export type PendingReview = {
 
 // How the platform stands against the launch targets of 20-30 suppliers, 200-300 products and 10-20 searching customers.
 // `suppliers` counts approved companies; `pendingSuppliers` those waiting for review.
-export type PlatformStats = { suppliers: number; pendingSuppliers: number; taggedProducts: number; searches: number; matchedSearches: number; distinctSearchers: number };
+export type PlatformStats = {
+  suppliers: number; pendingSuppliers: number; taggedProducts: number; searches: number; matchedSearches: number; distinctSearchers: number;
+  photoSearches: number; acceptedPhotoSearches: number; publishedPhotos: number;
+};

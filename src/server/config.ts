@@ -9,6 +9,8 @@ export type AppConfig = {
   allowPrivateHosts: boolean;
   evidenceDir: string; // where the local evidence store keeps files; Workers use the EVIDENCE bucket instead
   oauth: OAuthConfig; // a provider's sign-in button shows only when its keys are set
+  fakePhotoAi: boolean; // PHOTO_AI=fake: a deterministic stand-in for Workers AI under next dev and e2e
+  photoSearchPublic: boolean; // PHOTO_SEARCH_PUBLIC=1 shows buyers photo search; suppliers can add photos either way
 };
 
 export type OAuthKeys = { clientId: string; clientSecret: string };
@@ -53,6 +55,8 @@ export function readConfig(env: Record<string, string | undefined> = process.env
     allowPrivateHosts: env.FETCH_ALLOW_PRIVATE_HOSTS === '1',
     evidenceDir: value('EVIDENCE_DIR') ?? './.data/evidence',
     oauth: { google: oauthKeys('GOOGLE', 'Google'), microsoft: oauthKeys('MICROSOFT', 'Microsoft') },
+    fakePhotoAi: env.PHOTO_AI === 'fake',
+    photoSearchPublic: env.PHOTO_SEARCH_PUBLIC === '1',
   };
 }
 

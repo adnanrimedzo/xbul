@@ -14,7 +14,7 @@ beforeEach(() => {
 });
 afterEach(() => rmSync(root, { recursive: true, force: true }));
 
-it.each([KEY, 'company-docs/c1-company/d1-file'])('local store: puts, gets and deletes a file at %s', async (key) => {
+it.each([KEY, 'company-docs/c1-company/d1-file', 'supplier-photos/c1-company/p1-photo', 'photo-searches/20260310/s1-search'])('local store: puts, gets and deletes a file at %s', async (key) => {
   const dir = join(root, 'store');
   const store = createLocalEvidenceStore(dir);
   await store.put(key, PDF, 'application/pdf');
@@ -28,7 +28,7 @@ it.each([KEY, 'company-docs/c1-company/d1-file'])('local store: puts, gets and d
 it('local store: refuses a key that could leave its folder, for every operation, and writes nothing', async () => {
   const dir = join(root, 'store');
   const store = createLocalEvidenceStore(dir);
-  for (const key of ['../x', 'evidence/../x', 'evidence/a/../../x', 'evidence/a/b/c', 'evidence//b', '/etc/passwd', 'evidence/a/b.pdf', 'evidence/a/b\n', 'x', 'company-docs/../x', 'other/a/b']) {
+  for (const key of ['../x', 'evidence/../x', 'evidence/a/../../x', 'evidence/a/b/c', 'evidence//b', '/etc/passwd', 'evidence/a/b.pdf', 'evidence/a/b\n', 'x', 'company-docs/../x', 'other/a/b', 'supplier-photos/../x', 'photo-searches/a/b/c']) {
     await expect(store.put(key, PDF, 'application/pdf'), key).rejects.toThrow('Not an evidence storage key');
     await expect(store.get(key), key).rejects.toThrow('Not an evidence storage key');
     await expect(store.delete(key), key).rejects.toThrow('Not an evidence storage key');

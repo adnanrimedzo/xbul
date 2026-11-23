@@ -20,6 +20,16 @@ import {
   type EvidenceStore,
 } from '@/modules/claims';
 import { createAuth, findUserEmail, type Auth } from '@/modules/identity';
+import {
+  createFakePhotoModel,
+  createPhotoCheckRepository,
+  createSupplierPhotoRepository,
+  createWorkersAiPhotoModel,
+  type AiBinding,
+  type PhotoCheckRepository,
+  type PhotoModel,
+  type SupplierPhotoRepository,
+} from '@/modules/photos';
 import { createGleifChecker, createSupplierRepositories, createViesChecker, type ArticleRepository, type CheckRepository, type RegistryChecker, type CompanyDocumentRepository, type CompanyRepository, type RegistrationRepository, type ReviewEventRepository } from '@/modules/supplier';
 import { createDb, createPostgresDb, type Db } from '@/shared/db/client';
 import { createConsoleMailer, createResendMailer, type Mailer } from '@/shared/mail/mailer';
@@ -44,12 +54,17 @@ export type Container = {
   claims: ClaimRepository;
   evidence: EvidenceRepository;
   evidenceStore: EvidenceStore;
+  photoModel: PhotoModel | null; // null: no AI here, so photo features are off
+  photoSearchPublic: boolean; // buyers see photo search (needs a model and PHOTO_SEARCH_PUBLIC=1)
+  supplierPhotos: SupplierPhotoRepository;
+  photoChecks: PhotoCheckRepository;
 };
 
 declare global {
   interface CloudflareEnv {
     HYPERDRIVE?: { connectionString: string }; // the wrangler.jsonc binding
-    EVIDENCE?: EvidenceBucket; // the private R2 bucket for supplier documents
+    EVIDENCE?: EvidenceBucket; // the private R2 bucket for supplier documents and photos
+    AI?: AiBinding; // Workers AI, for photo search
   }
 }
 
@@ -76,20 +91,24 @@ export const getContainer = cache(async (): Promise<Container> => {
   const url = resolveDatabaseUrl(config, cf);
   let db: Db;
   let evidenceStore: EvidenceStore;
+  let photoModel: PhotoModel | null;
   if (cf) {
     // No fallback on Workers: DATABASE_URL would open PGlite or a pool shared across requests.
     if (config.databaseUrl) throw new Error('DATABASE_URL must not be set on Workers; the database comes from the HYPERDRIVE binding');
     if (!url.startsWith('postgres')) throw new Error('Workers need the HYPERDRIVE binding with a Postgres connection string (see wrangler.jsonc)');
     // Likewise for documents (customers' invoices): there is no local-disk fallback on Workers.
     if (!cf.env.EVIDENCE) throw new Error('Workers need the EVIDENCE R2 binding for supplier documents (see wrangler.jsonc)');
+    if (!cf.env.AI) throw new Error('Workers need the AI binding for photo search (see wrangler.jsonc)');
     const { ctx } = cf;
     const postgres = createPostgresDb(url);
     after(() => ctx.waitUntil(postgres.pool.end()));
     db = postgres.db;
     evidenceStore = createR2EvidenceStore(cf.env.EVIDENCE);
+    photoModel = createWorkersAiPhotoModel(cf.env.AI);
   } else {
     db = await createDb(url);
     evidenceStore = createLocalEvidenceStore(config.evidenceDir);
+    photoModel = config.fakePhotoAi ? createFakePhotoModel() : null;
   }
   const mailer = config.resendApiKey
     ? createResendMailer(config.resendApiKey, config.mailFrom, 'hello@xbul.io')
@@ -120,5 +139,9 @@ export const getContainer = cache(async (): Promise<Container> => {
     claims: createClaimRepository(db),
     evidence: createEvidenceRepository(db),
     evidenceStore,
+    photoModel,
+    photoSearchPublic: photoModel !== null && config.photoSearchPublic,
+    supplierPhotos: createSupplierPhotoRepository(db),
+    photoChecks: createPhotoCheckRepository(db),
   };
 });

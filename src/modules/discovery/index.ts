@@ -8,3 +8,5 @@ export { canSeeCompany, hasPublicClaims } from './infrastructure/visibility';
 export { getPlatformStats } from './infrastructure/platform-stats';
 export type { RegistrationReview, RegistrationRow } from './infrastructure/registration-review';
 export { getRegistrationReview, listRegistrations } from './infrastructure/registration-review';
+export type { PhotoMatchView, PhotoResultsView } from './infrastructure/photo-matches';
+export { findPhotoMatches, listArticleChoices, listPublishedPhotos } from './infrastructure/photo-matches';

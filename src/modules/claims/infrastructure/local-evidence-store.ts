@@ -2,9 +2,9 @@ import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { dirname, join, resolve } from 'node:path';
 import type { EvidenceStore } from '../application/ports';
 
-// The shapes createEvidence and the supplier's createCompanyDocument produce. No dots or slashes beyond the two
+// The shapes createEvidence, the supplier's createCompanyDocument and the photos module produce. No dots or slashes beyond the two
 // separators, so a key can't leave `dir`.
-const KEY = /^(?:evidence|company-docs)\/[0-9a-zA-Z-]+\/[0-9a-zA-Z-]+$/;
+const KEY = /^(?:evidence|company-docs|supplier-photos|photo-searches)\/[0-9a-zA-Z-]+\/[0-9a-zA-Z-]+$/;
 
 // Files on local disk, for development and tests. The content type lives in the database row, so it isn't stored here.
 export function createLocalEvidenceStore(dir: string): EvidenceStore {

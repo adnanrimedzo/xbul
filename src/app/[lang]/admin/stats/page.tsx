@@ -15,6 +15,8 @@ export default async function AdminStatsPage() {
     { key: 'products', label: t.products, value: stats.taggedProducts, note: t.productsNote },
     { key: 'searchers', label: t.searchers, value: stats.distinctSearchers, note: t.searchersNote },
     { key: 'searches', label: t.searches, value: stats.searches, note: t.searchesNote(stats.matchedSearches) },
+    { key: 'photo-searches', label: t.photoSearches, value: stats.photoSearches, note: t.photoSearchesNote(stats.acceptedPhotoSearches) },
+    { key: 'photos', label: t.photos, value: stats.publishedPhotos, note: null },
   ];
 
   return (

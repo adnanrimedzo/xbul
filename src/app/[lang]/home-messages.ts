@@ -13,6 +13,8 @@ export const HOME = defineMessages({
     notFound: 'No supplier has tagged this product yet.',
     addIt: 'Are you the supplier? Add it',
     noSignUp: 'No sign-up needed.',
+    photoSearch: 'Search with a photo',
+    orPhoto: 'Or search with a photo',
 
     scene: {
       fabric: 'Fabric supplier',
@@ -112,6 +114,8 @@ export const HOME = defineMessages({
     notFound: 'Bu ürünü henüz hiçbir üretici etiketlemedi.',
     addIt: 'Üreticisi siz misiniz? Ekleyin',
     noSignUp: 'Üyelik gerekmez.',
+    photoSearch: 'Fotoğrafla arayın',
+    orPhoto: 'Ya da fotoğrafla arayın',
 
     scene: {
       fabric: 'Kumaş üreticisi',

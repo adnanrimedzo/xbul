@@ -12,9 +12,11 @@ describe('readConfig', () => {
 
   it('treats blank values as unset and reads the optional switches', () => {
     expect(readConfig({ DATABASE_URL: '  ', BETTER_AUTH_SECRET: secret, PUBLIC_BASE_URL: 'http://x', ADMIN_EMAILS: ',, ,', RESEND_API_KEY: '', MAIL_FROM: '' }))
-      .toEqual({ databaseUrl: null, baseUrl: 'http://x', authSecret: secret, adminEmails: [], resendApiKey: null, mailFrom: 'xbul <hello@mail.xbul.io>', mailLogFile: null, allowPrivateHosts: false, evidenceDir: './.data/evidence', oauth: { google: null, microsoft: null } });
+      .toEqual({ databaseUrl: null, baseUrl: 'http://x', authSecret: secret, adminEmails: [], resendApiKey: null, mailFrom: 'xbul <hello@mail.xbul.io>', mailLogFile: null, allowPrivateHosts: false, evidenceDir: './.data/evidence', oauth: { google: null, microsoft: null }, fakePhotoAi: false, photoSearchPublic: false });
     expect(readConfig({ BETTER_AUTH_SECRET: secret, PUBLIC_BASE_URL: 'http://x', RESEND_API_KEY: 're_1', MAIL_LOG_FILE: '.outbox/mail.log', FETCH_ALLOW_PRIVATE_HOSTS: '1', EVIDENCE_DIR: '/var/evidence' }))
       .toMatchObject({ resendApiKey: 're_1', mailLogFile: '.outbox/mail.log', allowPrivateHosts: true, evidenceDir: '/var/evidence' });
+    expect(readConfig({ BETTER_AUTH_SECRET: secret, PUBLIC_BASE_URL: 'http://x', PHOTO_AI: 'fake', PHOTO_SEARCH_PUBLIC: '1' }))
+      .toMatchObject({ fakePhotoAi: true, photoSearchPublic: true });
   });
 
   it('turns on a sign-in provider only when both of its keys are set', () => {

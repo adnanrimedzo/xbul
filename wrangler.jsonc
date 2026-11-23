@@ -23,11 +23,15 @@
   ],
   // Private bucket for the documents suppliers send in for review (docs/deploy.md): never public, read only through the app.
   "r2_buckets": [{ "binding": "EVIDENCE", "bucket_name": "xbul-evidence" }],
+  // Workers AI for photo search: the vision check and the image embeddings (src/modules/photos).
+  "ai": { "binding": "AI" },
   // Public settings. Secrets (BETTER_AUTH_SECRET, RESEND_API_KEY, ADMIN_EMAILS) go in with `wrangler secret put`.
   // PUBLIC_BASE_URL is the one canonical origin (sign-in included): pick apex or www and use it everywhere.
   "vars": {
     "PUBLIC_BASE_URL": "https://xbul.io",
-    "MAIL_FROM": "xbul <hello@mail.xbul.io>"
+    "MAIL_FROM": "xbul <hello@mail.xbul.io>",
+    // "1" shows buyers photo search. Suppliers can add product photos before it goes public (docs/deploy.md).
+    "PHOTO_SEARCH_PUBLIC": "0"
   },
   // Workers Logs: request logs and console output (e.g. a failed owner notification) in the dashboard.
   "observability": { "enabled": true },
@@ -51,9 +55,11 @@
         }
       ],
       "r2_buckets": [{ "binding": "EVIDENCE", "bucket_name": "xbul-evidence-staging" }],
+      "ai": { "binding": "AI" },
       "vars": {
         "PUBLIC_BASE_URL": "https://staging.xbul.io",
-        "MAIL_FROM": "xbul staging <hello@mail.xbul.io>"
+        "MAIL_FROM": "xbul staging <hello@mail.xbul.io>",
+        "PHOTO_SEARCH_PUBLIC": "0"
       },
       "observability": { "enabled": true }
     }
