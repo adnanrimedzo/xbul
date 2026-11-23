@@ -110,7 +110,7 @@ Photo search runs on Workers AI and on pgvector in the database. Nothing to crea
 
 - **Workers AI** is the `AI` binding in `wrangler.jsonc`, for both workers. It bills to the Cloudflare account; a search costs a fraction of a cent (a vision check plus an image embedding). The models are named once in `src/modules/photos/infrastructure/workers-ai-photo-model.ts`.
 - **pgvector** is created by migration `0021_photos` (`CREATE EXTENSION vector`). Neon supports it. `pnpm db:migrate` runs `scripts/migrate.ts`, not `drizzle-kit migrate`, because drizzle-kit can't load the extension into a local PGlite database.
-- **Launch switch.** `PHOTO_SEARCH_PUBLIC` in `wrangler.jsonc` is `"0"`: suppliers can add product photos (in manufacturer mode, *Product photos*), but buyers don't see photo search yet. Once enough photos are published, set it to `"1"` and deploy. The home page then shows the camera button and "Or search with a photo".
+- **Launch switch.** `PHOTO_SEARCH_PUBLIC` in `wrangler.jsonc` is `"1"` on staging, where the real models and the thresholds are tested, and `"0"` in production: suppliers can add product photos (in manufacturer mode, *Product photos*), but buyers don't see photo search yet. Once enough photos are published, set it to `"1"` and deploy. The home page then shows the camera button and "Or search with a photo".
 
 Before going public, calibrate the match thresholds on staging (see [runbook.md](runbook.md), *Photo search*).
 
