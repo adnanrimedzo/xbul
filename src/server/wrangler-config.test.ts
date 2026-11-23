@@ -45,9 +45,8 @@ test('the worker runs beside the database', () => {
   expect(prod.placement).toEqual({ region: 'aws:eu-central-1' });
 });
 
-test('both workers can run photo search, and it starts hidden from buyers', () => {
-  for (const worker of [prod, staging]) {
-    expect(worker.ai).toEqual({ binding: 'AI' });
-    expect(worker.vars.PHOTO_SEARCH_PUBLIC).toBe('0');
-  }
+test('both workers can run photo search; buyers see it on staging only, until production is switched on', () => {
+  for (const worker of [prod, staging]) expect(worker.ai).toEqual({ binding: 'AI' });
+  expect(prod.vars.PHOTO_SEARCH_PUBLIC).toBe('0');
+  expect(staging.vars.PHOTO_SEARCH_PUBLIC).toBe('1');
 });
